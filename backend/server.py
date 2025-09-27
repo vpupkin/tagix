@@ -1,16 +1,23 @@
-from fastapi import FastAPI, APIRouter
-from dotenv import load_dotenv
-from starlette.middleware.cors import CORSMiddleware
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, status, WebSocket, WebSocketDisconnect, Request
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
+from pydantic import BaseModel, Field, EmailStr
+from typing import List, Optional, Dict, Any
+from datetime import datetime, timedelta, timezone
+from jose import JWTError, jwt
+from passlib.context import CryptContext
 import os
 import logging
-from pathlib import Path
-from pydantic import BaseModel, Field
-from typing import List
 import uuid
-from datetime import datetime
+import json
+import asyncio
+from geopy.distance import geodesic
+from emergentintegrations.payments.stripe.checkout import StripeCheckout, CheckoutSessionResponse, CheckoutStatusResponse, CheckoutSessionRequest
+from dotenv import load_dotenv
+from pathlib import Path
 
-
+# Load environment variables
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
@@ -19,42 +26,26 @@ mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
-# Create the main app without a prefix
-app = FastAPI()
+# Security setup
+security = HTTPBearer()
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+JWT_SECRET = os.environ.get('JWT_SECRET')
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
-# Create a router with the /api prefix
+# Stripe setup
+stripe_api_key = os.environ.get('STRIPE_API_KEY')
+
+# Google Maps API Key
+google_maps_api_key = os.environ.get('GOOGLE_MAPS_API_KEY')
+
+# Create the main app
+app = FastAPI(title="MobilityHub Ride-Sharing API", version="1.0.0")
+
+# Create router with /api prefix
 api_router = APIRouter(prefix="/api")
 
-
-# Define Models
-class StatusCheck(BaseModel):
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    client_name: str
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
-
-class StatusCheckCreate(BaseModel):
-    client_name: str
-
-# Add your routes to the router instead of directly to app
-@api_router.get("/")
-async def root():
-    return {"message": "Hello World"}
-
-@api_router.post("/status", response_model=StatusCheck)
-async def create_status_check(input: StatusCheckCreate):
-    status_dict = input.dict()
-    status_obj = StatusCheck(**status_dict)
-    _ = await db.status_checks.insert_one(status_obj.dict())
-    return status_obj
-
-@api_router.get("/status", response_model=List[StatusCheck])
-async def get_status_checks():
-    status_checks = await db.status_checks.find().to_list(1000)
-    return [StatusCheck(**status_check) for status_check in status_checks]
-
-# Include the router in the main app
-app.include_router(api_router)
-
+# CORS middleware
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
@@ -64,12 +55,758 @@ app.add_middleware(
 )
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+# === MODELS ===
+
+class UserRole(str):
+    RIDER = "rider"
+    DRIVER = "driver"
+    ADMIN = "admin"
+
+class RideStatus(str):
+    PENDING = "pending"
+    MATCHED = "matched"
+    ACCEPTED = "accepted"
+    IN_PROGRESS = "in_progress"
+    COMPLETED = "completed"
+    CANCELLED = "cancelled"
+
+class VehicleType(str):
+    ECONOMY = "economy"
+    COMFORT = "comfort"
+    PREMIUM = "premium"
+    SUV = "suv"
+
+class Location(BaseModel):
+    latitude: float = Field(..., ge=-90, le=90)
+    longitude: float = Field(..., ge=-180, le=180)
+    address: Optional[str] = None
+    place_id: Optional[str] = None
+
+class User(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    email: EmailStr
+    name: str
+    phone: str
+    role: str  # rider, driver, admin
+    is_verified: bool = False
+    rating: float = 5.0
+    total_rides: int = 0
+    is_online: bool = False
+    current_location: Optional[Location] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class UserCreate(BaseModel):
+    email: EmailStr
+    password: str
+    name: str
+    phone: str
+    role: str = UserRole.RIDER
+
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
+
+class DriverProfile(BaseModel):
+    user_id: str
+    vehicle_type: str = VehicleType.ECONOMY
+    vehicle_make: str
+    vehicle_model: str
+    vehicle_year: int
+    license_plate: str
+    license_number: str
+    is_approved: bool = False
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class RideRequest(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    rider_id: str
+    pickup_location: Location
+    dropoff_location: Location
+    vehicle_type: str = VehicleType.ECONOMY
+    passenger_count: int = 1
+    special_requirements: Optional[str] = None
+    estimated_fare: Optional[float] = None
+    status: str = RideStatus.PENDING
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    expires_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc) + timedelta(minutes=15))
+
+class RideOffer(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    driver_id: str
+    current_location: Location
+    available_seats: int = 4
+    vehicle_type: str = VehicleType.ECONOMY
+    is_available: bool = True
+    price_per_km: float = 1.50
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class RideMatch(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    request_id: str
+    offer_id: str
+    rider_id: str
+    driver_id: str
+    pickup_location: Location
+    dropoff_location: Location
+    estimated_fare: float
+    estimated_distance_km: float
+    estimated_duration_minutes: int
+    status: str = RideStatus.MATCHED
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    accepted_at: Optional[datetime] = None
+    completed_at: Optional[datetime] = None
+
+class PaymentTransaction(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    ride_id: Optional[str] = None
+    user_id: str
+    session_id: str
+    amount: float
+    currency: str = "usd"
+    payment_status: str = "pending"  # pending, paid, failed, expired
+    status: str = "initiated"  # initiated, processing, completed, failed
+    metadata: Optional[Dict[str, Any]] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class LocationUpdate(BaseModel):
+    user_id: str
+    location: Location
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class RideRating(BaseModel):
+    ride_id: str
+    rater_id: str  # who is giving the rating
+    rated_id: str  # who is being rated
+    rating: int = Field(..., ge=1, le=5)
+    comment: Optional[str] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+# === UTILITY FUNCTIONS ===
+
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.now(timezone.utc) + expires_delta
+    else:
+        expire = datetime.now(timezone.utc) + timedelta(minutes=15)
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, JWT_SECRET, algorithm=ALGORITHM)
+    return encoded_jwt
+
+def verify_password(plain_password, hashed_password):
+    return pwd_context.verify(plain_password, hashed_password)
+
+def get_password_hash(password):
+    return pwd_context.hash(password)
+
+async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(credentials.credentials, JWT_SECRET, algorithms=[ALGORITHM])
+        user_id: str = payload.get("sub")
+        if user_id is None:
+            raise credentials_exception
+    except JWTError:
+        raise credentials_exception
+    
+    user = await db.users.find_one({"id": user_id})
+    if user is None:
+        raise credentials_exception
+    return User(**user)
+
+def calculate_distance_km(loc1: Location, loc2: Location) -> float:
+    """Calculate distance between two locations in kilometers"""
+    return geodesic((loc1.latitude, loc1.longitude), (loc2.latitude, loc2.longitude)).kilometers
+
+def calculate_fare(distance_km: float, vehicle_type: str = VehicleType.ECONOMY) -> float:
+    """Calculate ride fare based on distance and vehicle type"""
+    base_fare = 3.00
+    rate_per_km = {
+        VehicleType.ECONOMY: 1.50,
+        VehicleType.COMFORT: 2.00,
+        VehicleType.PREMIUM: 3.00,
+        VehicleType.SUV: 2.50
+    }
+    return base_fare + (distance_km * rate_per_km.get(vehicle_type, 1.50))
+
+# === WebSocket Connection Manager ===
+
+class ConnectionManager:
+    def __init__(self):
+        self.active_connections: Dict[str, WebSocket] = {}
+        self.user_locations: Dict[str, Location] = {}
+
+    async def connect(self, websocket: WebSocket, user_id: str):
+        await websocket.accept()
+        self.active_connections[user_id] = websocket
+        logger.info(f"User {user_id} connected to WebSocket")
+
+    def disconnect(self, user_id: str):
+        if user_id in self.active_connections:
+            del self.active_connections[user_id]
+        if user_id in self.user_locations:
+            del self.user_locations[user_id]
+        logger.info(f"User {user_id} disconnected from WebSocket")
+
+    async def send_personal_message(self, message: str, user_id: str):
+        if user_id in self.active_connections:
+            await self.active_connections[user_id].send_text(message)
+
+    async def broadcast_nearby(self, message: str, location: Location, radius_km: float = 5.0):
+        """Broadcast message to users within radius"""
+        for user_id, user_location in self.user_locations.items():
+            if calculate_distance_km(location, user_location) <= radius_km:
+                await self.send_personal_message(message, user_id)
+
+manager = ConnectionManager()
+
+# === API ENDPOINTS ===
+
+@api_router.post("/auth/register", response_model=Dict[str, Any])
+async def register(user_data: UserCreate):
+    # Check if user already exists
+    existing_user = await db.users.find_one({"email": user_data.email})
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Email already registered")
+    
+    # Create new user
+    hashed_password = get_password_hash(user_data.password)
+    user = User(
+        email=user_data.email,
+        name=user_data.name,
+        phone=user_data.phone,
+        role=user_data.role
+    )
+    
+    user_dict = user.model_dump()
+    user_dict["password"] = hashed_password
+    
+    await db.users.insert_one(user_dict)
+    
+    # Create access token
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": user.id, "role": user.role}, expires_delta=access_token_expires
+    )
+    
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user": {
+            "id": user.id,
+            "email": user.email,
+            "name": user.name,
+            "role": user.role
+        }
+    }
+
+@api_router.post("/auth/login", response_model=Dict[str, Any])
+async def login(user_credentials: UserLogin):
+    user_doc = await db.users.find_one({"email": user_credentials.email})
+    if not user_doc or not verify_password(user_credentials.password, user_doc["password"]):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect email or password"
+        )
+    
+    user = User(**{k: v for k, v in user_doc.items() if k != "password"})
+    
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": user.id, "role": user.role}, expires_delta=access_token_expires
+    )
+    
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user": {
+            "id": user.id,
+            "email": user.email,
+            "name": user.name,
+            "role": user.role
+        }
+    }
+
+@api_router.get("/auth/me", response_model=User)
+async def get_current_user_info(current_user: User = Depends(get_current_user)):
+    return current_user
+
+@api_router.post("/driver/profile", response_model=Dict[str, str])
+async def create_driver_profile(profile_data: DriverProfile, current_user: User = Depends(get_current_user)):
+    if current_user.role != UserRole.DRIVER:
+        raise HTTPException(status_code=403, detail="Only drivers can create driver profiles")
+    
+    profile_data.user_id = current_user.id
+    profile_dict = profile_data.model_dump()
+    
+    await db.driver_profiles.insert_one(profile_dict)
+    return {"message": "Driver profile created successfully"}
+
+@api_router.get("/driver/profile", response_model=DriverProfile)
+async def get_driver_profile(current_user: User = Depends(get_current_user)):
+    profile = await db.driver_profiles.find_one({"user_id": current_user.id})
+    if not profile:
+        raise HTTPException(status_code=404, detail="Driver profile not found")
+    return DriverProfile(**profile)
+
+@api_router.post("/rides/request", response_model=Dict[str, Any])
+async def create_ride_request(request_data: RideRequest, current_user: User = Depends(get_current_user)):
+    if current_user.role != UserRole.RIDER:
+        raise HTTPException(status_code=403, detail="Only riders can create ride requests")
+    
+    request_data.rider_id = current_user.id
+    
+    # Calculate estimated fare
+    distance_km = calculate_distance_km(request_data.pickup_location, request_data.dropoff_location)
+    request_data.estimated_fare = calculate_fare(distance_km, request_data.vehicle_type)
+    
+    request_dict = request_data.model_dump()
+    await db.ride_requests.insert_one(request_dict)
+    
+    # Find nearby available drivers
+    matches = await find_nearby_drivers(request_data)
+    
+    # Notify nearby drivers via WebSocket
+    for match in matches[:5]:  # Notify top 5 matches
+        await manager.send_personal_message(
+            json.dumps({
+                "type": "ride_request",
+                "request_id": request_data.id,
+                "pickup_address": request_data.pickup_location.address,
+                "dropoff_address": request_data.dropoff_location.address,
+                "estimated_fare": request_data.estimated_fare,
+                "distance_km": distance_km
+            }),
+            match["driver_id"]
+        )
+    
+    return {
+        "request_id": request_data.id,
+        "estimated_fare": request_data.estimated_fare,
+        "matches_found": len(matches)
+    }
+
+async def find_nearby_drivers(request: RideRequest) -> List[Dict[str, Any]]:
+    """Find nearby available drivers for a ride request"""
+    # Get all online drivers with matching vehicle type
+    drivers = await db.users.find({
+        "role": UserRole.DRIVER,
+        "is_online": True,
+        "current_location": {"$exists": True}
+    }).to_list(None)
+    
+    matches = []
+    for driver in drivers:
+        if not driver.get("current_location"):
+            continue
+            
+        driver_location = Location(**driver["current_location"])
+        distance_km = calculate_distance_km(request.pickup_location, driver_location)
+        
+        if distance_km <= 10:  # Within 10km radius
+            matches.append({
+                "driver_id": driver["id"],
+                "distance_km": distance_km,
+                "rating": driver.get("rating", 5.0)
+            })
+    
+    # Sort by distance and rating
+    matches.sort(key=lambda x: (x["distance_km"], -x["rating"]))
+    return matches
+
+@api_router.post("/rides/{request_id}/accept", response_model=Dict[str, Any])
+async def accept_ride_request(request_id: str, current_user: User = Depends(get_current_user)):
+    if current_user.role != UserRole.DRIVER:
+        raise HTTPException(status_code=403, detail="Only drivers can accept ride requests")
+    
+    # Get the ride request
+    request_doc = await db.ride_requests.find_one({"id": request_id})
+    if not request_doc:
+        raise HTTPException(status_code=404, detail="Ride request not found")
+    
+    if request_doc["status"] != RideStatus.PENDING:
+        raise HTTPException(status_code=400, detail="Ride request is no longer available")
+    
+    request_obj = RideRequest(**request_doc)
+    
+    # Create ride match
+    match = RideMatch(
+        request_id=request_id,
+        offer_id=str(uuid.uuid4()),  # Generate offer ID
+        rider_id=request_obj.rider_id,
+        driver_id=current_user.id,
+        pickup_location=request_obj.pickup_location,
+        dropoff_location=request_obj.dropoff_location,
+        estimated_fare=request_obj.estimated_fare or 0.0,
+        estimated_distance_km=calculate_distance_km(request_obj.pickup_location, request_obj.dropoff_location),
+        estimated_duration_minutes=20,  # Simplified estimation
+        status=RideStatus.ACCEPTED,
+        accepted_at=datetime.now(timezone.utc)
+    )
+    
+    # Update request status
+    await db.ride_requests.update_one(
+        {"id": request_id}, 
+        {"$set": {"status": RideStatus.ACCEPTED}}
+    )
+    
+    # Save ride match
+    await db.ride_matches.insert_one(match.model_dump())
+    
+    # Notify rider
+    await manager.send_personal_message(
+        json.dumps({
+            "type": "ride_accepted",
+            "match_id": match.id,
+            "driver_name": current_user.name,
+            "driver_rating": current_user.rating,
+            "estimated_arrival": "5 minutes"
+        }),
+        request_obj.rider_id
+    )
+    
+    return {
+        "match_id": match.id,
+        "message": "Ride request accepted successfully"
+    }
+
+@api_router.get("/rides/my-rides", response_model=List[Dict[str, Any]])
+async def get_my_rides(current_user: User = Depends(get_current_user)):
+    if current_user.role == UserRole.RIDER:
+        rides = await db.ride_matches.find({"rider_id": current_user.id}).to_list(None)
+    elif current_user.role == UserRole.DRIVER:
+        rides = await db.ride_matches.find({"driver_id": current_user.id}).to_list(None)
+    else:
+        rides = await db.ride_matches.find({}).to_list(None)
+    
+    return rides
+
+@api_router.post("/rides/{match_id}/complete", response_model=Dict[str, str])
+async def complete_ride(match_id: str, current_user: User = Depends(get_current_user)):
+    match_doc = await db.ride_matches.find_one({"id": match_id})
+    if not match_doc:
+        raise HTTPException(status_code=404, detail="Ride match not found")
+    
+    # Only driver or rider can complete the ride
+    if current_user.id not in [match_doc["driver_id"], match_doc["rider_id"]]:
+        raise HTTPException(status_code=403, detail="Unauthorized to complete this ride")
+    
+    # Update ride status
+    await db.ride_matches.update_one(
+        {"id": match_id},
+        {
+            "$set": {
+                "status": RideStatus.COMPLETED,
+                "completed_at": datetime.now(timezone.utc)
+            }
+        }
+    )
+    
+    return {"message": "Ride completed successfully"}
+
+@api_router.post("/rides/{match_id}/rate", response_model=Dict[str, str])
+async def rate_ride(match_id: str, rating_data: RideRating, current_user: User = Depends(get_current_user)):
+    match_doc = await db.ride_matches.find_one({"id": match_id})
+    if not match_doc:
+        raise HTTPException(status_code=404, detail="Ride match not found")
+    
+    rating_data.ride_id = match_id
+    rating_data.rater_id = current_user.id
+    
+    # Determine who is being rated
+    if current_user.id == match_doc["rider_id"]:
+        rating_data.rated_id = match_doc["driver_id"]
+    elif current_user.id == match_doc["driver_id"]:
+        rating_data.rated_id = match_doc["rider_id"]
+    else:
+        raise HTTPException(status_code=403, detail="Unauthorized to rate this ride")
+    
+    await db.ratings.insert_one(rating_data.model_dump())
+    
+    # Update user's average rating
+    await update_user_rating(rating_data.rated_id)
+    
+    return {"message": "Rating submitted successfully"}
+
+async def update_user_rating(user_id: str):
+    """Update user's average rating based on all ratings received"""
+    ratings = await db.ratings.find({"rated_id": user_id}).to_list(None)
+    if ratings:
+        avg_rating = sum(r["rating"] for r in ratings) / len(ratings)
+        await db.users.update_one(
+            {"id": user_id},
+            {"$set": {"rating": round(avg_rating, 1)}}
+        )
+
+@api_router.post("/location/update", response_model=Dict[str, str])
+async def update_location(location_data: LocationUpdate, current_user: User = Depends(get_current_user)):
+    location_data.user_id = current_user.id
+    
+    # Update user's current location
+    await db.users.update_one(
+        {"id": current_user.id},
+        {
+            "$set": {
+                "current_location": location_data.location.model_dump(),
+                "is_online": True
+            }
+        }
+    )
+    
+    # Store in location history
+    await db.location_history.insert_one(location_data.model_dump())
+    
+    # Update WebSocket manager
+    manager.user_locations[current_user.id] = location_data.location
+    
+    return {"message": "Location updated successfully"}
+
+@api_router.post("/driver/online", response_model=Dict[str, str])
+async def toggle_driver_online(current_user: User = Depends(get_current_user)):
+    if current_user.role != UserRole.DRIVER:
+        raise HTTPException(status_code=403, detail="Only drivers can toggle online status")
+    
+    # Toggle online status
+    new_status = not current_user.is_online
+    await db.users.update_one(
+        {"id": current_user.id},
+        {"$set": {"is_online": new_status}}
+    )
+    
+    status_text = "online" if new_status else "offline"
+    return {"message": f"Driver is now {status_text}"}
+
+# === PAYMENT ENDPOINTS ===
+
+@api_router.post("/payments/create-session", response_model=Dict[str, Any])
+async def create_payment_session(
+    request: Request,
+    ride_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    # Get ride details
+    ride = await db.ride_matches.find_one({"id": ride_id})
+    if not ride:
+        raise HTTPException(status_code=404, detail="Ride not found")
+    
+    if ride["rider_id"] != current_user.id:
+        raise HTTPException(status_code=403, detail="Unauthorized to pay for this ride")
+    
+    # Get host URL from request
+    host_url = str(request.base_url).rstrip('/')
+    webhook_url = f"{host_url}/api/webhook/stripe"
+    
+    # Initialize Stripe checkout
+    stripe_checkout = StripeCheckout(api_key=stripe_api_key, webhook_url=webhook_url)
+    
+    # Create success and cancel URLs
+    success_url = f"{host_url.replace('/api', '')}/payment-success?session_id={{CHECKOUT_SESSION_ID}}"
+    cancel_url = f"{host_url.replace('/api', '')}/rides"
+    
+    # Create checkout session
+    checkout_request = CheckoutSessionRequest(
+        amount=float(ride["estimated_fare"]),
+        currency="usd",
+        success_url=success_url,
+        cancel_url=cancel_url,
+        metadata={
+            "ride_id": ride_id,
+            "user_id": current_user.id,
+            "type": "ride_payment"
+        }
+    )
+    
+    session = await stripe_checkout.create_checkout_session(checkout_request)
+    
+    # Store payment transaction
+    transaction = PaymentTransaction(
+        ride_id=ride_id,
+        user_id=current_user.id,
+        session_id=session.session_id,
+        amount=float(ride["estimated_fare"]),
+        currency="usd",
+        payment_status="pending",
+        status="initiated",
+        metadata={
+            "ride_id": ride_id,
+            "user_id": current_user.id
+        }
+    )
+    
+    await db.payment_transactions.insert_one(transaction.model_dump())
+    
+    return {
+        "checkout_url": session.url,
+        "session_id": session.session_id
+    }
+
+@api_router.get("/payments/status/{session_id}", response_model=Dict[str, Any])
+async def get_payment_status(session_id: str, current_user: User = Depends(get_current_user)):
+    # Get transaction from database
+    transaction = await db.payment_transactions.find_one({"session_id": session_id})
+    if not transaction:
+        raise HTTPException(status_code=404, detail="Payment session not found")
+    
+    if transaction["user_id"] != current_user.id:
+        raise HTTPException(status_code=403, detail="Unauthorized to view this payment")
+    
+    # Check with Stripe
+    stripe_checkout = StripeCheckout(api_key=stripe_api_key, webhook_url="")
+    status_response = await stripe_checkout.get_checkout_status(session_id)
+    
+    # Update transaction if status changed
+    if status_response.payment_status != transaction["payment_status"]:
+        await db.payment_transactions.update_one(
+            {"session_id": session_id},
+            {
+                "$set": {
+                    "payment_status": status_response.payment_status,
+                    "status": "completed" if status_response.payment_status == "paid" else "failed",
+                    "updated_at": datetime.now(timezone.utc)
+                }
+            }
+        )
+        
+        # If payment successful, mark ride as paid
+        if status_response.payment_status == "paid" and transaction.get("ride_id"):
+            await db.ride_matches.update_one(
+                {"id": transaction["ride_id"]},
+                {"$set": {"payment_status": "paid"}}
+            )
+    
+    return {
+        "payment_status": status_response.payment_status,
+        "amount": status_response.amount_total / 100,  # Convert from cents
+        "currency": status_response.currency
+    }
+
+@api_router.post("/webhook/stripe", include_in_schema=False)
+async def stripe_webhook(request: Request):
+    try:
+        body = await request.body()
+        signature = request.headers.get("Stripe-Signature")
+        
+        stripe_checkout = StripeCheckout(api_key=stripe_api_key, webhook_url="")
+        webhook_response = await stripe_checkout.handle_webhook(body, signature)
+        
+        # Update payment transaction
+        await db.payment_transactions.update_one(
+            {"session_id": webhook_response.session_id},
+            {
+                "$set": {
+                    "payment_status": webhook_response.payment_status,
+                    "status": "completed" if webhook_response.payment_status == "paid" else "failed",
+                    "updated_at": datetime.now(timezone.utc)
+                }
+            }
+        )
+        
+        return {"status": "success"}
+    except Exception as e:
+        logger.error(f"Webhook error: {e}")
+        raise HTTPException(status_code=400, detail="Webhook processing failed")
+
+# === WEBSOCKET ENDPOINT ===
+
+@app.websocket("/ws/{user_id}")
+async def websocket_endpoint(websocket: WebSocket, user_id: str):
+    await manager.connect(websocket, user_id)
+    try:
+        while True:
+            data = await websocket.receive_text()
+            message_data = json.loads(data)
+            
+            if message_data.get("type") == "location_update":
+                location = Location(**message_data["location"])
+                manager.user_locations[user_id] = location
+                
+                # Update user location in database
+                await db.users.update_one(
+                    {"id": user_id},
+                    {"$set": {"current_location": location.model_dump()}}
+                )
+                
+    except WebSocketDisconnect:
+        manager.disconnect(user_id)
+
+# === ADMIN ENDPOINTS ===
+
+@api_router.get("/admin/users", response_model=List[Dict[str, Any]])
+async def get_all_users(current_user: User = Depends(get_current_user)):
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    users = await db.users.find({}, {"password": 0}).to_list(None)
+    return users
+
+@api_router.get("/admin/rides", response_model=List[Dict[str, Any]])
+async def get_all_rides(current_user: User = Depends(get_current_user)):
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    rides = await db.ride_matches.find({}).to_list(None)
+    return rides
+
+@api_router.get("/admin/stats", response_model=Dict[str, Any])
+async def get_platform_stats(current_user: User = Depends(get_current_user)):
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    total_users = await db.users.count_documents({})
+    total_drivers = await db.users.count_documents({"role": UserRole.DRIVER})
+    total_riders = await db.users.count_documents({"role": UserRole.RIDER})
+    total_rides = await db.ride_matches.count_documents({})
+    completed_rides = await db.ride_matches.count_documents({"status": RideStatus.COMPLETED})
+    online_drivers = await db.users.count_documents({"role": UserRole.DRIVER, "is_online": True})
+    
+    # Calculate total revenue
+    completed_ride_docs = await db.ride_matches.find({"status": RideStatus.COMPLETED}).to_list(None)
+    total_revenue = sum(ride.get("estimated_fare", 0) for ride in completed_ride_docs)
+    
+    return {
+        "total_users": total_users,
+        "total_drivers": total_drivers,
+        "total_riders": total_riders,
+        "total_rides": total_rides,
+        "completed_rides": completed_rides,
+        "online_drivers": online_drivers,
+        "total_revenue": round(total_revenue, 2),
+        "completion_rate": round((completed_rides / total_rides * 100) if total_rides > 0 else 0, 1)
+    }
+
+# === BASIC HEALTH CHECK ===
+
+@api_router.get("/health")
+async def health_check():
+    return {"status": "healthy", "service": "MobilityHub API"}
+
+@api_router.get("/config")
+async def get_config():
+    return {
+        "google_maps_api_key": google_maps_api_key,
+        "features": {
+            "real_time_tracking": True,
+            "payments": True,
+            "ratings": True,
+            "admin_panel": True
+        }
+    }
+
+# Include router in the main app
+app.include_router(api_router)
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
     client.close()
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8001)
