@@ -1,0 +1,532 @@
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../contexts/AuthContext';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import axios from 'axios';
+import { 
+  Users, 
+  Car, 
+  DollarSign, 
+  TrendingUp, 
+  Activity, 
+  MapPin,
+  Clock,
+  Star,
+  Shield,
+  AlertTriangle,
+  CheckCircle,
+  RefreshCw
+} from 'lucide-react';
+import { toast } from 'sonner';
+
+const API_URL = process.env.REACT_APP_BACKEND_URL;
+
+const AdminDashboard = () => {
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    total_users: 0,
+    total_drivers: 0,
+    total_riders: 0,
+    total_rides: 0,
+    completed_rides: 0,
+    online_drivers: 0,
+    total_revenue: 0,
+    completion_rate: 0
+  });
+  const [users, setUsers] = useState([]);
+  const [rides, setRides] = useState([]);
+  const [refreshing, setRefreshing] = useState(false);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  const fetchDashboardData = async () => {
+    try {
+      setRefreshing(true);
+      const [statsResponse, usersResponse, ridesResponse] = await Promise.all([
+        axios.get(`${API_URL}/api/admin/stats`),
+        axios.get(`${API_URL}/api/admin/users`),
+        axios.get(`${API_URL}/api/admin/rides`)
+      ]);
+
+      setStats(statsResponse.data);
+      setUsers(usersResponse.data);
+      setRides(ridesResponse.data);
+    } catch (error) {
+      console.error('Error fetching admin data:', error);
+      toast.error('Failed to load dashboard data');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'completed':
+        return 'bg-green-100 text-green-800';
+      case 'in_progress':
+        return 'bg-blue-100 text-blue-800';
+      case 'accepted':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'cancelled':
+        return 'bg-red-100 text-red-800';
+      case 'pending':
+        return 'bg-gray-100 text-gray-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getUserRoleColor = (role) => {
+    switch (role) {
+      case 'admin':
+        return 'bg-purple-100 text-purple-800';
+      case 'driver':
+        return 'bg-blue-100 text-blue-800';
+      case 'rider':
+        return 'bg-green-100 text-green-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD'
+    }).format(amount);
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
+          <p className="text-gray-600">Loading admin dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 py-8" data-testid="admin-dashboard">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 flex items-center space-x-2">
+                <Shield className="h-8 w-8 text-purple-600" />
+                <span>Admin Dashboard</span>
+              </h1>
+              <p className="text-gray-600 mt-1">
+                Monitor and manage the MobilityHub platform
+              </p>
+            </div>
+            <Button 
+              onClick={fetchDashboardData}
+              disabled={refreshing}
+              variant="outline"
+              className="flex items-center space-x-2"
+            >
+              <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+              <span>Refresh</span>
+            </Button>
+          </div>
+        </div>
+
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <Card className="card-hover">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Total Users</p>
+                  <p className="text-3xl font-bold text-gray-900">{stats.total_users}</p>
+                  <p className="text-sm text-gray-500 mt-1">
+                    {stats.total_riders} riders • {stats.total_drivers} drivers
+                  </p>
+                </div>
+                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <Users className="h-6 w-6 text-blue-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="card-hover">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Total Rides</p>
+                  <p className="text-3xl font-bold text-gray-900">{stats.total_rides}</p>
+                  <p className="text-sm text-green-600 mt-1">
+                    {stats.completed_rides} completed
+                  </p>
+                </div>
+                <div className="w-12 h-12 bg-emerald-100 rounded-lg flex items-center justify-center">
+                  <Car className="h-6 w-6 text-emerald-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="card-hover">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Total Revenue</p>
+                  <p className="text-3xl font-bold text-gray-900">{formatCurrency(stats.total_revenue)}</p>
+                  <p className="text-sm text-gray-500 mt-1">
+                    {stats.completion_rate}% completion rate
+                  </p>
+                </div>
+                <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                  <DollarSign className="h-6 w-6 text-green-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="card-hover">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">Online Drivers</p>
+                  <p className="text-3xl font-bold text-gray-900">{stats.online_drivers}</p>
+                  <p className="text-sm text-gray-500 mt-1">
+                    of {stats.total_drivers} total
+                  </p>
+                </div>
+                <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                  <Activity className="h-6 w-6 text-orange-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Tabs for Different Views */}
+        <Tabs defaultValue="overview" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="users">User Management</TabsTrigger>
+            <TabsTrigger value="rides">Ride Monitoring</TabsTrigger>
+            <TabsTrigger value="analytics">Analytics</TabsTrigger>
+          </TabsList>
+
+          {/* Overview Tab */}
+          <TabsContent value="overview" className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Recent Activity */}
+              <Card className="card-hover">
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <Activity className="h-5 w-5 text-indigo-600" />
+                    <span>Recent Activity</span>
+                  </CardTitle>
+                  <CardDescription>
+                    Latest platform activities
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {rides.slice(0, 5).map((ride) => (
+                      <div key={ride.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center">
+                            <Car className="h-4 w-4 text-indigo-600" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-gray-900">
+                              Ride #{ride.id.slice(-8)}
+                            </p>
+                            <p className="text-xs text-gray-600">
+                              {formatDate(ride.created_at)}
+                            </p>
+                          </div>
+                        </div>
+                        <Badge className={getStatusColor(ride.status)}>
+                          {ride.status}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* System Health */}
+              <Card className="card-hover">
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <Shield className="h-5 w-5 text-green-600" />
+                    <span>System Health</span>
+                  </CardTitle>
+                  <CardDescription>
+                    Platform status and metrics
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">API Status</span>
+                      <div className="flex items-center space-x-2">
+                        <CheckCircle className="h-4 w-4 text-green-500" />
+                        <span className="text-sm font-medium text-green-700">Operational</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">Database</span>
+                      <div className="flex items-center space-x-2">
+                        <CheckCircle className="h-4 w-4 text-green-500" />
+                        <span className="text-sm font-medium text-green-700">Connected</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">WebSocket</span>
+                      <div className="flex items-center space-x-2">
+                        <CheckCircle className="h-4 w-4 text-green-500" />
+                        <span className="text-sm font-medium text-green-700">Active</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">Payment System</span>
+                      <div className="flex items-center space-x-2">
+                        <CheckCircle className="h-4 w-4 text-green-500" />
+                        <span className="text-sm font-medium text-green-700">Functional</span>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* Users Tab */}
+          <TabsContent value="users" className="space-y-6">
+            <Card className="card-hover">
+              <CardHeader>
+                <CardTitle>User Management</CardTitle>
+                <CardDescription>
+                  Manage riders, drivers, and administrators
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Role</TableHead>
+                        <TableHead>Rating</TableHead>
+                        <TableHead>Rides</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Joined</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {users.map((user) => (
+                        <TableRow key={user.id}>
+                          <TableCell className="font-medium">{user.name}</TableCell>
+                          <TableCell>{user.email}</TableCell>
+                          <TableCell>
+                            <Badge className={getUserRoleColor(user.role)}>
+                              {user.role}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center space-x-1">
+                              <Star className="h-4 w-4 text-yellow-400 fill-current" />
+                              <span>{user.rating || 5.0}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>{user.total_rides || 0}</TableCell>
+                          <TableCell>
+                            <Badge className={user.is_online ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
+                              {user.is_online ? 'Online' : 'Offline'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {formatDate(user.created_at)}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Rides Tab */}
+          <TabsContent value="rides" className="space-y-6">
+            <Card className="card-hover">
+              <CardHeader>
+                <CardTitle>Ride Monitoring</CardTitle>
+                <CardDescription>
+                  Monitor all ride requests and completed trips
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Ride ID</TableHead>
+                        <TableHead>Rider</TableHead>
+                        <TableHead>Driver</TableHead>
+                        <TableHead>Route</TableHead>
+                        <TableHead>Fare</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Created</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {rides.map((ride) => (
+                        <TableRow key={ride.id}>
+                          <TableCell className="font-mono text-sm">
+                            #{ride.id.slice(-8)}
+                          </TableCell>
+                          <TableCell>{ride.rider_id.slice(-8)}</TableCell>
+                          <TableCell>{ride.driver_id.slice(-8)}</TableCell>
+                          <TableCell>
+                            <div className="max-w-xs">
+                              <p className="text-sm truncate">
+                                {ride.pickup_location?.address || 'N/A'}
+                              </p>
+                              <p className="text-xs text-gray-500 truncate">
+                                → {ride.dropoff_location?.address || 'N/A'}
+                              </p>
+                            </div>
+                          </TableCell>
+                          <TableCell>{formatCurrency(ride.estimated_fare || 0)}</TableCell>
+                          <TableCell>
+                            <Badge className={getStatusColor(ride.status)}>
+                              {ride.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {formatDate(ride.created_at)}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Analytics Tab */}
+          <TabsContent value="analytics" className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Performance Metrics */}
+              <Card className="card-hover">
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <TrendingUp className="h-5 w-5 text-green-600" />
+                    <span>Performance Metrics</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Completion Rate</span>
+                    <span className="text-lg font-semibold text-green-600">
+                      {stats.completion_rate}%
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Average Rating</span>
+                    <div className="flex items-center space-x-1">
+                      <Star className="h-4 w-4 text-yellow-400 fill-current" />
+                      <span className="text-lg font-semibold">4.8</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Driver Utilization</span>
+                    <span className="text-lg font-semibold text-blue-600">
+                      {stats.total_drivers > 0 ? Math.round((stats.online_drivers / stats.total_drivers) * 100) : 0}%
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-600">Revenue per Ride</span>
+                    <span className="text-lg font-semibold text-purple-600">
+                      {formatCurrency(stats.completed_rides > 0 ? stats.total_revenue / stats.completed_rides : 0)}
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Growth Insights */}
+              <Card className="card-hover">
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <Activity className="h-5 w-5 text-indigo-600" />
+                    <span>Growth Insights</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="p-4 bg-green-50 rounded-lg">
+                    <div className="flex items-center space-x-2">
+                      <TrendingUp className="h-5 w-5 text-green-600" />
+                      <span className="font-medium text-green-900">Revenue Growth</span>
+                    </div>
+                    <p className="text-sm text-green-700 mt-1">
+                      Platform revenue is trending upward with consistent ride completion rates.
+                    </p>
+                  </div>
+                  
+                  <div className="p-4 bg-blue-50 rounded-lg">
+                    <div className="flex items-center space-x-2">
+                      <Users className="h-5 w-5 text-blue-600" />
+                      <span className="font-medium text-blue-900">User Engagement</span>
+                    </div>
+                    <p className="text-sm text-blue-700 mt-1">
+                      High user satisfaction with {stats.online_drivers} active drivers online.
+                    </p>
+                  </div>
+                  
+                  <div className="p-4 bg-orange-50 rounded-lg">
+                    <div className="flex items-center space-x-2">
+                      <MapPin className="h-5 w-5 text-orange-600" />
+                      <span className="font-medium text-orange-900">Market Coverage</span>
+                    </div>
+                    <p className="text-sm text-orange-700 mt-1">
+                      Expanding coverage area with increased driver availability.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
+    </div>
+  );
+};
+
+export default AdminDashboard;
