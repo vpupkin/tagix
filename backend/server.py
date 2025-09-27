@@ -28,7 +28,9 @@ db = client[os.environ['DB_NAME']]
 
 # Security setup
 security = HTTPBearer()
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# Using a simpler hashing approach due to bcrypt compatibility issues
+import hashlib
+import secrets
 JWT_SECRET = os.environ.get('JWT_SECRET')
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
