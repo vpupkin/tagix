@@ -359,12 +359,16 @@ async def get_current_user_info(current_user: User = Depends(get_current_user)):
     return current_user
 
 @api_router.post("/driver/profile", response_model=Dict[str, str])
-async def create_driver_profile(profile_data: DriverProfile, current_user: User = Depends(get_current_user)):
+async def create_driver_profile(profile_data: DriverProfileCreate, current_user: User = Depends(get_current_user)):
     if current_user.role != UserRole.DRIVER:
         raise HTTPException(status_code=403, detail="Only drivers can create driver profiles")
     
-    profile_data.user_id = current_user.id
-    profile_dict = profile_data.model_dump()
+    # Create full profile with user_id
+    full_profile = DriverProfile(
+        user_id=current_user.id,
+        **profile_data.model_dump()
+    )
+    profile_dict = full_profile.model_dump()
     
     await db.driver_profiles.insert_one(profile_dict)
     return {"message": "Driver profile created successfully"}
