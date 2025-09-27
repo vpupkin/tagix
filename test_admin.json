@@ -1,0 +1,7 @@
+{
+  "email": "admin@test.com",
+  "password": "admin123",
+  "name": "Test Admin",
+  "phone": "+1234567892",
+  "role": "admin"
+}
