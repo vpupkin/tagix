@@ -122,6 +122,14 @@ class DriverProfile(BaseModel):
     is_approved: bool = False
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
+class DriverProfileCreate(BaseModel):
+    vehicle_type: str = VehicleType.ECONOMY
+    vehicle_make: str
+    vehicle_model: str
+    vehicle_year: int
+    license_plate: str
+    license_number: str
+
 class RideRequest(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     rider_id: str
