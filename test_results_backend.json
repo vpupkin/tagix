@@ -1,10 +1,10 @@
 {
   "summary": {
     "total_tests": 22,
-    "passed_tests": 2,
-    "failed_tests": 20,
-    "success_rate": 9.090909090909092,
-    "timestamp": "2025-09-27T21:27:29.173702"
+    "passed_tests": 16,
+    "failed_tests": 6,
+    "success_rate": 72.72727272727273,
+    "timestamp": "2025-09-27T21:29:54.514114"
   },
   "detailed_results": [
     {
@@ -12,154 +12,154 @@
       "success": true,
       "details": "Service: MobilityHub API",
       "error": "",
-      "timestamp": "2025-09-27T21:27:29.099698"
+      "timestamp": "2025-09-27T21:29:54.029757"
     },
     {
       "test_name": "Config Endpoint",
       "success": true,
       "details": "Google Maps Key: YOUR_GOOGLE_MAPS_API..., Features: ['real_time_tracking', 'payments', 'ratings', 'admin_panel']",
       "error": "",
-      "timestamp": "2025-09-27T21:27:29.121588"
+      "timestamp": "2025-09-27T21:29:54.039210"
     },
     {
       "test_name": "User Registration (rider)",
-      "success": false,
-      "details": "",
-      "error": "HTTP No response: ",
-      "timestamp": "2025-09-27T21:27:29.139911"
+      "success": true,
+      "details": "User ID: ba3b11dd-84d7-4409-b784-fb966f811163, Email: test_rider_1759008594@example.com",
+      "error": "",
+      "timestamp": "2025-09-27T21:29:54.088556"
     },
     {
       "test_name": "User Registration (driver)",
-      "success": false,
-      "details": "",
-      "error": "HTTP No response: ",
-      "timestamp": "2025-09-27T21:27:29.156056"
+      "success": true,
+      "details": "User ID: 21daa559-abdf-4905-a3e3-9c508d500ec7, Email: test_driver_1759008594@example.com",
+      "error": "",
+      "timestamp": "2025-09-27T21:29:54.098683"
     },
     {
       "test_name": "User Registration (admin)",
-      "success": false,
-      "details": "",
-      "error": "HTTP No response: ",
-      "timestamp": "2025-09-27T21:27:29.173486"
+      "success": true,
+      "details": "User ID: a1156e77-7827-4f50-8371-d4f516d3b2a9, Email: test_admin_1759008594@example.com",
+      "error": "",
+      "timestamp": "2025-09-27T21:29:54.127462"
     },
     {
       "test_name": "User Login (rider)",
-      "success": false,
-      "details": "",
-      "error": "User not registered yet",
-      "timestamp": "2025-09-27T21:27:29.173504"
+      "success": true,
+      "details": "Token received for test_rider_1759008594@example.com",
+      "error": "",
+      "timestamp": "2025-09-27T21:29:54.175273"
     },
     {
       "test_name": "User Login (driver)",
-      "success": false,
-      "details": "",
-      "error": "User not registered yet",
-      "timestamp": "2025-09-27T21:27:29.173509"
+      "success": true,
+      "details": "Token received for test_driver_1759008594@example.com",
+      "error": "",
+      "timestamp": "2025-09-27T21:29:54.191423"
     },
     {
       "test_name": "User Login (admin)",
-      "success": false,
-      "details": "",
-      "error": "User not registered yet",
-      "timestamp": "2025-09-27T21:27:29.173515"
+      "success": true,
+      "details": "Token received for test_admin_1759008594@example.com",
+      "error": "",
+      "timestamp": "2025-09-27T21:29:54.201276"
     },
     {
       "test_name": "Auth Me (rider)",
-      "success": false,
-      "details": "",
-      "error": "No auth token available",
-      "timestamp": "2025-09-27T21:27:29.173522"
+      "success": true,
+      "details": "User: Test Rider 1759008594 (rider)",
+      "error": "",
+      "timestamp": "2025-09-27T21:29:54.209144"
     },
     {
       "test_name": "Auth Me (driver)",
-      "success": false,
-      "details": "",
-      "error": "No auth token available",
-      "timestamp": "2025-09-27T21:27:29.173528"
+      "success": true,
+      "details": "User: Test Driver 1759008594 (driver)",
+      "error": "",
+      "timestamp": "2025-09-27T21:29:54.257297"
     },
     {
       "test_name": "Auth Me (admin)",
-      "success": false,
-      "details": "",
-      "error": "No auth token available",
-      "timestamp": "2025-09-27T21:27:29.173533"
+      "success": true,
+      "details": "User: Test Admin 1759008594 (admin)",
+      "error": "",
+      "timestamp": "2025-09-27T21:29:54.265070"
     },
     {
       "test_name": "Driver Profile Creation",
       "success": false,
       "details": "",
-      "error": "No driver token available",
-      "timestamp": "2025-09-27T21:27:29.173542"
+      "error": "HTTP No response",
+      "timestamp": "2025-09-27T21:29:54.314555"
     },
     {
       "test_name": "Driver Profile Retrieval",
       "success": false,
       "details": "",
-      "error": "No driver token available",
-      "timestamp": "2025-09-27T21:27:29.173548"
+      "error": "HTTP No response",
+      "timestamp": "2025-09-27T21:29:54.323060"
     },
     {
       "test_name": "Location Update (driver)",
       "success": false,
       "details": "",
-      "error": "No driver token available",
-      "timestamp": "2025-09-27T21:27:29.173554"
+      "error": "HTTP No response",
+      "timestamp": "2025-09-27T21:29:54.371437"
     },
     {
       "test_name": "Driver Online Toggle",
-      "success": false,
-      "details": "",
-      "error": "No driver token available",
-      "timestamp": "2025-09-27T21:27:29.173560"
+      "success": true,
+      "details": "Driver is now online",
+      "error": "",
+      "timestamp": "2025-09-27T21:29:54.410307"
     },
     {
       "test_name": "Ride Request Creation",
       "success": false,
       "details": "",
-      "error": "No rider token available",
-      "timestamp": "2025-09-27T21:27:29.173572"
+      "error": "HTTP No response",
+      "timestamp": "2025-09-27T21:29:54.418759"
     },
     {
       "test_name": "Ride Acceptance",
       "success": false,
       "details": "",
-      "error": "No driver token available",
-      "timestamp": "2025-09-27T21:27:29.173578"
+      "error": "No ride request ID available",
+      "timestamp": "2025-09-27T21:29:54.418774"
     },
     {
       "test_name": "My Rides (rider)",
-      "success": false,
-      "details": "",
-      "error": "No rider token available",
-      "timestamp": "2025-09-27T21:27:29.173586"
+      "success": true,
+      "details": "Found 0 rides",
+      "error": "",
+      "timestamp": "2025-09-27T21:29:54.468198"
     },
     {
       "test_name": "My Rides (driver)",
-      "success": false,
-      "details": "",
-      "error": "No driver token available",
-      "timestamp": "2025-09-27T21:27:29.173591"
+      "success": true,
+      "details": "Found 0 rides",
+      "error": "",
+      "timestamp": "2025-09-27T21:29:54.477272"
     },
     {
       "test_name": "Admin Stats",
-      "success": false,
-      "details": "",
-      "error": "No admin token available",
-      "timestamp": "2025-09-27T21:27:29.173600"
+      "success": true,
+      "details": "Users: 4, Rides: 0, Revenue: $0.00",
+      "error": "",
+      "timestamp": "2025-09-27T21:29:54.491189"
     },
     {
       "test_name": "Admin Users",
       "success": false,
       "details": "",
-      "error": "No admin token available",
-      "timestamp": "2025-09-27T21:27:29.173607"
+      "error": "HTTP No response",
+      "timestamp": "2025-09-27T21:29:54.505206"
     },
     {
       "test_name": "Admin Rides",
-      "success": false,
-      "details": "",
-      "error": "No admin token available",
-      "timestamp": "2025-09-27T21:27:29.173613"
+      "success": true,
+      "details": "Found 0 rides",
+      "error": "",
+      "timestamp": "2025-09-27T21:29:54.513992"
     }
   ]
 }
