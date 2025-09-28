@@ -1,0 +1,102 @@
+{
+  "summary": {
+    "total_tests": 13,
+    "passed_tests": 7,
+    "failed_tests": 6,
+    "success_rate": 53.84615384615385,
+    "timestamp": "2025-09-28T18:57:30.090044"
+  },
+  "detailed_results": [
+    {
+      "test_name": "Duplicate Registration Rejection",
+      "success": false,
+      "details": "",
+      "error": "Expected 400, got No response",
+      "timestamp": "2025-09-28T18:57:28.825279"
+    },
+    {
+      "test_name": "Successful Login Audit",
+      "success": true,
+      "details": "Login should create audit log",
+      "error": "",
+      "timestamp": "2025-09-28T18:57:28.836795"
+    },
+    {
+      "test_name": "Failed Login Audit",
+      "success": false,
+      "details": "",
+      "error": "Expected 401, got No response",
+      "timestamp": "2025-09-28T18:57:28.848170"
+    },
+    {
+      "test_name": "Driver Profile Creation Audit",
+      "success": true,
+      "details": "Driver profile creation should create audit log",
+      "error": "",
+      "timestamp": "2025-09-28T18:57:28.897432"
+    },
+    {
+      "test_name": "Ride Request Creation Audit",
+      "success": false,
+      "details": "",
+      "error": "Ride request failed: No response",
+      "timestamp": "2025-09-28T18:57:28.905665"
+    },
+    {
+      "test_name": "Admin User List Access Audit",
+      "success": false,
+      "details": "",
+      "error": "Admin user list failed: No response",
+      "timestamp": "2025-09-28T18:57:28.914859"
+    },
+    {
+      "test_name": "Admin Filtered User Access Audit",
+      "success": false,
+      "details": "",
+      "error": "Admin filtered users failed: No response",
+      "timestamp": "2025-09-28T18:57:28.923797"
+    },
+    {
+      "test_name": "Admin Stats with Audit Data",
+      "success": true,
+      "details": "Audit logs: 13",
+      "error": "",
+      "timestamp": "2025-09-28T18:57:28.934307"
+    },
+    {
+      "test_name": "Admin Audit Log Access",
+      "success": false,
+      "details": "",
+      "error": "Audit logs failed: No response",
+      "timestamp": "2025-09-28T18:57:28.943105"
+    },
+    {
+      "test_name": "Audit Statistics Access",
+      "success": true,
+      "details": "Total logs: 13, Recent (24h): 13",
+      "error": "",
+      "timestamp": "2025-09-28T18:57:28.952538"
+    },
+    {
+      "test_name": "User Own Audit Log Access",
+      "success": true,
+      "details": "User can access 0 of their own audit logs",
+      "error": "",
+      "timestamp": "2025-09-28T18:57:28.960443"
+    },
+    {
+      "test_name": "Admin Payment Access Audit",
+      "success": true,
+      "details": "Payment access should create audit log. Found 0 payments",
+      "error": "",
+      "timestamp": "2025-09-28T18:57:28.970488"
+    },
+    {
+      "test_name": "Audit Log Persistence",
+      "success": true,
+      "details": "Audit logs increased from 14 to 14",
+      "error": "",
+      "timestamp": "2025-09-28T18:57:30.089920"
+    }
+  ]
+}
