@@ -265,6 +265,11 @@ class AdminCRUDOperations:
         
         rides = await cursor.to_list(None)
         
+        # Convert MongoDB ObjectIds to strings for JSON serialization
+        for ride in rides:
+            if '_id' in ride:
+                ride['_id'] = str(ride['_id'])
+        
         # Log audit event
         await self.audit.log_action(
             action=AuditAction.ADMIN_RIDE_MODIFIED,
