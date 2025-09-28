@@ -663,7 +663,7 @@ async def get_my_rides(current_user: User = Depends(get_current_user)):
     else:
         rides = await db.ride_matches.find({}).to_list(None)
     
-    return rides
+    return convert_objectids_to_strings(rides)
 
 @api_router.post("/rides/{match_id}/complete", response_model=Dict[str, str])
 async def complete_ride(match_id: str, current_user: User = Depends(get_current_user)):
