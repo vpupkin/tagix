@@ -190,6 +190,10 @@ class AuditSystem:
         for result in results:
             if '_id' in result:
                 result['_id'] = str(result['_id'])
+            # Convert any other ObjectId fields that might exist
+            for key, value in result.items():
+                if hasattr(value, '__class__') and value.__class__.__name__ == 'ObjectId':
+                    result[key] = str(value)
         
         return results
     
