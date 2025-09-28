@@ -17,6 +17,15 @@ from emergentintegrations.payments.stripe.checkout import StripeCheckout, Checko
 from dotenv import load_dotenv
 from pathlib import Path
 
+# Import comprehensive audit and admin systems
+try:
+    from audit_system import AuditSystem, AuditAction, AuditFilter
+    from admin_crud import AdminCRUDOperations, AdminUserUpdate, AdminRideUpdate, AdminPaymentUpdate, DataFilter
+    AUDIT_ENABLED = True
+except ImportError as e:
+    print(f"Warning: Audit system not available: {e}")
+    AUDIT_ENABLED = False
+
 # Load environment variables
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
