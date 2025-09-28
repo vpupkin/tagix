@@ -94,6 +94,11 @@ class AdminCRUDOperations:
         
         users = await cursor.to_list(None)
         
+        # Convert MongoDB ObjectIds to strings for JSON serialization
+        for user in users:
+            if '_id' in user:
+                user['_id'] = str(user['_id'])
+        
         # Log audit event
         await self.audit.log_action(
             action=AuditAction.ADMIN_USER_MODIFIED,
