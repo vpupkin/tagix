@@ -307,10 +307,27 @@ manager = ConnectionManager()
 # === API ENDPOINTS ===
 
 @api_router.post("/auth/register", response_model=Dict[str, Any])
-async def register(user_data: UserCreate):
+async def register(user_data: UserCreate, request: Request):
+    # Get request info for audit
+    ip_address = request.client.host if request.client else None
+    user_agent = request.headers.get("user-agent")
+    
     # Check if user already exists
     existing_user = await db.users.find_one({"email": user_data.email})
     if existing_user:
+        # Log failed registration attempt
+        if AUDIT_ENABLED and audit_system:
+            await audit_system.log_action(
+                action=AuditAction.USER_CREATED,
+                entity_type="user",
+                metadata={
+                    "email": user_data.email,
+                    "failure_reason": "email_already_exists"
+                },
+                ip_address=ip_address,
+                user_agent=user_agent,
+                severity="medium"
+            )
         raise HTTPException(status_code=400, detail="Email already registered")
     
     # Create new user
@@ -332,6 +349,23 @@ async def register(user_data: UserCreate):
     access_token = create_access_token(
         data={"sub": user.id, "role": user.role}, expires_delta=access_token_expires
     )
+    
+    # Log successful registration
+    if AUDIT_ENABLED and audit_system:
+        await audit_system.log_action(
+            action=AuditAction.USER_CREATED,
+            user_id=user.id,
+            entity_type="user",
+            entity_id=user.id,
+            new_data={
+                "email": user.email,
+                "name": user.name,
+                "role": user.role
+            },
+            ip_address=ip_address,
+            user_agent=user_agent,
+            severity="medium"
+        )
     
     return {
         "access_token": access_token,
