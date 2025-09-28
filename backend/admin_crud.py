@@ -400,13 +400,7 @@ class AdminCRUDOperations:
         payments = await cursor.to_list(None)
         
         # Convert MongoDB ObjectIds to strings for JSON serialization
-        for payment in payments:
-            if '_id' in payment:
-                payment['_id'] = str(payment['_id'])
-            # Convert any other ObjectId fields that might exist
-            for key, value in payment.items():
-                if hasattr(value, '__class__') and value.__class__.__name__ == 'ObjectId':
-                    payment[key] = str(value)
+        payments = convert_objectids_to_strings(payments)
         
         # Calculate summary statistics
         total_amount = await self.db.payment_transactions.aggregate([
