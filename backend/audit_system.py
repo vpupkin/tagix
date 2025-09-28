@@ -205,13 +205,7 @@ class AuditSystem:
         results = await cursor.to_list(None)
         
         # Convert MongoDB ObjectIds to strings for JSON serialization
-        for result in results:
-            if '_id' in result:
-                result['_id'] = str(result['_id'])
-            # Convert any other ObjectId fields that might exist
-            for key, value in result.items():
-                if hasattr(value, '__class__') and value.__class__.__name__ == 'ObjectId':
-                    result[key] = str(value)
+        results = convert_objectids_to_strings(results)
         
         return results
     
