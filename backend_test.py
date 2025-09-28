@@ -712,7 +712,7 @@ def main():
         success = tester.run_comprehensive_test()
         
         # Save detailed results
-        with open('/app/test_results_backend.json', 'w') as f:
+        with open('test_results_backend.json', 'w') as f:
             json.dump({
                 'summary': {
                     'total_tests': tester.total_tests,
