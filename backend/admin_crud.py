@@ -367,7 +367,7 @@ class AdminCRUDOperations:
         
         return {
             "message": "Ride updated successfully",
-            "ride": updated_ride,
+            "ride": convert_objectids_to_strings(updated_ride),
             "modified_fields": list(update_data.keys())
         }
     
