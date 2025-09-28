@@ -684,23 +684,47 @@ class MobilityHubAPITester:
 
 def main():
     """Main test execution"""
-    tester = MobilityHubAPITester()
-    success = tester.run_comprehensive_test()
+    import sys
     
-    # Save detailed results
-    with open('/app/test_results_backend.json', 'w') as f:
-        json.dump({
-            'summary': {
-                'total_tests': tester.total_tests,
-                'passed_tests': tester.passed_tests,
-                'failed_tests': tester.total_tests - tester.passed_tests,
-                'success_rate': (tester.passed_tests/tester.total_tests*100) if tester.total_tests > 0 else 0,
-                'timestamp': datetime.now().isoformat()
-            },
-            'detailed_results': tester.test_results
-        }, f, indent=2)
-    
-    return 0 if success else 1
+    # Check if we should run the specific ObjectId serialization test
+    if len(sys.argv) > 1 and sys.argv[1] == "objectid":
+        tester = MobilityHubAPITester()
+        success = tester.run_objectid_serialization_test()
+        
+        # Save detailed results
+        with open('/app/test_results_objectid_fix.json', 'w') as f:
+            json.dump({
+                'test_type': 'objectid_serialization_fix',
+                'summary': {
+                    'total_tests': tester.total_tests,
+                    'passed_tests': tester.passed_tests,
+                    'failed_tests': tester.total_tests - tester.passed_tests,
+                    'success_rate': (tester.passed_tests/tester.total_tests*100) if tester.total_tests > 0 else 0,
+                    'timestamp': datetime.now().isoformat()
+                },
+                'detailed_results': tester.test_results
+            }, f, indent=2)
+        
+        return 0 if success else 1
+    else:
+        # Run comprehensive test
+        tester = MobilityHubAPITester()
+        success = tester.run_comprehensive_test()
+        
+        # Save detailed results
+        with open('/app/test_results_backend.json', 'w') as f:
+            json.dump({
+                'summary': {
+                    'total_tests': tester.total_tests,
+                    'passed_tests': tester.passed_tests,
+                    'failed_tests': tester.total_tests - tester.passed_tests,
+                    'success_rate': (tester.passed_tests/tester.total_tests*100) if tester.total_tests > 0 else 0,
+                    'timestamp': datetime.now().isoformat()
+                },
+                'detailed_results': tester.test_results
+            }, f, indent=2)
+        
+        return 0 if success else 1
 
 if __name__ == "__main__":
     sys.exit(main())
