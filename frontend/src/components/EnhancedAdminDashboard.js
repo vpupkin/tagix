@@ -753,7 +753,7 @@ const EnhancedAdminDashboard = () => {
                         <SelectValue placeholder="Role" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">All Roles</SelectItem>
+                        <SelectItem value="all">All Roles</SelectItem>
                         <SelectItem value="rider">Rider</SelectItem>
                         <SelectItem value="driver">Driver</SelectItem>
                         <SelectItem value="admin">Admin</SelectItem>
