@@ -1,10 +1,10 @@
 {
   "summary": {
     "total_tests": 13,
-    "passed_tests": 7,
-    "failed_tests": 6,
-    "success_rate": 53.84615384615385,
-    "timestamp": "2025-09-28T18:57:30.090044"
+    "passed_tests": 10,
+    "failed_tests": 3,
+    "success_rate": 76.92307692307693,
+    "timestamp": "2025-09-28T18:59:34.352650"
   },
   "detailed_results": [
     {
@@ -12,91 +12,91 @@
       "success": false,
       "details": "",
       "error": "Expected 400, got No response",
-      "timestamp": "2025-09-28T18:57:28.825279"
+      "timestamp": "2025-09-28T18:59:26.468900"
     },
     {
       "test_name": "Successful Login Audit",
       "success": true,
       "details": "Login should create audit log",
       "error": "",
-      "timestamp": "2025-09-28T18:57:28.836795"
+      "timestamp": "2025-09-28T18:59:26.478959"
     },
     {
       "test_name": "Failed Login Audit",
       "success": false,
       "details": "",
       "error": "Expected 401, got No response",
-      "timestamp": "2025-09-28T18:57:28.848170"
+      "timestamp": "2025-09-28T18:59:26.527721"
     },
     {
       "test_name": "Driver Profile Creation Audit",
       "success": true,
       "details": "Driver profile creation should create audit log",
       "error": "",
-      "timestamp": "2025-09-28T18:57:28.897432"
+      "timestamp": "2025-09-28T18:59:26.537660"
     },
     {
       "test_name": "Ride Request Creation Audit",
       "success": false,
       "details": "",
       "error": "Ride request failed: No response",
-      "timestamp": "2025-09-28T18:57:28.905665"
+      "timestamp": "2025-09-28T18:59:28.858961"
     },
     {
       "test_name": "Admin User List Access Audit",
-      "success": false,
-      "details": "",
-      "error": "Admin user list failed: No response",
-      "timestamp": "2025-09-28T18:57:28.914859"
+      "success": true,
+      "details": "Admin accessing user list should create audit log",
+      "error": "",
+      "timestamp": "2025-09-28T18:59:28.877572"
     },
     {
       "test_name": "Admin Filtered User Access Audit",
-      "success": false,
-      "details": "",
-      "error": "Admin filtered users failed: No response",
-      "timestamp": "2025-09-28T18:57:28.923797"
+      "success": true,
+      "details": "Admin filtered user access should create audit log",
+      "error": "",
+      "timestamp": "2025-09-28T18:59:32.173674"
     },
     {
       "test_name": "Admin Stats with Audit Data",
       "success": true,
-      "details": "Audit logs: 13",
+      "details": "Audit logs: 25",
       "error": "",
-      "timestamp": "2025-09-28T18:57:28.934307"
+      "timestamp": "2025-09-28T18:59:32.185672"
     },
     {
       "test_name": "Admin Audit Log Access",
-      "success": false,
-      "details": "",
-      "error": "Audit logs failed: No response",
-      "timestamp": "2025-09-28T18:57:28.943105"
+      "success": true,
+      "details": "Retrieved 20 logs with actions: admin_payment_modified, user_login, admin_user_modified, user_created",
+      "error": "",
+      "timestamp": "2025-09-28T18:59:32.194938"
     },
     {
       "test_name": "Audit Statistics Access",
       "success": true,
-      "details": "Total logs: 13, Recent (24h): 13",
+      "details": "Total logs: 25, Recent (24h): 25",
       "error": "",
-      "timestamp": "2025-09-28T18:57:28.952538"
+      "timestamp": "2025-09-28T18:59:32.209240"
     },
     {
       "test_name": "User Own Audit Log Access",
       "success": true,
       "details": "User can access 0 of their own audit logs",
       "error": "",
-      "timestamp": "2025-09-28T18:57:28.960443"
+      "timestamp": "2025-09-28T18:59:33.264318"
     },
     {
       "test_name": "Admin Payment Access Audit",
       "success": true,
       "details": "Payment access should create audit log. Found 0 payments",
       "error": "",
-      "timestamp": "2025-09-28T18:57:28.970488"
+      "timestamp": "2025-09-28T18:59:33.274650"
     },
     {
       "test_name": "Audit Log Persistence",
       "success": true,
-      "details": "Audit logs increased from 14 to 14",
+      "details": "Audit logs increased from 26 to 26",
       "error": "",
-      "timestamp": "2025-09-28T18:57:30.089920"
+      "timestamp": "2025-09-28T18:59:34.352518"
     }
   ]
 }
