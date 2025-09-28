@@ -1,10 +1,10 @@
 {
   "summary": {
     "total_tests": 22,
-    "passed_tests": 16,
-    "failed_tests": 6,
-    "success_rate": 72.72727272727273,
-    "timestamp": "2025-09-27T21:29:54.514114"
+    "passed_tests": 18,
+    "failed_tests": 4,
+    "success_rate": 81.81818181818183,
+    "timestamp": "2025-09-28T18:56:13.864064"
   },
   "detailed_results": [
     {
@@ -12,154 +12,154 @@
       "success": true,
       "details": "Service: MobilityHub API",
       "error": "",
-      "timestamp": "2025-09-27T21:29:54.029757"
+      "timestamp": "2025-09-28T18:56:13.216752"
     },
     {
       "test_name": "Config Endpoint",
       "success": true,
       "details": "Google Maps Key: YOUR_GOOGLE_MAPS_API..., Features: ['real_time_tracking', 'payments', 'ratings', 'admin_panel']",
       "error": "",
-      "timestamp": "2025-09-27T21:29:54.039210"
+      "timestamp": "2025-09-28T18:56:13.231071"
     },
     {
       "test_name": "User Registration (rider)",
       "success": true,
-      "details": "User ID: ba3b11dd-84d7-4409-b784-fb966f811163, Email: test_rider_1759008594@example.com",
+      "details": "User ID: 30912b2a-0f6d-423d-83c3-a0b79be4c88d, Email: test_rider_1759085773@example.com",
       "error": "",
-      "timestamp": "2025-09-27T21:29:54.088556"
+      "timestamp": "2025-09-28T18:56:13.351504"
     },
     {
       "test_name": "User Registration (driver)",
       "success": true,
-      "details": "User ID: 21daa559-abdf-4905-a3e3-9c508d500ec7, Email: test_driver_1759008594@example.com",
+      "details": "User ID: e8089745-fbb4-41aa-a001-f1c905770b42, Email: test_driver_1759085773@example.com",
       "error": "",
-      "timestamp": "2025-09-27T21:29:54.098683"
+      "timestamp": "2025-09-28T18:56:13.365685"
     },
     {
       "test_name": "User Registration (admin)",
       "success": true,
-      "details": "User ID: a1156e77-7827-4f50-8371-d4f516d3b2a9, Email: test_admin_1759008594@example.com",
+      "details": "User ID: 9cea3592-a9d5-4cf6-ba60-ee9360e1fd64, Email: test_admin_1759085773@example.com",
       "error": "",
-      "timestamp": "2025-09-27T21:29:54.127462"
+      "timestamp": "2025-09-28T18:56:13.416297"
     },
     {
       "test_name": "User Login (rider)",
       "success": true,
-      "details": "Token received for test_rider_1759008594@example.com",
+      "details": "Token received for test_rider_1759085773@example.com",
       "error": "",
-      "timestamp": "2025-09-27T21:29:54.175273"
+      "timestamp": "2025-09-28T18:56:13.467123"
     },
     {
       "test_name": "User Login (driver)",
       "success": true,
-      "details": "Token received for test_driver_1759008594@example.com",
+      "details": "Token received for test_driver_1759085773@example.com",
       "error": "",
-      "timestamp": "2025-09-27T21:29:54.191423"
+      "timestamp": "2025-09-28T18:56:13.531024"
     },
     {
       "test_name": "User Login (admin)",
       "success": true,
-      "details": "Token received for test_admin_1759008594@example.com",
+      "details": "Token received for test_admin_1759085773@example.com",
       "error": "",
-      "timestamp": "2025-09-27T21:29:54.201276"
+      "timestamp": "2025-09-28T18:56:13.543771"
     },
     {
       "test_name": "Auth Me (rider)",
       "success": true,
-      "details": "User: Test Rider 1759008594 (rider)",
+      "details": "User: Test Rider 1759085773 (rider)",
       "error": "",
-      "timestamp": "2025-09-27T21:29:54.209144"
+      "timestamp": "2025-09-28T18:56:13.559122"
     },
     {
       "test_name": "Auth Me (driver)",
       "success": true,
-      "details": "User: Test Driver 1759008594 (driver)",
+      "details": "User: Test Driver 1759085773 (driver)",
       "error": "",
-      "timestamp": "2025-09-27T21:29:54.257297"
+      "timestamp": "2025-09-28T18:56:13.608107"
     },
     {
       "test_name": "Auth Me (admin)",
       "success": true,
-      "details": "User: Test Admin 1759008594 (admin)",
+      "details": "User: Test Admin 1759085773 (admin)",
       "error": "",
-      "timestamp": "2025-09-27T21:29:54.265070"
+      "timestamp": "2025-09-28T18:56:13.616833"
     },
     {
       "test_name": "Driver Profile Creation",
-      "success": false,
-      "details": "",
-      "error": "HTTP No response",
-      "timestamp": "2025-09-27T21:29:54.314555"
+      "success": true,
+      "details": "Driver profile created successfully",
+      "error": "",
+      "timestamp": "2025-09-28T18:56:13.650221"
     },
     {
       "test_name": "Driver Profile Retrieval",
-      "success": false,
-      "details": "",
-      "error": "HTTP No response",
-      "timestamp": "2025-09-27T21:29:54.323060"
+      "success": true,
+      "details": "Vehicle: 2020 Toyota Camry",
+      "error": "",
+      "timestamp": "2025-09-28T18:56:13.658621"
     },
     {
       "test_name": "Location Update (driver)",
       "success": false,
       "details": "",
       "error": "HTTP No response",
-      "timestamp": "2025-09-27T21:29:54.371437"
+      "timestamp": "2025-09-28T18:56:13.700378"
     },
     {
       "test_name": "Driver Online Toggle",
       "success": true,
       "details": "Driver is now online",
       "error": "",
-      "timestamp": "2025-09-27T21:29:54.410307"
+      "timestamp": "2025-09-28T18:56:13.709468"
     },
     {
       "test_name": "Ride Request Creation",
       "success": false,
       "details": "",
       "error": "HTTP No response",
-      "timestamp": "2025-09-27T21:29:54.418759"
+      "timestamp": "2025-09-28T18:56:13.728794"
     },
     {
       "test_name": "Ride Acceptance",
       "success": false,
       "details": "",
       "error": "No ride request ID available",
-      "timestamp": "2025-09-27T21:29:54.418774"
+      "timestamp": "2025-09-28T18:56:13.728814"
     },
     {
       "test_name": "My Rides (rider)",
       "success": true,
       "details": "Found 0 rides",
       "error": "",
-      "timestamp": "2025-09-27T21:29:54.468198"
+      "timestamp": "2025-09-28T18:56:13.781141"
     },
     {
       "test_name": "My Rides (driver)",
       "success": true,
       "details": "Found 0 rides",
       "error": "",
-      "timestamp": "2025-09-27T21:29:54.477272"
+      "timestamp": "2025-09-28T18:56:13.791356"
     },
     {
       "test_name": "Admin Stats",
       "success": true,
-      "details": "Users: 4, Rides: 0, Revenue: $0.00",
+      "details": "Users: 12, Rides: 0, Revenue: $0.00",
       "error": "",
-      "timestamp": "2025-09-27T21:29:54.491189"
+      "timestamp": "2025-09-28T18:56:13.802938"
     },
     {
       "test_name": "Admin Users",
       "success": false,
       "details": "",
       "error": "HTTP No response",
-      "timestamp": "2025-09-27T21:29:54.505206"
+      "timestamp": "2025-09-28T18:56:13.850414"
     },
     {
       "test_name": "Admin Rides",
       "success": true,
       "details": "Found 0 rides",
       "error": "",
-      "timestamp": "2025-09-27T21:29:54.513992"
+      "timestamp": "2025-09-28T18:56:13.863928"
     }
   ]
 }
