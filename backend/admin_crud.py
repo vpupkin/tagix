@@ -385,6 +385,11 @@ class AdminCRUDOperations:
         
         payments = await cursor.to_list(None)
         
+        # Convert MongoDB ObjectIds to strings for JSON serialization
+        for payment in payments:
+            if '_id' in payment:
+                payment['_id'] = str(payment['_id'])
+        
         # Calculate summary statistics
         total_amount = await self.db.payment_transactions.aggregate([
             {"$match": query},
