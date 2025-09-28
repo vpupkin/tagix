@@ -185,6 +185,12 @@ class AuditSystem:
         cursor = cursor.skip(filters.offset).limit(filters.limit)
         
         results = await cursor.to_list(None)
+        
+        # Convert MongoDB ObjectIds to strings for JSON serialization
+        for result in results:
+            if '_id' in result:
+                result['_id'] = str(result['_id'])
+        
         return results
     
     async def get_audit_statistics(self) -> Dict[str, Any]:
