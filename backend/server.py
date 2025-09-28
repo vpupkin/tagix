@@ -907,6 +907,12 @@ async def get_all_rides(current_user: User = Depends(get_current_user)):
         raise HTTPException(status_code=403, detail="Admin access required")
     
     rides = await db.ride_matches.find({}).to_list(None)
+    
+    # Convert MongoDB ObjectIds to strings for JSON serialization
+    for ride in rides:
+        if '_id' in ride:
+            ride['_id'] = str(ride['_id'])
+    
     return rides
 
 @api_router.get("/admin/stats", response_model=Dict[str, Any])
