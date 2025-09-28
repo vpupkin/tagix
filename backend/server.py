@@ -898,6 +898,10 @@ async def get_all_users(current_user: User = Depends(get_current_user)):
     for user in users:
         if '_id' in user:
             user['_id'] = str(user['_id'])
+        # Convert any other ObjectId fields that might exist
+        for key, value in user.items():
+            if hasattr(value, '__class__') and value.__class__.__name__ == 'ObjectId':
+                user[key] = str(value)
     
     return users
 
