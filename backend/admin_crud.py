@@ -6,6 +6,24 @@ from pydantic import BaseModel, Field
 import uuid
 from audit_system import AuditSystem, AuditAction
 
+# Utility function to convert ObjectIds to strings
+def convert_objectids_to_strings(data):
+    """Recursively convert MongoDB ObjectIds to strings for JSON serialization"""
+    if isinstance(data, list):
+        return [convert_objectids_to_strings(item) for item in data]
+    elif isinstance(data, dict):
+        converted = {}
+        for key, value in data.items():
+            if hasattr(value, '__class__') and value.__class__.__name__ == 'ObjectId':
+                converted[key] = str(value)
+            elif isinstance(value, (dict, list)):
+                converted[key] = convert_objectids_to_strings(value)
+            else:
+                converted[key] = value
+        return converted
+    else:
+        return data
+
 class AdminUserUpdate(BaseModel):
     name: Optional[str] = None
     email: Optional[str] = None
