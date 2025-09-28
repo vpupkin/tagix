@@ -98,6 +98,10 @@ class AdminCRUDOperations:
         for user in users:
             if '_id' in user:
                 user['_id'] = str(user['_id'])
+            # Convert any other ObjectId fields that might exist
+            for key, value in user.items():
+                if hasattr(value, '__class__') and value.__class__.__name__ == 'ObjectId':
+                    user[key] = str(value)
         
         # Log audit event
         await self.audit.log_action(
