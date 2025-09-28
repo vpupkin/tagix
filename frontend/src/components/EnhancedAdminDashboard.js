@@ -170,7 +170,7 @@ const EnhancedAdminDashboard = () => {
     try {
       const params = new URLSearchParams();
       Object.entries(filters).forEach(([key, value]) => {
-        if (value !== '' && value !== null && value !== undefined) {
+        if (value !== '' && value !== null && value !== undefined && value !== 'all') {
           params.append(key, value);
         }
       });
@@ -188,7 +188,7 @@ const EnhancedAdminDashboard = () => {
     try {
       const params = new URLSearchParams();
       Object.entries(filters).forEach(([key, value]) => {
-        if (value !== '' && value !== null && value !== undefined) {
+        if (value !== '' && value !== null && value !== undefined && value !== 'all') {
           params.append(key, value);
         }
       });
@@ -206,7 +206,7 @@ const EnhancedAdminDashboard = () => {
     try {
       const params = new URLSearchParams();
       Object.entries(filters).forEach(([key, value]) => {
-        if (value !== '' && value !== null && value !== undefined) {
+        if (value !== '' && value !== null && value !== undefined && value !== 'all') {
           params.append(key, value);
         }
       });
@@ -224,7 +224,7 @@ const EnhancedAdminDashboard = () => {
     try {
       const params = new URLSearchParams();
       Object.entries(filters).forEach(([key, value]) => {
-        if (value !== '' && value !== null && value !== undefined) {
+        if (value !== '' && value !== null && value !== undefined && value !== 'all') {
           params.append(key, value);
         }
       });
