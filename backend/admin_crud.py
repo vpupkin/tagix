@@ -282,13 +282,7 @@ class AdminCRUDOperations:
         rides = await cursor.to_list(None)
         
         # Convert MongoDB ObjectIds to strings for JSON serialization
-        for ride in rides:
-            if '_id' in ride:
-                ride['_id'] = str(ride['_id'])
-            # Convert any other ObjectId fields that might exist
-            for key, value in ride.items():
-                if hasattr(value, '__class__') and value.__class__.__name__ == 'ObjectId':
-                    ride[key] = str(value)
+        rides = convert_objectids_to_strings(rides)
         
         # Log audit event
         await self.audit.log_action(
