@@ -487,7 +487,7 @@ async def get_driver_profile(current_user: User = Depends(get_current_user)):
     return DriverProfile(**profile)
 
 @api_router.post("/rides/request", response_model=Dict[str, Any])
-async def create_ride_request(request_data: RideRequest, current_user: User = Depends(get_current_user)):
+async def create_ride_request(request_data: RideRequest, request: Request, current_user: User = Depends(get_current_user)):
     if current_user.role != UserRole.RIDER:
         raise HTTPException(status_code=403, detail="Only riders can create ride requests")
     
@@ -499,6 +499,25 @@ async def create_ride_request(request_data: RideRequest, current_user: User = De
     
     request_dict = request_data.model_dump()
     await db.ride_requests.insert_one(request_dict)
+    
+    # Log ride request creation
+    if AUDIT_ENABLED and audit_system:
+        await audit_system.log_action(
+            action=AuditAction.RIDE_REQUESTED,
+            user_id=current_user.id,
+            entity_type="ride_request",
+            entity_id=request_data.id,
+            new_data={
+                "pickup_address": request_data.pickup_location.address,
+                "dropoff_address": request_data.dropoff_location.address,
+                "vehicle_type": request_data.vehicle_type,
+                "estimated_fare": request_data.estimated_fare,
+                "distance_km": distance_km
+            },
+            ip_address=request.client.host if request.client else None,
+            user_agent=request.headers.get("user-agent"),
+            severity="medium"
+        )
     
     # Find nearby available drivers
     matches = await find_nearby_drivers(request_data)
