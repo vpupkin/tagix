@@ -273,6 +273,10 @@ class AdminCRUDOperations:
         for ride in rides:
             if '_id' in ride:
                 ride['_id'] = str(ride['_id'])
+            # Convert any other ObjectId fields that might exist
+            for key, value in ride.items():
+                if hasattr(value, '__class__') and value.__class__.__name__ == 'ObjectId':
+                    ride[key] = str(value)
         
         # Log audit event
         await self.audit.log_action(
