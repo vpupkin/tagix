@@ -9,7 +9,7 @@ import AuthModal from './components/AuthModal';
 import HomePage from './components/HomePage';
 import RiderDashboard from './components/RiderDashboard';
 import DriverDashboard from './components/DriverDashboard';
-import AdminDashboard from './components/AdminDashboard';
+import EnhancedAdminDashboard from './components/EnhancedAdminDashboard';
 import RideBooking from './components/RideBooking';
 import RideHistory from './components/RideHistory';
 import PaymentSuccess from './components/PaymentSuccess';
