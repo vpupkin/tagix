@@ -48,6 +48,24 @@ security = HTTPBearer()
 # Using a simpler hashing approach due to bcrypt compatibility issues
 import hashlib
 import secrets
+
+# Utility function to convert ObjectIds to strings
+def convert_objectids_to_strings(data):
+    """Recursively convert MongoDB ObjectIds to strings for JSON serialization"""
+    if isinstance(data, list):
+        return [convert_objectids_to_strings(item) for item in data]
+    elif isinstance(data, dict):
+        converted = {}
+        for key, value in data.items():
+            if hasattr(value, '__class__') and value.__class__.__name__ == 'ObjectId':
+                converted[key] = str(value)
+            elif isinstance(value, (dict, list)):
+                converted[key] = convert_objectids_to_strings(value)
+            else:
+                converted[key] = value
+        return converted
+    else:
+        return data
 JWT_SECRET = os.environ.get('JWT_SECRET')
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
