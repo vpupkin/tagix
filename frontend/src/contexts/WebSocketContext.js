@@ -38,7 +38,11 @@ export const WebSocketProvider = ({ children }) => {
 
   const connectWebSocket = () => {
     if (socket) {
-      socket.disconnect();
+      if (typeof socket.close === 'function') {
+        socket.close();
+      } else if (typeof socket.disconnect === 'function') {
+        socket.disconnect();
+      }
     }
 
     try {
