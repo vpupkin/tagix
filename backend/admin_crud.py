@@ -495,6 +495,6 @@ class AdminCRUDOperations:
         
         return {
             "message": "Payment transaction updated successfully",
-            "payment": updated_payment,
+            "payment": convert_objectids_to_strings(updated_payment),
             "modified_fields": list(update_data.keys())
         }
