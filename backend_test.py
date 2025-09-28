@@ -8,7 +8,7 @@ from datetime import datetime
 import uuid
 
 class MobilityHubAPITester:
-    def __init__(self, base_url="https://ridesync-10.preview.emergentagent.com"):
+    def __init__(self, base_url="http://localhost:8001"):
         self.base_url = base_url
         self.session = requests.Session()
         self.tokens = {}  # Store tokens for different user types
