@@ -1,0 +1,61 @@
+{
+  "test_type": "objectid_serialization_fix",
+  "summary": {
+    "total_tests": 7,
+    "passed_tests": 7,
+    "failed_tests": 0,
+    "success_rate": 100.0,
+    "timestamp": "2025-09-28T20:03:08.218653"
+  },
+  "detailed_results": [
+    {
+      "test_name": "User Registration (admin)",
+      "success": true,
+      "details": "User ID: 11205880-c5a2-41e4-896d-a50054e65b1e, Email: test_admin_1759089787@example.com",
+      "error": "",
+      "timestamp": "2025-09-28T20:03:08.066439"
+    },
+    {
+      "test_name": "User Login (admin)",
+      "success": true,
+      "details": "Token received for test_admin_1759089787@example.com",
+      "error": "",
+      "timestamp": "2025-09-28T20:03:08.117166"
+    },
+    {
+      "test_name": "Auth Me (admin)",
+      "success": true,
+      "details": "User: Test Admin 1759089787 (admin)",
+      "error": "",
+      "timestamp": "2025-09-28T20:03:08.134281"
+    },
+    {
+      "test_name": "Admin Users Filtered",
+      "success": true,
+      "details": "Found 25 users, Total: 0",
+      "error": "",
+      "timestamp": "2025-09-28T20:03:08.145103"
+    },
+    {
+      "test_name": "Admin Users",
+      "success": true,
+      "details": "Found 25 users",
+      "error": "",
+      "timestamp": "2025-09-28T20:03:08.157339"
+    },
+    {
+      "test_name": "Admin Rides",
+      "success": true,
+      "details": "Found 0 rides",
+      "error": "",
+      "timestamp": "2025-09-28T20:03:08.207438"
+    },
+    {
+      "test_name": "Audit Logs",
+      "success": true,
+      "details": "Found 50 audit log entries",
+      "error": "",
+      "timestamp": "2025-09-28T20:03:08.218525"
+    }
+  ]
+}
