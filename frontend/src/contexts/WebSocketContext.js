@@ -94,7 +94,11 @@ export const WebSocketProvider = ({ children }) => {
 
   const disconnectWebSocket = () => {
     if (socket) {
-      socket.close(1000, 'User logout'); // Normal closure
+      if (typeof socket.close === 'function') {
+        socket.close(1000, 'User logout'); // Normal closure for WebSocket
+      } else if (typeof socket.disconnect === 'function') {
+        socket.disconnect(); // For socket.io
+      }
       setSocket(null);
     }
     setConnected(false);
