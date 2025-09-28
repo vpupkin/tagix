@@ -379,12 +379,51 @@ async def register(user_data: UserCreate, request: Request):
     }
 
 @api_router.post("/auth/login", response_model=Dict[str, Any])
-async def login(user_credentials: UserLogin):
+async def login(user_credentials: UserLogin, request: Request):
+    # Get request info for audit
+    ip_address = request.client.host if request.client else None
+    user_agent = request.headers.get("user-agent")
+    
     user_doc = await db.users.find_one({"email": user_credentials.email})
+    
     if not user_doc or not verify_password(user_credentials.password, user_doc["password"]):
+        # Log failed login attempt
+        if AUDIT_ENABLED and audit_system:
+            await audit_system.log_action(
+                action=AuditAction.USER_LOGIN,
+                entity_type="user",
+                metadata={
+                    "email": user_credentials.email,
+                    "failure_reason": "invalid_credentials"
+                },
+                ip_address=ip_address,
+                user_agent=user_agent,
+                severity="medium"
+            )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password"
+        )
+    
+    # Check if user is suspended
+    if user_doc.get("status") == "suspended":
+        if AUDIT_ENABLED and audit_system:
+            await audit_system.log_action(
+                action=AuditAction.USER_LOGIN,
+                user_id=user_doc["id"],
+                entity_type="user",
+                entity_id=user_doc["id"],
+                metadata={
+                    "email": user_credentials.email,
+                    "failure_reason": "account_suspended"
+                },
+                ip_address=ip_address,
+                user_agent=user_agent,
+                severity="high"
+            )
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Account is suspended"
         )
     
     user = User(**{k: v for k, v in user_doc.items() if k != "password"})
@@ -393,6 +432,22 @@ async def login(user_credentials: UserLogin):
     access_token = create_access_token(
         data={"sub": user.id, "role": user.role}, expires_delta=access_token_expires
     )
+    
+    # Log successful login
+    if AUDIT_ENABLED and audit_system:
+        await audit_system.log_action(
+            action=AuditAction.USER_LOGIN,
+            user_id=user.id,
+            entity_type="user",
+            entity_id=user.id,
+            metadata={
+                "email": user.email,
+                "role": user.role
+            },
+            ip_address=ip_address,
+            user_agent=user_agent,
+            severity="low"
+        )
     
     return {
         "access_token": access_token,
