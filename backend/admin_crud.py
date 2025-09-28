@@ -200,7 +200,7 @@ class AdminCRUDOperations:
         
         return {
             "message": "User updated successfully",
-            "user": updated_user,
+            "user": convert_objectids_to_strings(updated_user),
             "modified_fields": list(update_data.keys())
         }
     
