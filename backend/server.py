@@ -49,9 +49,11 @@ security = HTTPBearer()
 import hashlib
 import secrets
 
-# Utility function to convert ObjectIds to strings
+# Utility function to convert ObjectIds and datetime objects to strings
 def convert_objectids_to_strings(data):
-    """Recursively convert MongoDB ObjectIds to strings for JSON serialization"""
+    """Recursively convert MongoDB ObjectIds and datetime objects to strings for JSON serialization"""
+    from datetime import datetime, date
+    
     if isinstance(data, list):
         return [convert_objectids_to_strings(item) for item in data]
     elif isinstance(data, dict):
@@ -59,11 +61,19 @@ def convert_objectids_to_strings(data):
         for key, value in data.items():
             if hasattr(value, '__class__') and value.__class__.__name__ == 'ObjectId':
                 converted[key] = str(value)
+            elif isinstance(value, datetime):
+                converted[key] = value.isoformat()
+            elif isinstance(value, date):
+                converted[key] = value.isoformat()
             elif isinstance(value, (dict, list)):
                 converted[key] = convert_objectids_to_strings(value)
             else:
                 converted[key] = value
         return converted
+    elif isinstance(data, datetime):
+        return data.isoformat()
+    elif isinstance(data, date):
+        return data.isoformat()
     else:
         return data
 JWT_SECRET = os.environ.get('JWT_SECRET')
