@@ -35,6 +35,14 @@ mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
+# Initialize audit system if available
+if AUDIT_ENABLED:
+    audit_system = AuditSystem(db)
+    admin_crud = AdminCRUDOperations(db, audit_system)
+else:
+    audit_system = None
+    admin_crud = None
+
 # Security setup
 security = HTTPBearer()
 # Using a simpler hashing approach due to bcrypt compatibility issues
