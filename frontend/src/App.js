@@ -73,7 +73,7 @@ function MainApp() {
           } />
           
           <Route path="/admin" element={
-            user && user.role === 'admin' ? <AdminDashboard /> : <Navigate to="/" />
+            user && user.role === 'admin' ? <EnhancedAdminDashboard /> : <Navigate to="/" />
           } />
           
           <Route path="/book-ride" element={
