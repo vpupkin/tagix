@@ -811,6 +811,14 @@ async def get_platform_stats(current_user: User = Depends(get_current_user)):
     completed_ride_docs = await db.ride_matches.find({"status": RideStatus.COMPLETED}).to_list(None)
     total_revenue = sum(ride.get("estimated_fare", 0) for ride in completed_ride_docs)
     
+    # Get audit statistics if available
+    audit_stats = {}
+    if AUDIT_ENABLED and audit_system:
+        try:
+            audit_stats = await audit_system.get_audit_statistics()
+        except Exception as e:
+            logger.warning(f"Failed to get audit statistics: {e}")
+    
     return {
         "total_users": total_users,
         "total_drivers": total_drivers,
@@ -819,8 +827,252 @@ async def get_platform_stats(current_user: User = Depends(get_current_user)):
         "completed_rides": completed_rides,
         "online_drivers": online_drivers,
         "total_revenue": round(total_revenue, 2),
-        "completion_rate": round((completed_rides / total_rides * 100) if total_rides > 0 else 0, 1)
+        "completion_rate": round((completed_rides / total_rides * 100) if total_rides > 0 else 0, 1),
+        "audit_statistics": audit_stats
     }
+
+# ========== COMPREHENSIVE ADMIN CRUD ENDPOINTS ==========
+
+@api_router.get("/admin/users/filtered", response_model=Dict[str, Any])
+async def get_users_with_filters(
+    search: Optional[str] = None,
+    role: Optional[str] = None,
+    status: Optional[str] = None,
+    limit: int = 50,
+    offset: int = 0,
+    sort_by: str = "created_at",
+    sort_order: str = "desc",
+    current_user: User = Depends(get_current_user)
+):
+    """Enhanced user listing with filtering and searching"""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    if not AUDIT_ENABLED or not admin_crud:
+        raise HTTPException(status_code=503, detail="Admin CRUD system not available")
+    
+    filters = DataFilter(
+        search_term=search,
+        user_role=role,
+        status=status,
+        limit=limit,
+        offset=offset,
+        sort_by=sort_by,
+        sort_order=sort_order
+    )
+    
+    return await admin_crud.get_users_filtered(filters, current_user.id)
+
+@api_router.put("/admin/users/{user_id}/update", response_model=Dict[str, Any])
+async def admin_update_user(
+    user_id: str,
+    name: Optional[str] = None,
+    email: Optional[str] = None,
+    phone: Optional[str] = None,
+    is_verified: Optional[bool] = None,
+    is_online: Optional[bool] = None,
+    rating: Optional[float] = None,
+    status: Optional[str] = None,
+    admin_notes: Optional[str] = None,
+    current_user: User = Depends(get_current_user)
+):
+    """Update user details with comprehensive audit trail"""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    if not AUDIT_ENABLED or not admin_crud:
+        raise HTTPException(status_code=503, detail="Admin CRUD system not available")
+    
+    updates = AdminUserUpdate(
+        name=name,
+        email=email,
+        phone=phone,
+        is_verified=is_verified,
+        is_online=is_online,
+        rating=rating,
+        status=status
+    )
+    
+    return await admin_crud.update_user(user_id, updates, current_user.id, admin_notes)
+
+@api_router.post("/admin/users/{user_id}/suspend", response_model=Dict[str, str])
+async def admin_suspend_user(
+    user_id: str,
+    reason: str,
+    duration_days: Optional[int] = None,
+    current_user: User = Depends(get_current_user)
+):
+    """Suspend user account with audit trail"""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    if not AUDIT_ENABLED or not admin_crud:
+        raise HTTPException(status_code=503, detail="Admin CRUD system not available")
+    
+    return await admin_crud.suspend_user(user_id, current_user.id, reason, duration_days)
+
+@api_router.get("/admin/rides/filtered", response_model=Dict[str, Any])
+async def get_rides_with_filters(
+    search: Optional[str] = None,
+    status: Optional[str] = None,
+    limit: int = 50,
+    offset: int = 0,
+    sort_by: str = "created_at",
+    sort_order: str = "desc",
+    current_user: User = Depends(get_current_user)
+):
+    """Enhanced ride listing with filtering and searching"""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    if not AUDIT_ENABLED or not admin_crud:
+        raise HTTPException(status_code=503, detail="Admin CRUD system not available")
+    
+    filters = DataFilter(
+        search_term=search,
+        status=status,
+        limit=limit,
+        offset=offset,
+        sort_by=sort_by,
+        sort_order=sort_order
+    )
+    
+    return await admin_crud.get_rides_filtered(filters, current_user.id)
+
+@api_router.put("/admin/rides/{ride_id}/update", response_model=Dict[str, Any])
+async def admin_update_ride(
+    ride_id: str,
+    status: Optional[str] = None,
+    estimated_fare: Optional[float] = None,
+    notes: Optional[str] = None,
+    admin_override: Optional[bool] = None,
+    admin_notes: Optional[str] = None,
+    current_user: User = Depends(get_current_user)
+):
+    """Update ride details with comprehensive audit trail"""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    if not AUDIT_ENABLED or not admin_crud:
+        raise HTTPException(status_code=503, detail="Admin CRUD system not available")
+    
+    updates = AdminRideUpdate(
+        status=status,
+        estimated_fare=estimated_fare,
+        notes=notes,
+        admin_override=admin_override
+    )
+    
+    return await admin_crud.update_ride(ride_id, updates, current_user.id, admin_notes)
+
+@api_router.get("/admin/payments/filtered", response_model=Dict[str, Any])
+async def get_payments_with_filters(
+    search: Optional[str] = None,
+    status: Optional[str] = None,
+    start_date: Optional[datetime] = None,
+    end_date: Optional[datetime] = None,
+    limit: int = 50,
+    offset: int = 0,
+    sort_by: str = "created_at",
+    sort_order: str = "desc",
+    current_user: User = Depends(get_current_user)
+):
+    """Enhanced payment transaction listing with filtering and searching"""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    if not AUDIT_ENABLED or not admin_crud:
+        raise HTTPException(status_code=503, detail="Admin CRUD system not available")
+    
+    filters = DataFilter(
+        search_term=search,
+        status=status,
+        start_date=start_date,
+        end_date=end_date,
+        limit=limit,
+        offset=offset,
+        sort_by=sort_by,
+        sort_order=sort_order
+    )
+    
+    return await admin_crud.get_payments_filtered(filters, current_user.id)
+
+@api_router.put("/admin/payments/{payment_id}/update", response_model=Dict[str, Any])
+async def admin_update_payment(
+    payment_id: str,
+    status: Optional[str] = None,
+    notes: Optional[str] = None,
+    refund_amount: Optional[float] = None,
+    admin_action: Optional[str] = None,
+    admin_notes: Optional[str] = None,
+    current_user: User = Depends(get_current_user)
+):
+    """Update payment transaction with comprehensive audit trail"""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    if not AUDIT_ENABLED or not admin_crud:
+        raise HTTPException(status_code=503, detail="Admin CRUD system not available")
+    
+    updates = AdminPaymentUpdate(
+        status=status,
+        notes=notes,
+        refund_amount=refund_amount,
+        admin_action=admin_action
+    )
+    
+    return await admin_crud.update_payment(payment_id, updates, current_user.id, admin_notes)
+
+# ========== AUDIT LOG ENDPOINTS ==========
+
+@api_router.get("/audit/logs", response_model=List[Dict[str, Any]])
+async def get_audit_logs(
+    user_id: Optional[str] = None,
+    target_user_id: Optional[str] = None,
+    action: Optional[str] = None,
+    entity_type: Optional[str] = None,
+    start_date: Optional[datetime] = None,
+    end_date: Optional[datetime] = None,
+    severity: Optional[str] = None,
+    search: Optional[str] = None,
+    limit: int = 50,
+    offset: int = 0,
+    current_user: User = Depends(get_current_user)
+):
+    """Get audit logs with comprehensive filtering - available to all roles for their own data"""
+    if not AUDIT_ENABLED or not audit_system:
+        raise HTTPException(status_code=503, detail="Audit system not available")
+    
+    # Non-admin users can only see their own audit logs
+    if current_user.role != UserRole.ADMIN:
+        user_id = current_user.id
+        target_user_id = current_user.id
+    
+    filters = AuditFilter(
+        user_id=user_id,
+        target_user_id=target_user_id,
+        action=action,
+        entity_type=entity_type,
+        start_date=start_date,
+        end_date=end_date,
+        severity=severity,
+        search_term=search,
+        limit=limit,
+        offset=offset
+    )
+    
+    return await audit_system.get_audit_logs(filters, current_user.role)
+
+@api_router.get("/audit/statistics", response_model=Dict[str, Any])
+async def get_audit_statistics(current_user: User = Depends(get_current_user)):
+    """Get comprehensive audit statistics - admin only"""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    if not AUDIT_ENABLED or not audit_system:
+        raise HTTPException(status_code=503, detail="Audit system not available")
+    
+    return await audit_system.get_audit_statistics()
 
 # === BASIC HEALTH CHECK ===
 
