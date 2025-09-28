@@ -916,6 +916,10 @@ async def get_all_rides(current_user: User = Depends(get_current_user)):
     for ride in rides:
         if '_id' in ride:
             ride['_id'] = str(ride['_id'])
+        # Convert any other ObjectId fields that might exist
+        for key, value in ride.items():
+            if hasattr(value, '__class__') and value.__class__.__name__ == 'ObjectId':
+                ride[key] = str(value)
     
     return rides
 
