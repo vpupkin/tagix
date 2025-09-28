@@ -512,6 +512,111 @@ class MobilityHubAPITester:
             self.log_test("Admin Rides", False, error=f"HTTP {status}")
             return False
 
+    def test_admin_users_filtered(self):
+        """Test admin users filtered endpoint - specifically for ObjectId serialization fix"""
+        token = self.tokens.get('admin')
+        if not token:
+            self.log_test("Admin Users Filtered", False, error="No admin token available")
+            return False
+            
+        response = self.make_request('GET', '/api/admin/users/filtered', auth_token=token)
+        
+        if response and response.status_code == 200:
+            try:
+                data = response.json()
+                if isinstance(data, dict) and 'users' in data:
+                    self.log_test("Admin Users Filtered", True, 
+                                f"Found {len(data['users'])} users, Total: {data.get('total', 0)}")
+                    return True
+                else:
+                    self.log_test("Admin Users Filtered", False, error="Unexpected response format")
+                    return False
+            except json.JSONDecodeError:
+                self.log_test("Admin Users Filtered", False, error="Invalid JSON response")
+                return False
+        else:
+            status = response.status_code if response else "No response"
+            error_msg = ""
+            if response:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', 'Unknown error')
+                except:
+                    error_msg = response.text[:200]
+            self.log_test("Admin Users Filtered", False, error=f"HTTP {status}: {error_msg}")
+            return False
+
+    def test_audit_logs(self):
+        """Test audit logs endpoint - specifically for ObjectId serialization fix"""
+        token = self.tokens.get('admin')
+        if not token:
+            self.log_test("Audit Logs", False, error="No admin token available")
+            return False
+            
+        response = self.make_request('GET', '/api/audit/logs', auth_token=token)
+        
+        if response and response.status_code == 200:
+            try:
+                data = response.json()
+                if isinstance(data, list):
+                    self.log_test("Audit Logs", True, f"Found {len(data)} audit log entries")
+                    return True
+                else:
+                    self.log_test("Audit Logs", False, error="Response is not a list")
+                    return False
+            except json.JSONDecodeError:
+                self.log_test("Audit Logs", False, error="Invalid JSON response")
+                return False
+        else:
+            status = response.status_code if response else "No response"
+            error_msg = ""
+            if response:
+                try:
+                    error_data = response.json()
+                    error_msg = error_data.get('detail', 'Unknown error')
+                except:
+                    error_msg = response.text[:200]
+            self.log_test("Audit Logs", False, error=f"HTTP {status}: {error_msg}")
+            return False
+
+    def run_objectid_serialization_test(self):
+        """Run specific test for MongoDB ObjectId serialization fix"""
+        print("🔧 Starting MongoDB ObjectId Serialization Fix Test")
+        print("=" * 60)
+        
+        # First ensure we have an admin user
+        print("\n🔐 ADMIN AUTHENTICATION")
+        print("-" * 30)
+        self.test_user_registration("admin")
+        self.test_user_login("admin")
+        self.test_auth_me("admin")
+        
+        # Test the specific endpoints that were failing
+        print("\n🛠️ OBJECTID SERIALIZATION TESTS")
+        print("-" * 30)
+        self.test_admin_users_filtered()
+        self.test_admin_users()
+        self.test_admin_rides()
+        self.test_audit_logs()
+        
+        # Print summary
+        print("\n" + "=" * 60)
+        print("📊 OBJECTID SERIALIZATION TEST SUMMARY")
+        print("=" * 60)
+        print(f"Total Tests: {self.total_tests}")
+        print(f"Passed: {self.passed_tests}")
+        print(f"Failed: {self.total_tests - self.passed_tests}")
+        print(f"Success Rate: {(self.passed_tests/self.total_tests*100):.1f}%")
+        
+        if self.passed_tests == self.total_tests:
+            print("\n🎉 ALL OBJECTID SERIALIZATION TESTS PASSED!")
+            print("✅ MongoDB ObjectId serialization fix is working correctly.")
+            return True
+        else:
+            print(f"\n⚠️  {self.total_tests - self.passed_tests} tests failed.")
+            print("❌ MongoDB ObjectId serialization issues may still exist.")
+            return False
+
     def run_comprehensive_test(self):
         """Run all tests in sequence"""
         print("🚀 Starting MobilityHub API Comprehensive Testing")
