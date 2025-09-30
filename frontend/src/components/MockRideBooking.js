@@ -10,7 +10,7 @@ const MockRideBooking = () => {
   const [formData, setFormData] = useState({
     pickup: '',
     dropoff: '',
-    vehicleType: 'standard'
+    vehicleType: 'economy'
   });
   const [loading, setLoading] = useState(false);
 
