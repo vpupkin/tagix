@@ -175,7 +175,7 @@ const MockRideBooking = () => {
             <p className="text-blue-700 font-bold">
               Estimated Fare: $
               {formData.vehicleType === 'economy' ? '12-18' :
-               formData.vehicleType === 'standard' ? '15-25' :
+               formData.vehicleType === 'comfort' ? '15-25' :
                formData.vehicleType === 'premium' ? '20-35' : '30-50'}
             </p>
           </div>
