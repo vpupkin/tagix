@@ -47,6 +47,7 @@ export const WebSocketProvider = ({ children }) => {
 
     try {
       const wsUrl = process.env.REACT_APP_BACKEND_URL.replace(/^http/, 'ws');
+      console.log(`Attempting WebSocket connection to: ${wsUrl}/ws/${user.id}`);
       const newSocket = new WebSocket(`${wsUrl}/ws/${user.id}`);
       
       newSocket.onopen = () => {
