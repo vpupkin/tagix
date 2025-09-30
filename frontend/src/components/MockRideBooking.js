@@ -160,9 +160,9 @@ const MockRideBooking = () => {
             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
           >
             <option value="economy">🚙 Economy ($)</option>
-            <option value="standard">🚗 Standard ($$)</option>
+            <option value="comfort">🚗 Comfort ($$)</option>
             <option value="premium">🚘 Premium ($$$)</option>
-            <option value="luxury">🏎️ Luxury ($$$$)</option>
+            <option value="suv">🚐 SUV ($$$$)</option>
           </select>
         </div>
 
