@@ -78,7 +78,7 @@ function MainApp() {
           } />
           
           <Route path="/book-ride" element={
-            user && user.role === 'rider' ? <RideBooking /> : <Navigate to="/" />
+            user && user.role === 'rider' ? <MockRideBooking /> : <Navigate to="/" />
           } />
           
           <Route path="/rides" element={
