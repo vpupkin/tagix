@@ -46,16 +46,17 @@ const MockRideBooking = () => {
 
       const requestData = {
         pickup_location: {
-          lat: pickupLocation.lat,
-          lng: pickupLocation.lng,
+          latitude: pickupLocation.lat,
+          longitude: pickupLocation.lng,
           address: pickupLocation.name
         },
         dropoff_location: {
-          lat: dropoffLocation.lat,
-          lng: dropoffLocation.lng,
+          latitude: dropoffLocation.lat,
+          longitude: dropoffLocation.lng,
           address: dropoffLocation.name
         },
-        vehicle_type: formData.vehicleType
+        vehicle_type: formData.vehicleType,
+        passenger_count: 1
       };
 
       const response = await axios.post(`${API_URL}/api/rides/request`, requestData, {
