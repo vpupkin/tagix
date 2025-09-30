@@ -177,7 +177,7 @@ class DriverProfileCreate(BaseModel):
 
 class RideRequest(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    rider_id: str
+    rider_id: Optional[str] = None
     pickup_location: Location
     dropoff_location: Location
     vehicle_type: str = VehicleType.ECONOMY
