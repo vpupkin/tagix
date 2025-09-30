@@ -44,10 +44,15 @@ const AddressAutocomplete = ({ onPlaceSelect, placeholder, value, testId }) => {
   React.useEffect(() => {
     if (!placesLibrary) return;
     
-    autocompleteService.current = new placesLibrary.AutocompleteService();
-    placesService.current = new placesLibrary.PlacesService(
-      document.createElement('div')
-    );
+    try {
+      autocompleteService.current = new placesLibrary.AutocompleteService();
+      placesService.current = new placesLibrary.PlacesService(
+        document.createElement('div')
+      );
+    } catch (error) {
+      console.warn('Google Maps Places service not available:', error);
+      // Fallback: disable autocomplete features gracefully
+    }
   }, [placesLibrary]);
 
   const fetchSuggestions = useCallback(async (input) => {
