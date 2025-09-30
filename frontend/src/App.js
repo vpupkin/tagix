@@ -11,6 +11,7 @@ import RiderDashboard from './components/RiderDashboard';
 import DriverDashboard from './components/DriverDashboard';
 import EnhancedAdminDashboard from './components/EnhancedAdminDashboard';
 import RideBooking from './components/RideBooking';
+import MockRideBooking from './components/MockRideBooking';
 import RideHistory from './components/RideHistory';
 import PaymentSuccess from './components/PaymentSuccess';
 import Profile from './components/Profile';
