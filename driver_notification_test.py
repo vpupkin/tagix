@@ -468,11 +468,14 @@ class DriverNotificationTester:
         self.update_driver_location("driver1", 37.7749, -122.4194)  # San Francisco
         self.update_driver_location("driver2", 37.7849, -122.4094)  # Nearby location
         
-        # Step 4: Toggle drivers online
+        # Step 4: Toggle drivers online (ensure they are online)
         print("\n🟢 STEP 4: DRIVER ONLINE STATUS")
         print("-" * 30)
+        # Toggle twice to ensure they end up online
         self.toggle_driver_online("driver1")
+        self.toggle_driver_online("driver1")  # Toggle again to make sure they're online
         self.toggle_driver_online("driver2")
+        self.toggle_driver_online("driver2")  # Toggle again to make sure they're online
         
         # Step 5: Verify driver setup
         print("\n🔍 STEP 5: DRIVER SETUP VERIFICATION")
