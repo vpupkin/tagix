@@ -186,10 +186,11 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Enhanced Admin Dashboard testing completed successfully"
-    - "All audit system components working"
-    - "All driver/rider API calls creating audit logs verified"
-  stuck_tasks: []
+    - "Driver notification system WebSocket infrastructure issue"
+    - "WebSocket routing configuration needs fixing"
+    - "Backend notification logic is working correctly"
+  stuck_tasks: 
+    - "Driver notification system debugging - WebSocket infrastructure issue"
   test_all: false
   test_priority: "high_first"
 
