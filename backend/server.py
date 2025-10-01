@@ -1011,6 +1011,188 @@ async def update_ride_status(ride_id: str, update: RideUpdate, current_user: Use
 
 # === PAYMENT ENDPOINTS ===
 
+@api_router.post("/payments/{payment_id}/process", response_model=Dict[str, Any])
+async def process_payment(payment_id: str, current_user: User = Depends(get_current_user)):
+    """Process payment (mock implementation)"""
+    
+    # Get payment record
+    payment = await db.payments.find_one({"id": payment_id})
+    if not payment:
+        raise HTTPException(status_code=404, detail="Payment not found")
+    
+    # Validate user can process this payment
+    if current_user.role not in [UserRole.RIDER, UserRole.ADMIN] and current_user.id != payment["rider_id"]:
+        raise HTTPException(status_code=403, detail="Not authorized to process this payment")
+    
+    if payment["status"] != PaymentStatus.PENDING:
+        raise HTTPException(status_code=400, detail=f"Payment already {payment['status']}")
+    
+    # Mock payment processing
+    processing_time = datetime.now(timezone.utc)
+    success = True  # Mock always succeeds for now
+    
+    if success:
+        # Update payment status
+        await db.payments.update_one(
+            {"id": payment_id},
+            {
+                "$set": {
+                    "status": PaymentStatus.COMPLETED,
+                    "completed_at": processing_time,
+                    "processed_at": processing_time
+                }
+            }
+        )
+        
+        # Update driver earnings
+        driver_id = payment["driver_id"]
+        if driver_id:
+            await db.users.update_one(
+                {"id": driver_id},
+                {
+                    "$inc": {
+                        "total_earnings": payment["driver_earnings"],
+                        "completed_rides": 1
+                    }
+                }
+            )
+        
+        # Update platform revenue
+        platform_earnings = payment["platform_fee"]
+        
+        # Log audit for payment completion
+        if AUDIT_ENABLED and audit_system:
+            await audit_system.log_action(
+                action=AuditAction.PAYMENT_COMPLETED,
+                user_id=current_user.id,
+                entity_type="payment",
+                entity_id=payment_id,
+                severity="medium",
+                metadata={
+                    "amount": payment["amount"],
+                    "driver_earnings": payment["driver_earnings"],
+                    "platform_fee": payment["platform_fee"],
+                    "transaction_id": payment["transaction_id"],
+                    "completed_at": processing_time.isoformat()
+                }
+            )
+        
+        return {
+            "message": "Payment processed successfully",
+            "payment_id": payment_id,
+            "status": PaymentStatus.COMPLETED,
+            "amount": payment["amount"],
+            "transaction_id": payment["transaction_id"]
+        }
+    else:
+        # Payment failed (future implementation)
+        await db.payments.update_one(
+            {"id": payment_id},
+            {"$set": {"status": PaymentStatus.FAILED, "failed_at": processing_time}}
+        )
+        
+        return {"message": "Payment failed", "status": PaymentStatus.FAILED}
+
+@api_router.get("/payments", response_model=List[Dict[str, Any]])
+async def get_user_payments(current_user: User = Depends(get_current_user)):
+    """Get user's payment history"""
+    
+    if current_user.role == UserRole.RIDER:
+        query = {"rider_id": current_user.id}
+    elif current_user.role == UserRole.DRIVER:
+        query = {"driver_id": current_user.id}
+    elif current_user.role == UserRole.ADMIN:
+        query = {}  # Admins can see all payments
+    else:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    payments = await db.payments.find(query).sort("created_at", -1).limit(50).to_list(None)
+    
+    # Convert ObjectIds and add summary info
+    payment_list = convert_objectids_to_strings(payments)
+    
+    # Log audit
+    if AUDIT_ENABLED and audit_system:
+        await audit_system.log_action(
+            action=AuditAction.PAYMENT_QUERY,
+            user_id=current_user.id,
+            entity_type="payment_history",
+            entity_id=f"payments_{len(payment_list)}",
+            metadata={"payments_found": len(payment_list)}
+        )
+    
+    return payment_list
+
+@api_router.get("/payments/summary", response_model=Dict[str, Any])
+async def get_payment_summary(current_user: User = Depends(get_current_user)):
+    """Get payment summary and revenue calculation"""
+    
+    if current_user.role == UserRole.DRIVER:
+        # Driver earnings summary
+        pipeline = [
+            {"$match": {"driver_id": current_user.id, "status": PaymentStatus.COMPLETED}},
+            {"$group": {
+                "_id": None,
+                "total_earnings": {"$sum": "$driver_earnings"},
+                "total_rides": {"$sum": 1},
+                "total_revenue": {"$sum": "$amount"}
+            }}
+        ]
+    elif current_user.role == UserRole.ADMIN:
+        # Platform revenue summary
+        pipeline = [
+            {"$match": {"status": PaymentStatus.COMPLETED}},
+            {"$group": {
+                "_id": None,
+                "total_platform_revenue": {"$sum": "$platform_fee"},
+                "total_driver_earnings": {"$sum": "$driver_earnings"},
+                "total_gross_revenue": {"$sum": "$amount"},
+                "total_transactions": {"$sum": 1}
+            }}
+        ]
+    else:
+        # Rider spending summary
+        pipeline = [
+            {"$match": {"rider_id": current_user.id, "status": PaymentStatus.COMPLETED}},
+            {"$group": {
+                "_id": None,
+                "total_spent": {"$sum": "$amount"},
+                "total_rides": {"$sum": 1}
+            }}
+        ]
+    
+    try:
+        result = await db.payments.aggregate(pipeline).to_list(None)
+        summary = result[0] if result else {}
+        
+        # Remove the _id field
+        summary.pop("_id", None)
+        
+        # Add default values for empty results
+        if current_user.role == UserRole.DRIVER:
+            summary.setdefault("total_earnings", 0)
+            summary.setdefault("total_rides", 0)
+            summary.setdefault("total_revenue", 0)
+        elif current_user.role == UserRole.ADMIN:
+            summary.setdefault("total_platform_revenue", 0)
+            summary.setdefault("total_driver_earnings", 0)
+            summary.setdefault("total_gross_revenue", 0)
+            summary.setdefault("total_transactions", 0)
+        else:
+            summary.setdefault("total_spent", 0)
+            summary.setdefault("total_rides", 0)
+        
+        return summary
+        
+    except Exception as e:
+        # Return empty summary if aggregation fails
+        if current_user.role == UserRole.DRIVER:
+            return {"total_earnings": 0, "total_rides": 0, "total_revenue": 0}
+        elif current_user.role == UserRole.ADMIN:
+            return {"total_platform_revenue": 0, "total_driver_earnings": 0, "total_gross_revenue": 0, "total_transactions": 0}
+        else:
+            return {"total_spent": 0, "total_rides": 0}
+
 @api_router.post("/payments/create-session", response_model=Dict[str, Any])
 async def create_payment_session(
     request: Request,
