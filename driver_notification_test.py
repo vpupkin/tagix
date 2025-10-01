@@ -138,8 +138,15 @@ class DriverNotificationTester:
         if not token:
             self.log_test(f"Driver Location Update ({driver_key})", False, error="No driver token available")
             return False
+        
+        # Get user_id from stored user data
+        user = self.users.get(driver_key)
+        if not user:
+            self.log_test(f"Driver Location Update ({driver_key})", False, error="No user data available")
+            return False
             
         location_data = {
+            "user_id": user['id'],
             "location": {
                 "latitude": lat,
                 "longitude": lng,
