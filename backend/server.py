@@ -198,10 +198,31 @@ class RideRequest(BaseModel):
     vehicle_type: str = VehicleType.ECONOMY
     passenger_count: int = 1
     special_requirements: Optional[str] = None
-    estimated_fare: Optional[float] = None
     status: str = RideStatus.PENDING
+    estimated_fare: float = 0.0
+    estimated_duration: int = 0  # minutes
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     expires_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc) + timedelta(minutes=15))
+
+class RideUpdate(BaseModel):
+    action: str  # "accept", "start", "arrive", "complete", "cancel"
+    location: Optional[Location] = None
+    notes: Optional[str] = None
+
+class Payment(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    ride_id: str
+    rider_id: str
+    driver_id: Optional[str] = None
+    amount: float
+    platform_fee: float = 0.0
+    driver_earnings: float = 0.0
+    payment_method: str = "mock_card"
+    status: str = PaymentStatus.PENDING
+    transaction_id: Optional[str] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    completed_at: Optional[datetime] = None
+    metadata: Optional[dict] = None
 
 class RideOffer(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
