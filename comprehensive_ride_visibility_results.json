@@ -1,0 +1,103 @@
+{
+  "test_type": "comprehensive_ride_visibility_and_processing",
+  "summary": {
+    "total_tests": 13,
+    "passed_tests": 10,
+    "failed_tests": 3,
+    "success_rate": 76.92307692307693,
+    "timestamp": "2025-10-01T00:33:39.789410"
+  },
+  "detailed_results": [
+    {
+      "test_name": "Database Ride Requests Storage",
+      "success": true,
+      "details": "Found 8 total ride requests, 7 pending",
+      "error": "",
+      "timestamp": "2025-10-01T00:33:39.531724"
+    },
+    {
+      "test_name": "Database Ride Matches Storage",
+      "success": true,
+      "details": "Found 1 ride matches",
+      "error": "",
+      "timestamp": "2025-10-01T00:33:39.532258"
+    },
+    {
+      "test_name": "Database Driver Status",
+      "success": true,
+      "details": "Found 17 drivers, 9 online",
+      "error": "",
+      "timestamp": "2025-10-01T00:33:39.532666"
+    },
+    {
+      "test_name": "Ride Request Creation #1",
+      "success": true,
+      "details": "Request ID: 82f6dd23-b2e9-45ff-bc22-3cf892c23a45, Fare: $5.13",
+      "error": "",
+      "timestamp": "2025-10-01T00:33:39.583160"
+    },
+    {
+      "test_name": "Ride Request Creation #2",
+      "success": true,
+      "details": "Request ID: 691d8c18-58e2-400a-8003-232afb3ef447, Fare: $11.50",
+      "error": "",
+      "timestamp": "2025-10-01T00:33:39.592863"
+    },
+    {
+      "test_name": "Admin Rides Access",
+      "success": true,
+      "details": "Admin can see 1 ride matches",
+      "error": "",
+      "timestamp": "2025-10-01T00:33:39.642133"
+    },
+    {
+      "test_name": "Admin Stats Access",
+      "success": true,
+      "details": "Users: 46, Rides: 1, Online Drivers: 9",
+      "error": "",
+      "timestamp": "2025-10-01T00:33:39.654590"
+    },
+    {
+      "test_name": "Driver Available Rides Endpoint",
+      "success": false,
+      "details": "",
+      "error": "HTTP No response",
+      "timestamp": "2025-10-01T00:33:39.662390"
+    },
+    {
+      "test_name": "Driver My Rides Access",
+      "success": true,
+      "details": "Driver can see 0 of their rides",
+      "error": "",
+      "timestamp": "2025-10-01T00:33:39.712067"
+    },
+    {
+      "test_name": "Ride Acceptance",
+      "success": true,
+      "details": "Ride accepted, Match ID: ea49560f-709a-4927-9f8d-df0f24820a4f",
+      "error": "",
+      "timestamp": "2025-10-01T00:33:39.721470"
+    },
+    {
+      "test_name": "Ride Completion",
+      "success": true,
+      "details": "Ride completed successfully",
+      "error": "",
+      "timestamp": "2025-10-01T00:33:39.732482"
+    },
+    {
+      "test_name": "Rider Admin Access Restriction",
+      "success": false,
+      "details": "",
+      "error": "Expected 403, got No response",
+      "timestamp": "2025-10-01T00:33:39.780236"
+    },
+    {
+      "test_name": "Driver Admin Access Restriction",
+      "success": false,
+      "details": "",
+      "error": "Expected 403, got No response",
+      "timestamp": "2025-10-01T00:33:39.789264"
+    }
+  ]
+}
