@@ -931,28 +931,234 @@ const EnhancedAdminDashboard = () => {
             </Dialog>
           </TabsContent>
 
-          {/* Rides Tab - Simplified for now */}
+          {/* Enhanced Rides Tab */}
           <TabsContent value="rides" className="space-y-6">
             <Card className="hover:shadow-lg transition-shadow">
               <CardHeader>
-                <CardTitle>Ride Monitoring</CardTitle>
-                <CardDescription>Monitor all ride activities with audit trails</CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Real-Time Ride Monitoring</CardTitle>
+                    <CardDescription>Monitor all ride activities with complete audit trails</CardDescription>
+                  </div>
+                  <Button onClick={() => fetchRidesWithFilters()}>
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Refresh Rides
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-600">Ride monitoring interface coming soon...</p>
+                <div className="space-y-4">
+                  {/* Ride Statistics */}
+                  <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+                    <div className="bg-blue-50 p-4 rounded-lg">
+                      <div className="flex items-center space-x-2">
+                        <Clock className="h-5 w-5 text-blue-600" />
+                        <div>
+                          <p className="text-sm text-blue-600">Pending</p>
+                          <p className="text-xl font-bold text-blue-900">
+                            {rides.filter(r => r.status === 'pending').length}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="bg-yellow-50 p-4 rounded-lg">
+                      <div className="flex items-center space-x-2">
+                        <Car className="h-5 w-5 text-yellow-600" />
+                        <div>
+                          <p className="text-sm text-yellow-600">Active</p>
+                          <p className="text-xl font-bold text-yellow-900">
+                            {rides.filter(r => ['accepted', 'in_progress'].includes(r.status)).length}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="bg-green-50 p-4 rounded-lg">
+                      <div className="flex items-center space-x-2">
+                        <CheckCircle className="h-5 w-5 text-green-600" />
+                        <div>
+                          <p className="text-sm text-green-600">Completed</p>
+                          <p className="text-xl font-bold text-green-900">
+                            {rides.filter(r => r.status === 'completed').length}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="bg-red-50 p-4 rounded-lg">
+                      <div className="flex items-center space-x-2">
+                        <UserX className="h-5 w-5 text-red-600" />
+                        <div>
+                          <p className="text-sm text-red-600">Cancelled</p>
+                          <p className="text-xl font-bold text-red-900">
+                            {rides.filter(r => r.status === 'cancelled').length}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="bg-purple-50 p-4 rounded-lg">
+                      <div className="flex items-center space-x-2">
+                        <DollarSign className="h-5 w-5 text-purple-600" />
+                        <div>
+                          <p className="text-sm text-purple-600">Total Revenue</p>
+                          <p className="text-xl font-bold text-purple-900">
+                            ${rides.filter(r => r.status === 'completed').reduce((sum, r) => sum + (r.estimated_fare || 0), 0).toFixed(2)}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Rides Table */}
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Ride ID</TableHead>
+                          <TableHead>Rider</TableHead>
+                          <TableHead>Driver</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Route</TableHead>
+                          <TableHead>Fare</TableHead>
+                          <TableHead>Created</TableHead>
+                          <TableHead>Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {rides.slice(0, 10).map((ride) => (
+                          <TableRow key={ride.id}>
+                            <TableCell className="font-mono text-sm">{ride.id?.slice(-8)}</TableCell>
+                            <TableCell className="font-mono text-sm">{ride.rider_id?.slice(-8)}</TableCell>
+                            <TableCell className="font-mono text-sm">{ride.driver_id?.slice(-8) || 'Unassigned'}</TableCell>
+                            <TableCell>
+                              <Badge className={getStatusColor(ride.status)}>
+                                {ride.status?.toUpperCase()}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-sm">
+                              <div>
+                                <div>From: {ride.pickup_location?.address}</div>
+                                <div className="text-gray-500">To: {ride.dropoff_location?.address}</div>
+                              </div>
+                            </TableCell>
+                            <TableCell className="font-semibold">${ride.estimated_fare}</TableCell>
+                            <TableCell>{formatDate(ride.created_at)}</TableCell>
+                            <TableCell>
+                              <Button variant="outline" size="sm">
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
 
-          {/* Payments Tab - Simplified for now */}
+          {/* Enhanced Payments Tab */}
           <TabsContent value="payments" className="space-y-6">
             <Card className="hover:shadow-lg transition-shadow">
               <CardHeader>
-                <CardTitle>Payment Control</CardTitle>
-                <CardDescription>Monitor payment transactions with audit trails</CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>Payment Control & Revenue Tracking</CardTitle>
+                    <CardDescription>Monitor all payment transactions with comprehensive audit trails</CardDescription>
+                  </div>
+                  <Button onClick={() => fetchPaymentsWithFilters()}>
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Refresh Payments
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
-                <p className="text-gray-600">Payment control interface coming soon...</p>
+                <div className="space-y-4">
+                  {/* Payment Statistics */}
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                    <div className="bg-green-50 p-4 rounded-lg">
+                      <div className="flex items-center space-x-2">
+                        <CheckCircle className="h-5 w-5 text-green-600" />
+                        <div>
+                          <p className="text-sm text-green-600">Completed</p>
+                          <p className="text-xl font-bold text-green-900">
+                            {payments.filter(p => p.status === 'completed').length}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="bg-yellow-50 p-4 rounded-lg">
+                      <div className="flex items-center space-x-2">
+                        <Clock className="h-5 w-5 text-yellow-600" />
+                        <div>
+                          <p className="text-sm text-yellow-600">Pending</p>
+                          <p className="text-xl font-bold text-yellow-900">
+                            {payments.filter(p => p.status === 'pending').length}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="bg-blue-50 p-4 rounded-lg">
+                      <div className="flex items-center space-x-2">
+                        <DollarSign className="h-5 w-5 text-blue-600" />
+                        <div>
+                          <p className="text-sm text-blue-600">Total Revenue</p>
+                          <p className="text-xl font-bold text-blue-900">
+                            ${payments.filter(p => p.status === 'completed').reduce((sum, p) => sum + (p.amount || 0), 0).toFixed(2)}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="bg-purple-50 p-4 rounded-lg">
+                      <div className="flex items-center space-x-2">
+                        <TrendingUp className="h-5 w-5 text-purple-600" />
+                        <div>
+                          <p className="text-sm text-purple-600">Platform Fees</p>
+                          <p className="text-xl font-bold text-purple-900">
+                            ${payments.filter(p => p.status === 'completed').reduce((sum, p) => sum + (p.platform_fee || 0), 0).toFixed(2)}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Payments Table */}
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Payment ID</TableHead>
+                          <TableHead>Ride ID</TableHead>
+                          <TableHead>Rider</TableHead>
+                          <TableHead>Driver</TableHead>
+                          <TableHead>Amount</TableHead>
+                          <TableHead>Driver Earnings</TableHead>
+                          <TableHead>Platform Fee</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Date</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {payments.slice(0, 10).map((payment) => (
+                          <TableRow key={payment.id}>
+                            <TableCell className="font-mono text-sm">{payment.id?.slice(-8)}</TableCell>
+                            <TableCell className="font-mono text-sm">{payment.ride_id?.slice(-8)}</TableCell>
+                            <TableCell className="font-mono text-sm">{payment.rider_id?.slice(-8)}</TableCell>
+                            <TableCell className="font-mono text-sm">{payment.driver_id?.slice(-8)}</TableCell>
+                            <TableCell className="font-semibold">${payment.amount}</TableCell>
+                            <TableCell className="font-semibold text-green-600">${payment.driver_earnings}</TableCell>
+                            <TableCell className="font-semibold text-purple-600">${payment.platform_fee}</TableCell>
+                            <TableCell>
+                              <Badge className={getStatusColor(payment.status)}>
+                                {payment.status?.toUpperCase()}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>{formatDate(payment.created_at)}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
