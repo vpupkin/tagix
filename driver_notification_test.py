@@ -186,6 +186,44 @@ class DriverNotificationTester:
             self.log_test(f"Driver Online Toggle ({driver_key})", False, error=f"HTTP {status}")
             return False
 
+    def check_driver_online_status(self, driver_key="driver"):
+        """Check if driver is online and toggle if needed"""
+        token = self.tokens.get('admin')
+        user = self.users.get(driver_key)
+        
+        if not token or not user:
+            self.log_test(f"Driver Online Status Check ({driver_key})", False, error="Missing admin token or user data")
+            return False
+        
+        # Get driver info from admin endpoint
+        response = self.make_request('GET', f'/api/admin/users/filtered?search={user["email"]}', auth_token=token)
+        
+        if response and response.status_code == 200:
+            try:
+                data = response.json()
+                users = data.get('users', [])
+                if users:
+                    driver_data = users[0]
+                    is_online = driver_data.get('is_online', False)
+                    
+                    if is_online:
+                        self.log_test(f"Driver Online Status Check ({driver_key})", True, f"Driver is already online")
+                        return True
+                    else:
+                        # Driver is offline, toggle to online
+                        self.log_test(f"Driver Online Status Check ({driver_key})", True, f"Driver was offline, toggling to online")
+                        return self.toggle_driver_online(driver_key)
+                else:
+                    self.log_test(f"Driver Online Status Check ({driver_key})", False, error="Driver not found")
+                    return False
+            except json.JSONDecodeError:
+                self.log_test(f"Driver Online Status Check ({driver_key})", False, error="Invalid JSON response")
+                return False
+        else:
+            status = response.status_code if response else "No response"
+            self.log_test(f"Driver Online Status Check ({driver_key})", False, error=f"HTTP {status}")
+            return False
+
     def check_online_drivers(self):
         """Check how many drivers are online using admin stats"""
         token = self.tokens.get('admin')
