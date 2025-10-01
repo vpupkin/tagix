@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: Complete implementation of comprehensive audit system for MobilityHub ride-sharing MVP. Ensure all transactional activity from drivers and riders is properly audited and fully monitorable from admin dashboard. Focus on "Add-Once/Keep-Forever" audit principle with full traceability.
+user_problem_statement: Debug why drivers are not receiving ride request notifications in MobilityHub. Check driver setup requirements, test driver workflow, test ride request to driver notification flow, debug WebSocket connection issues, and investigate database query logic.
 
 backend:
   - task: "Fix audit system backend integration"
