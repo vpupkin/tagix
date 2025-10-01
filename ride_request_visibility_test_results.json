@@ -1,0 +1,100 @@
+{
+  "test_type": "ride_request_visibility_and_processing",
+  "summary": {
+    "total_tests": 12,
+    "passed_tests": 9,
+    "failed_tests": 3,
+    "success_rate": 75.0,
+    "timestamp": "2025-10-01T00:31:43.267612"
+  },
+  "detailed_results": [
+    {
+      "test_name": "Ride Request Creation #1",
+      "success": true,
+      "details": "Request ID: e1376e6e-45e1-4ba8-b1b1-8a5a1ac58a5c, Fare: $5.13",
+      "error": "",
+      "timestamp": "2025-10-01T00:31:42.959627"
+    },
+    {
+      "test_name": "Ride Request Creation #2",
+      "success": true,
+      "details": "Request ID: f53cc313-9785-4af2-9a05-65c3277d8dbd, Fare: $5.83",
+      "error": "",
+      "timestamp": "2025-10-01T00:31:43.010216"
+    },
+    {
+      "test_name": "Database Storage Verification",
+      "success": true,
+      "details": "Found 0 total rides, 0 from this test",
+      "error": "",
+      "timestamp": "2025-10-01T00:31:43.019700"
+    },
+    {
+      "test_name": "Admin All Rides Access",
+      "success": true,
+      "details": "Admin can see 0 total rides",
+      "error": "",
+      "timestamp": "2025-10-01T00:31:43.028544"
+    },
+    {
+      "test_name": "Admin Test Rides Visibility",
+      "success": true,
+      "details": "Admin can see 0 of our test rides",
+      "error": "",
+      "timestamp": "2025-10-01T00:31:43.028555"
+    },
+    {
+      "test_name": "Driver Available Rides Endpoint",
+      "success": false,
+      "details": "",
+      "error": "HTTP No response",
+      "timestamp": "2025-10-01T00:31:43.077342"
+    },
+    {
+      "test_name": "Rider Admin Access Restriction",
+      "success": false,
+      "details": "",
+      "error": "Expected 403, got No response",
+      "timestamp": "2025-10-01T00:31:43.084529"
+    },
+    {
+      "test_name": "Driver Admin Access Restriction",
+      "success": false,
+      "details": "",
+      "error": "Expected 403, got No response",
+      "timestamp": "2025-10-01T00:31:43.132134"
+    },
+    {
+      "test_name": "Admin Stats Access",
+      "success": true,
+      "details": "Admin can access stats: 40 users, 0 rides",
+      "error": "",
+      "timestamp": "2025-10-01T00:31:43.144245"
+    },
+    {
+      "test_name": "Ride Acceptance",
+      "success": true,
+      "details": "Ride accepted, Match ID: 052a1995-cac7-4895-8154-1da9787d19cf",
+      "error": "",
+      "timestamp": "2025-10-01T00:31:43.206422"
+    },
+    {
+      "test_name": "Ride Completion",
+      "success": true,
+      "details": "Ride completed successfully",
+      "error": "",
+      "timestamp": "2025-10-01T00:31:43.256589"
+    },
+    {
+      "test_name": "Audit Logging Verification",
+      "success": true,
+      "details": "Found 50 total audit logs, 14 ride-related",
+      "error": "",
+      "timestamp": "2025-10-01T00:31:43.267462"
+    }
+  ],
+  "created_ride_requests": [
+    "e1376e6e-45e1-4ba8-b1b1-8a5a1ac58a5c",
+    "f53cc313-9785-4af2-9a05-65c3277d8dbd"
+  ]
+}
