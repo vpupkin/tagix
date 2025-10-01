@@ -2,125 +2,125 @@
   "test_type": "driver_notification_debug",
   "summary": {
     "total_tests": 16,
-    "passed_tests": 10,
-    "failed_tests": 6,
-    "success_rate": 62.5,
+    "passed_tests": 12,
+    "failed_tests": 4,
+    "success_rate": 75.0,
     "websocket_messages_received": 0,
     "ride_notifications_received": 0,
-    "timestamp": "2025-10-01T00:10:20.550803"
+    "timestamp": "2025-10-01T00:11:33.194641"
   },
   "detailed_results": [
     {
       "test_name": "User Registration (admin)",
       "success": true,
-      "details": "User ID: 7a5485a6-e70b-4cf7-876c-53e7c4c36a18, Email: test_admin_1759277390@example.com",
+      "details": "User ID: b05f9a3a-e61b-42d7-b985-7c4786c02a4b, Email: test_admin_1759277462@example.com",
       "error": "",
-      "timestamp": "2025-10-01T00:09:50.301164"
+      "timestamp": "2025-10-01T00:11:02.810277"
     },
     {
       "test_name": "User Registration (rider)",
       "success": true,
-      "details": "User ID: bda9561d-0308-4195-9dba-a5df690b21f7, Email: test_rider_1759277390@example.com",
+      "details": "User ID: c18f6796-3f54-4856-8b01-09ef8c33758b, Email: test_rider_1759277462@example.com",
       "error": "",
-      "timestamp": "2025-10-01T00:09:50.313085"
+      "timestamp": "2025-10-01T00:11:02.859297"
     },
     {
       "test_name": "User Registration (driver1)",
       "success": true,
-      "details": "User ID: a5d5ea9e-7a3e-4fec-a33e-5e76c72c41a5, Email: test_driver_17592773901@example.com",
+      "details": "User ID: f50853b2-c7f2-4898-b996-8de6771da355, Email: test_driver_17592774621@example.com",
       "error": "",
-      "timestamp": "2025-10-01T00:09:50.323009"
+      "timestamp": "2025-10-01T00:11:02.878030"
     },
     {
       "test_name": "User Registration (driver2)",
       "success": true,
-      "details": "User ID: 6836686a-5a4b-477a-960e-99f87ae3f7c2, Email: test_driver_17592773902@example.com",
+      "details": "User ID: affb1ed3-a9aa-4e7e-8ec7-79a0f4725d29, Email: test_driver_17592774622@example.com",
       "error": "",
-      "timestamp": "2025-10-01T00:09:50.334024"
+      "timestamp": "2025-10-01T00:11:02.889221"
     },
     {
       "test_name": "Driver Profile Creation (driver1)",
       "success": true,
       "details": "Profile created successfully",
       "error": "",
-      "timestamp": "2025-10-01T00:09:50.384928"
+      "timestamp": "2025-10-01T00:11:02.938708"
     },
     {
       "test_name": "Driver Profile Creation (driver2)",
       "success": true,
       "details": "Profile created successfully",
       "error": "",
-      "timestamp": "2025-10-01T00:09:50.392389"
+      "timestamp": "2025-10-01T00:11:02.989028"
     },
     {
       "test_name": "Driver Location Update (driver1)",
-      "success": false,
-      "details": "",
-      "error": "HTTP No response",
-      "timestamp": "2025-10-01T00:09:50.401614"
+      "success": true,
+      "details": "Location set to 37.7749, -122.4194",
+      "error": "",
+      "timestamp": "2025-10-01T00:11:03.017960"
     },
     {
       "test_name": "Driver Location Update (driver2)",
-      "success": false,
-      "details": "",
-      "error": "HTTP No response",
-      "timestamp": "2025-10-01T00:09:50.408608"
+      "success": true,
+      "details": "Location set to 37.7849, -122.4094",
+      "error": "",
+      "timestamp": "2025-10-01T00:11:03.030184"
     },
     {
       "test_name": "Driver Online Toggle (driver1)",
       "success": true,
-      "details": "Driver is now online",
+      "details": "Driver is now offline",
       "error": "",
-      "timestamp": "2025-10-01T00:09:50.458365"
+      "timestamp": "2025-10-01T00:11:03.039266"
     },
     {
       "test_name": "Driver Online Toggle (driver2)",
       "success": true,
-      "details": "Driver is now online",
+      "details": "Driver is now offline",
       "error": "",
-      "timestamp": "2025-10-01T00:09:50.465462"
+      "timestamp": "2025-10-01T00:11:03.088130"
     },
     {
       "test_name": "Check Online Drivers",
       "success": true,
-      "details": "Online drivers: 4/10",
+      "details": "Online drivers: 4/12",
       "error": "",
-      "timestamp": "2025-10-01T00:09:50.477357"
+      "timestamp": "2025-10-01T00:11:03.141748"
     },
     {
       "test_name": "Query Drivers Directly",
       "success": true,
-      "details": "Total drivers: 10, Online: 4, With location: 0",
+      "details": "Total drivers: 12, Online: 4, With location: 2",
       "error": "",
-      "timestamp": "2025-10-01T00:09:50.485639"
+      "timestamp": "2025-10-01T00:11:03.152394"
     },
     {
       "test_name": "WebSocket Connection Test (driver1)",
       "success": false,
       "details": "",
       "error": "Failed to establish WebSocket connection",
-      "timestamp": "2025-10-01T00:10:00.506531"
+      "timestamp": "2025-10-01T00:11:13.165545"
     },
     {
       "test_name": "WebSocket Connection Test (driver2)",
       "success": false,
       "details": "",
       "error": "Failed to establish WebSocket connection",
-      "timestamp": "2025-10-01T00:10:10.517617"
+      "timestamp": "2025-10-01T00:11:23.170517"
     },
     {
       "test_name": "Find Nearby Drivers Function",
       "success": false,
       "details": "This could indicate issues with driver location data or online status",
       "error": "No nearby drivers found",
-      "timestamp": "2025-10-01T00:10:10.539721"
+      "timestamp": "2025-10-01T00:11:23.182691"
     },
     {
       "test_name": "Ride Request with Notifications",
       "success": false,
-      "details": "Request ID: 7b9dbca1-be32-4ffa-9b99-ba208cb87079, Matches: 0, Notifications received: 0",
+      "details": "Request ID: 0937af47-8320-4a47-b88a-55cdff402294, Matches: 0, Notifications received: 0",
       "error": "No ride request notifications received. Matches found: 0",
-      "timestamp": "2025-10-01T00:10:20.550614"
+      "timestamp": "2025-10-01T00:11:33.194426"
     }
   ],
   "websocket_messages": []
