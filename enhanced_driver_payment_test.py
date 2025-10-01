@@ -251,6 +251,12 @@ class EnhancedDriverPaymentTester:
         if not token:
             self.log_test("Available Rides Endpoint", False, error="No driver token available")
             return False
+        
+        # Ensure driver is online first (toggle might have made them offline)
+        online_response = self.make_request('POST', '/api/driver/online', auth_token=token)
+        if not online_response or online_response.status_code != 200:
+            self.log_test("Available Rides Endpoint", False, error="Failed to set driver online")
+            return False
             
         response = self.make_request('GET', '/api/rides/available', auth_token=token)
         
