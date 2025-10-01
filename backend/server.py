@@ -126,6 +126,21 @@ class VehicleType(str):
     PREMIUM = "premium"
     SUV = "suv"
 
+class RideStatus(str):
+    PENDING = "pending"
+    ACCEPTED = "accepted" 
+    DRIVER_ARRIVING = "driver_arriving"
+    IN_PROGRESS = "in_progress"
+    COMPLETED = "completed"
+    CANCELLED = "cancelled"
+
+class PaymentStatus(str):
+    PENDING = "pending"
+    PROCESSING = "processing"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    REFUNDED = "refunded"
+
 class Location(BaseModel):
     latitude: float = Field(..., ge=-90, le=90)
     longitude: float = Field(..., ge=-180, le=180)
