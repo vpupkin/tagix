@@ -198,9 +198,9 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Driver notification system WebSocket infrastructure issue"
-    - "WebSocket routing configuration needs fixing"
-    - "Backend notification logic is working correctly"
+    - "WebSocket routing configuration needs fixing for driver notifications"
+    - "Consider implementing /api/rides/available endpoint for drivers"
+    - "Minor role-based access control improvements"
   stuck_tasks: 
     - "Driver notification system debugging - WebSocket infrastructure issue"
   test_all: false
