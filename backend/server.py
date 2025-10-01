@@ -789,6 +789,60 @@ async def toggle_driver_online(current_user: User = Depends(get_current_user)):
     status_text = "online" if new_status else "offline"
     return {"message": f"Driver is now {status_text}"}
 
+# === RIDE ENDPOINTS ===
+
+@api_router.get("/rides/available", response_model=List[Dict[str, Any]])
+async def get_available_rides(current_user: User = Depends(get_current_user)):
+    """Get available rides for drivers"""
+    if current_user.role != UserRole.DRIVER:
+        raise HTTPException(status_code=403, detail="Only drivers can view available rides")
+    
+    # Get driver location
+    driver = await db.users.find_one({"id": current_user.id})
+    if not driver or not driver.get("current_location"):
+        raise HTTPException(status_code=400, detail="Driver location not set. Please update your location first.")
+    
+    if not driver.get("is_online", False):
+        raise HTTPException(status_code=400, detail="Driver must be online to view available rides")
+    
+    # Find pending ride requests
+    pending_requests = await db.ride_requests.find({
+        "status": RideStatus.PENDING,
+        "expires_at": {"$gt": datetime.now(timezone.utc)}
+    }).to_list(None)
+    
+    available_rides = []
+    driver_location = driver["current_location"]
+    
+    for request in pending_requests:
+        # Calculate distance to pickup
+        pickup = request["pickup_location"]
+        distance = calculate_distance_km(
+            Location(**driver_location), Location(**pickup)
+        )
+        
+        # Only show rides within 10km radius
+        if distance <= 10.0:
+            ride_info = convert_objectids_to_strings(request)
+            ride_info["distance_to_pickup"] = round(distance, 2)
+            ride_info["estimated_pickup_time"] = int(distance * 2)  # 2 minutes per km estimate
+            available_rides.append(ride_info)
+    
+    # Sort by distance
+    available_rides.sort(key=lambda x: x["distance_to_pickup"])
+    
+    # Log audit event
+    if AUDIT_ENABLED and audit_system:
+        await audit_system.log_action(
+            action=AuditAction.RIDE_QUERY,
+            user_id=current_user.id,
+            entity_type="ride_discovery",
+            entity_id=f"available_rides_{len(available_rides)}",
+            metadata={"rides_found": len(available_rides), "driver_online": True}
+        )
+    
+    return available_rides
+
 # === PAYMENT ENDPOINTS ===
 
 @api_router.post("/payments/create-session", response_model=Dict[str, Any])
