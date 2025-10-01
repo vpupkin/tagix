@@ -62,6 +62,7 @@ class AuditAction:
     PAYMENT_COMPLETED = "payment_completed"
     PAYMENT_FAILED = "payment_failed"
     PAYMENT_REFUNDED = "payment_refunded"
+    PAYMENT_QUERY = "payment_query"
     
     # Admin actions
     ADMIN_USER_MODIFIED = "admin_user_modified"
