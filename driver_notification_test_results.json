@@ -1,0 +1,127 @@
+{
+  "test_type": "driver_notification_debug",
+  "summary": {
+    "total_tests": 16,
+    "passed_tests": 10,
+    "failed_tests": 6,
+    "success_rate": 62.5,
+    "websocket_messages_received": 0,
+    "ride_notifications_received": 0,
+    "timestamp": "2025-10-01T00:10:20.550803"
+  },
+  "detailed_results": [
+    {
+      "test_name": "User Registration (admin)",
+      "success": true,
+      "details": "User ID: 7a5485a6-e70b-4cf7-876c-53e7c4c36a18, Email: test_admin_1759277390@example.com",
+      "error": "",
+      "timestamp": "2025-10-01T00:09:50.301164"
+    },
+    {
+      "test_name": "User Registration (rider)",
+      "success": true,
+      "details": "User ID: bda9561d-0308-4195-9dba-a5df690b21f7, Email: test_rider_1759277390@example.com",
+      "error": "",
+      "timestamp": "2025-10-01T00:09:50.313085"
+    },
+    {
+      "test_name": "User Registration (driver1)",
+      "success": true,
+      "details": "User ID: a5d5ea9e-7a3e-4fec-a33e-5e76c72c41a5, Email: test_driver_17592773901@example.com",
+      "error": "",
+      "timestamp": "2025-10-01T00:09:50.323009"
+    },
+    {
+      "test_name": "User Registration (driver2)",
+      "success": true,
+      "details": "User ID: 6836686a-5a4b-477a-960e-99f87ae3f7c2, Email: test_driver_17592773902@example.com",
+      "error": "",
+      "timestamp": "2025-10-01T00:09:50.334024"
+    },
+    {
+      "test_name": "Driver Profile Creation (driver1)",
+      "success": true,
+      "details": "Profile created successfully",
+      "error": "",
+      "timestamp": "2025-10-01T00:09:50.384928"
+    },
+    {
+      "test_name": "Driver Profile Creation (driver2)",
+      "success": true,
+      "details": "Profile created successfully",
+      "error": "",
+      "timestamp": "2025-10-01T00:09:50.392389"
+    },
+    {
+      "test_name": "Driver Location Update (driver1)",
+      "success": false,
+      "details": "",
+      "error": "HTTP No response",
+      "timestamp": "2025-10-01T00:09:50.401614"
+    },
+    {
+      "test_name": "Driver Location Update (driver2)",
+      "success": false,
+      "details": "",
+      "error": "HTTP No response",
+      "timestamp": "2025-10-01T00:09:50.408608"
+    },
+    {
+      "test_name": "Driver Online Toggle (driver1)",
+      "success": true,
+      "details": "Driver is now online",
+      "error": "",
+      "timestamp": "2025-10-01T00:09:50.458365"
+    },
+    {
+      "test_name": "Driver Online Toggle (driver2)",
+      "success": true,
+      "details": "Driver is now online",
+      "error": "",
+      "timestamp": "2025-10-01T00:09:50.465462"
+    },
+    {
+      "test_name": "Check Online Drivers",
+      "success": true,
+      "details": "Online drivers: 4/10",
+      "error": "",
+      "timestamp": "2025-10-01T00:09:50.477357"
+    },
+    {
+      "test_name": "Query Drivers Directly",
+      "success": true,
+      "details": "Total drivers: 10, Online: 4, With location: 0",
+      "error": "",
+      "timestamp": "2025-10-01T00:09:50.485639"
+    },
+    {
+      "test_name": "WebSocket Connection Test (driver1)",
+      "success": false,
+      "details": "",
+      "error": "Failed to establish WebSocket connection",
+      "timestamp": "2025-10-01T00:10:00.506531"
+    },
+    {
+      "test_name": "WebSocket Connection Test (driver2)",
+      "success": false,
+      "details": "",
+      "error": "Failed to establish WebSocket connection",
+      "timestamp": "2025-10-01T00:10:10.517617"
+    },
+    {
+      "test_name": "Find Nearby Drivers Function",
+      "success": false,
+      "details": "This could indicate issues with driver location data or online status",
+      "error": "No nearby drivers found",
+      "timestamp": "2025-10-01T00:10:10.539721"
+    },
+    {
+      "test_name": "Ride Request with Notifications",
+      "success": false,
+      "details": "Request ID: 7b9dbca1-be32-4ffa-9b99-ba208cb87079, Matches: 0, Notifications received: 0",
+      "error": "No ride request notifications received. Matches found: 0",
+      "timestamp": "2025-10-01T00:10:20.550614"
+    }
+  ],
+  "websocket_messages": []
+}
