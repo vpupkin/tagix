@@ -48,6 +48,7 @@ class AuditAction:
     RIDE_STARTED = "ride_started"
     RIDE_COMPLETED = "ride_completed"
     RIDE_CANCELLED = "ride_cancelled"
+    RIDE_QUERY = "ride_query"
     RIDE_RATED = "ride_rated"
     
     # Driver actions
