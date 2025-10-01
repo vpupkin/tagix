@@ -116,6 +116,7 @@ class RideStatus(str):
     PENDING = "pending"
     MATCHED = "matched"
     ACCEPTED = "accepted"
+    DRIVER_ARRIVING = "driver_arriving"
     IN_PROGRESS = "in_progress"
     COMPLETED = "completed"
     CANCELLED = "cancelled"
@@ -125,14 +126,6 @@ class VehicleType(str):
     COMFORT = "comfort"
     PREMIUM = "premium"
     SUV = "suv"
-
-class RideStatus(str):
-    PENDING = "pending"
-    ACCEPTED = "accepted" 
-    DRIVER_ARRIVING = "driver_arriving"
-    IN_PROGRESS = "in_progress"
-    COMPLETED = "completed"
-    CANCELLED = "cancelled"
 
 class PaymentStatus(str):
     PENDING = "pending"
