@@ -2,167 +2,196 @@
   "test_type": "enhanced_driver_workflow_and_payment_system",
   "summary": {
     "total_tests": 18,
-    "passed_tests": 17,
-    "failed_tests": 1,
-    "success_rate": 94.44444444444444,
-    "timestamp": "2025-10-01T01:08:05.880463"
+    "passed_tests": 18,
+    "failed_tests": 0,
+    "success_rate": 100.0,
+    "timestamp": "2025-10-01T01:08:24.571489"
   },
   "detailed_results": [
     {
       "test_name": "Rider Account Creation",
       "success": true,
-      "details": "Rider ID: a1846346-d5c8-479f-a333-81eb001ef749",
+      "details": "Rider ID: 1d2841ea-eb5c-496c-9b8e-54f8648a6b66",
       "error": "",
-      "timestamp": "2025-10-01T01:08:05.594924"
+      "timestamp": "2025-10-01T01:08:24.176797"
     },
     {
       "test_name": "Driver Account Creation",
       "success": true,
-      "details": "Driver ID: 7554b561-7f96-4889-91a1-8d22e931e66a",
+      "details": "Driver ID: c8b4a600-10f0-4d7b-9ebc-2876e0d3f2c1",
       "error": "",
-      "timestamp": "2025-10-01T01:08:05.604646"
+      "timestamp": "2025-10-01T01:08:24.185485"
     },
     {
       "test_name": "Admin Account Creation",
       "success": true,
-      "details": "Admin ID: 000a219c-e1f7-4c4d-8172-31c074ce180f",
+      "details": "Admin ID: 367a9b9f-1a8b-4dc5-91b0-7d9d2cc52b77",
       "error": "",
-      "timestamp": "2025-10-01T01:08:05.652032"
+      "timestamp": "2025-10-01T01:08:24.236456"
     },
     {
       "test_name": "Driver Profile Setup",
       "success": true,
       "details": "Driver profile created successfully",
       "error": "",
-      "timestamp": "2025-10-01T01:08:05.664031"
+      "timestamp": "2025-10-01T01:08:24.244561"
     },
     {
       "test_name": "Driver Location Update",
       "success": true,
       "details": "Location updated successfully",
       "error": "",
-      "timestamp": "2025-10-01T01:08:05.672069"
+      "timestamp": "2025-10-01T01:08:24.253771"
     },
     {
       "test_name": "Driver Online Status",
       "success": true,
       "details": "Driver is now offline",
       "error": "",
-      "timestamp": "2025-10-01T01:08:05.718076"
+      "timestamp": "2025-10-01T01:08:24.303002"
     },
     {
       "test_name": "Ride Request Creation",
       "success": true,
-      "details": "Request ID: 7d01b26a-023f-45b6-a71b-e606392ef28a, Fare: $5.13",
+      "details": "Request ID: 2e945397-2400-4d73-b2dc-24738ef40e28, Fare: $5.13",
       "error": "",
-      "timestamp": "2025-10-01T01:08:05.725708"
+      "timestamp": "2025-10-01T01:08:24.310597"
     },
     {
       "test_name": "Available Rides Endpoint",
-      "success": false,
-      "details": "",
-      "error": "HTTP No response: ",
-      "timestamp": "2025-10-01T01:08:05.732036"
+      "success": true,
+      "details": "Found 1 available rides",
+      "error": "",
+      "timestamp": "2025-10-01T01:08:24.371645"
     },
     {
       "test_name": "Ride Acceptance via Update",
       "success": true,
-      "details": "Match ID: 5d58014c-652f-40fa-bb78-d234260cdfab, Status: accepted",
+      "details": "Match ID: 08e4fcf8-5064-49ba-990c-0755f324ccf6, Status: accepted",
       "error": "",
-      "timestamp": "2025-10-01T01:08:05.779542"
+      "timestamp": "2025-10-01T01:08:24.421496"
     },
     {
       "test_name": "Ride Lifecycle - Arrive",
       "success": true,
       "details": "Driver arrival status updated",
       "error": "",
-      "timestamp": "2025-10-01T01:08:05.788072"
+      "timestamp": "2025-10-01T01:08:24.429401"
     },
     {
       "test_name": "Ride Lifecycle - Start",
       "success": true,
       "details": "Ride started successfully",
       "error": "",
-      "timestamp": "2025-10-01T01:08:05.794997"
+      "timestamp": "2025-10-01T01:08:24.435988"
     },
     {
       "test_name": "Ride Lifecycle - Complete",
       "success": true,
-      "details": "Ride completed, Payment ID: 5ef3e4e8-e471-4efa-a922-77c96374abec, Amount: $5.13, Driver Earnings: $4.10",
+      "details": "Ride completed, Payment ID: c35a3d21-8810-4095-a6a1-fb74f66c97e6, Amount: $5.13, Driver Earnings: $4.10",
       "error": "",
-      "timestamp": "2025-10-01T01:08:05.802584"
+      "timestamp": "2025-10-01T01:08:24.445282"
     },
     {
       "test_name": "Automatic Payment Creation",
       "success": true,
       "details": "Payment created correctly - Amount: $5.13, Driver: $4.10 (80%), Platform: $1.03 (20%)",
       "error": "",
-      "timestamp": "2025-10-01T01:08:05.802607"
+      "timestamp": "2025-10-01T01:08:24.445307"
     },
     {
       "test_name": "Payment Processing",
       "success": true,
       "details": "Payment processed successfully - Status: completed, Amount: $5.13",
       "error": "",
-      "timestamp": "2025-10-01T01:08:05.850319"
+      "timestamp": "2025-10-01T01:08:24.496222"
     },
     {
       "test_name": "Driver Payment Summary",
       "success": true,
       "details": "Earnings: $4.10, Rides: 1, Revenue: $5.13",
       "error": "",
-      "timestamp": "2025-10-01T01:08:05.857183"
+      "timestamp": "2025-10-01T01:08:24.503352"
     },
     {
       "test_name": "Admin Payment Summary",
       "success": true,
-      "details": "Platform Revenue: $2.05, Driver Earnings: $8.20, Gross Revenue: $10.25, Transactions: 2",
+      "details": "Platform Revenue: $3.08, Driver Earnings: $12.30, Gross Revenue: $15.38, Transactions: 3",
       "error": "",
-      "timestamp": "2025-10-01T01:08:05.863410"
+      "timestamp": "2025-10-01T01:08:24.554496"
     },
     {
       "test_name": "Admin Rides Monitoring",
       "success": true,
-      "details": "Admin can access 6 rides",
+      "details": "Admin can access 7 rides",
       "error": "",
-      "timestamp": "2025-10-01T01:08:05.870066"
+      "timestamp": "2025-10-01T01:08:24.561655"
     },
     {
       "test_name": "Audit Logging Verification",
       "success": true,
-      "details": "Found 100 total audit logs, 32 ride-related, 12 payment-related",
+      "details": "Found 100 total audit logs, 35 ride-related, 9 payment-related",
       "error": "",
-      "timestamp": "2025-10-01T01:08:05.880324"
+      "timestamp": "2025-10-01T01:08:24.571360"
     }
   ],
   "test_data": {
     "ride_data": {
-      "request_id": "7d01b26a-023f-45b6-a71b-e606392ef28a",
+      "request_id": "2e945397-2400-4d73-b2dc-24738ef40e28",
       "estimated_fare": 5.125445191330671,
-      "match_id": "5d58014c-652f-40fa-bb78-d234260cdfab"
+      "available_rides": [
+        {
+          "_id": "68dc7f08e40b019edc75c75b",
+          "id": "2e945397-2400-4d73-b2dc-24738ef40e28",
+          "rider_id": "1d2841ea-eb5c-496c-9b8e-54f8648a6b66",
+          "pickup_location": {
+            "latitude": 37.7849,
+            "longitude": -122.4094,
+            "address": "Downtown San Francisco, CA",
+            "place_id": null
+          },
+          "dropoff_location": {
+            "latitude": 37.7949,
+            "longitude": -122.3994,
+            "address": "Financial District, San Francisco, CA",
+            "place_id": null
+          },
+          "vehicle_type": "economy",
+          "passenger_count": 1,
+          "special_requirements": "Enhanced driver workflow test",
+          "status": "pending",
+          "estimated_fare": 5.125445191330671,
+          "estimated_duration": 0,
+          "created_at": "2025-10-01T01:08:24.307000",
+          "expires_at": "2025-10-01T01:23:24.307000",
+          "distance_to_pickup": 1.42,
+          "estimated_pickup_time": 2
+        }
+      ],
+      "match_id": "08e4fcf8-5064-49ba-990c-0755f324ccf6"
     },
     "payment_data": {
-      "payment_id": "5ef3e4e8-e471-4efa-a922-77c96374abec",
+      "payment_id": "c35a3d21-8810-4095-a6a1-fb74f66c97e6",
       "amount": 5.125445191330671,
       "driver_earnings": 4.100356153064538
     },
     "users": {
       "rider": {
-        "id": "a1846346-d5c8-479f-a333-81eb001ef749",
-        "email": "test_rider_1759280885@example.com",
-        "name": "Test Rider 1759280885",
+        "id": "1d2841ea-eb5c-496c-9b8e-54f8648a6b66",
+        "email": "test_rider_1759280904@example.com",
+        "name": "Test Rider 1759280904",
         "role": "rider"
       },
       "driver": {
-        "id": "7554b561-7f96-4889-91a1-8d22e931e66a",
-        "email": "test_driver_1759280885@example.com",
-        "name": "Test Driver 1759280885",
+        "id": "c8b4a600-10f0-4d7b-9ebc-2876e0d3f2c1",
+        "email": "test_driver_1759280904@example.com",
+        "name": "Test Driver 1759280904",
         "role": "driver"
       },
       "admin": {
-        "id": "000a219c-e1f7-4c4d-8172-31c074ce180f",
-        "email": "test_admin_1759280885@example.com",
-        "name": "Test Admin 1759280885",
+        "id": "367a9b9f-1a8b-4dc5-91b0-7d9d2cc52b77",
+        "email": "test_admin_1759280904@example.com",
+        "name": "Test Admin 1759280904",
         "role": "admin"
       }
     }
