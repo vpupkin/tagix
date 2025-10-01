@@ -843,6 +843,172 @@ async def get_available_rides(current_user: User = Depends(get_current_user)):
     
     return available_rides
 
+@api_router.post("/rides/{ride_id}/update", response_model=Dict[str, Any])
+async def update_ride_status(ride_id: str, update: RideUpdate, current_user: User = Depends(get_current_user)):
+    """Update ride status - used by drivers and riders"""
+    
+    # Get the ride request
+    ride = await db.ride_requests.find_one({"id": ride_id})
+    if not ride:
+        ride = await db.ride_matches.find_one({"id": ride_id})
+        if not ride:
+            raise HTTPException(status_code=404, detail="Ride not found")
+    
+    current_status = ride.get("status", RideStatus.PENDING)
+    action = update.action.lower()
+    
+    # Validate permissions and state transitions
+    if action == "accept":
+        if current_user.role != UserRole.DRIVER:
+            raise HTTPException(status_code=403, detail="Only drivers can accept rides")
+        if current_status != RideStatus.PENDING:
+            raise HTTPException(status_code=400, detail="Ride is no longer available")
+        
+        # Create ride match
+        match_data = {
+            "id": str(uuid.uuid4()),
+            "ride_request_id": ride_id,
+            "rider_id": ride["rider_id"],
+            "driver_id": current_user.id,
+            "status": RideStatus.ACCEPTED,
+            "accepted_at": datetime.now(timezone.utc),
+            "pickup_location": ride["pickup_location"],
+            "dropoff_location": ride["dropoff_location"],
+            "vehicle_type": ride["vehicle_type"],
+            "estimated_fare": ride["estimated_fare"],
+            "passenger_count": ride["passenger_count"]
+        }
+        
+        await db.ride_matches.insert_one(match_data)
+        await db.ride_requests.update_one({"id": ride_id}, {"$set": {"status": RideStatus.ACCEPTED}})
+        
+        # Log audit
+        if AUDIT_ENABLED and audit_system:
+            await audit_system.log_action(
+                action=AuditAction.RIDE_ACCEPTED,
+                user_id=current_user.id,
+                entity_type="ride_match",
+                entity_id=match_data["id"],
+                metadata={"ride_request_id": ride_id, "fare": ride["estimated_fare"]}
+            )
+        
+        return {"message": "Ride accepted successfully", "match_id": match_data["id"], "status": RideStatus.ACCEPTED}
+    
+    elif action == "arrive":
+        if current_user.role != UserRole.DRIVER:
+            raise HTTPException(status_code=403, detail="Only drivers can update arrival status")
+        if current_status not in [RideStatus.ACCEPTED]:
+            raise HTTPException(status_code=400, detail="Invalid status transition")
+        
+        await db.ride_matches.update_one(
+            {"id": ride_id, "driver_id": current_user.id},
+            {
+                "$set": {
+                    "status": RideStatus.DRIVER_ARRIVING,
+                    "driver_arrived_at": datetime.now(timezone.utc)
+                }
+            }
+        )
+        
+        return {"message": "Driver arrival status updated", "status": RideStatus.DRIVER_ARRIVING}
+    
+    elif action == "start":
+        if current_user.role != UserRole.DRIVER:
+            raise HTTPException(status_code=403, detail="Only drivers can start rides")
+        if current_status not in [RideStatus.ACCEPTED, RideStatus.DRIVER_ARRIVING]:
+            raise HTTPException(status_code=400, detail="Invalid status transition")
+        
+        await db.ride_matches.update_one(
+            {"id": ride_id, "driver_id": current_user.id},
+            {
+                "$set": {
+                    "status": RideStatus.IN_PROGRESS,
+                    "started_at": datetime.now(timezone.utc)
+                }
+            }
+        )
+        
+        # Log audit
+        if AUDIT_ENABLED and audit_system:
+            await audit_system.log_action(
+                action=AuditAction.RIDE_STARTED,
+                user_id=current_user.id,
+                entity_type="ride_match",
+                entity_id=ride_id,
+                metadata={"started_at": datetime.now(timezone.utc).isoformat()}
+            )
+        
+        return {"message": "Ride started successfully", "status": RideStatus.IN_PROGRESS}
+    
+    elif action == "complete":
+        if current_user.role != UserRole.DRIVER:
+            raise HTTPException(status_code=403, detail="Only drivers can complete rides")
+        if current_status != RideStatus.IN_PROGRESS:
+            raise HTTPException(status_code=400, detail="Ride must be in progress to complete")
+        
+        completed_at = datetime.now(timezone.utc)
+        
+        # Update ride status
+        await db.ride_matches.update_one(
+            {"id": ride_id, "driver_id": current_user.id},
+            {
+                "$set": {
+                    "status": RideStatus.COMPLETED,
+                    "completed_at": completed_at,
+                    "completion_notes": update.notes
+                }
+            }
+        )
+        
+        # Get updated ride for payment processing
+        completed_ride = await db.ride_matches.find_one({"id": ride_id})
+        
+        # Create payment record
+        payment_data = {
+            "id": str(uuid.uuid4()),
+            "ride_id": ride_id,
+            "rider_id": completed_ride["rider_id"],
+            "driver_id": current_user.id,
+            "amount": completed_ride["estimated_fare"],
+            "platform_fee": completed_ride["estimated_fare"] * 0.20,  # 20% platform fee
+            "driver_earnings": completed_ride["estimated_fare"] * 0.80,  # 80% to driver
+            "payment_method": "mock_card",
+            "status": PaymentStatus.PENDING,
+            "transaction_id": f"txn_{int(time.time())}_{ride_id[:8]}",
+            "created_at": completed_at,
+            "metadata": {
+                "ride_completed_at": completed_at.isoformat(),
+                "completion_notes": update.notes
+            }
+        }
+        
+        await db.payments.insert_one(payment_data)
+        
+        # Log audit for ride completion
+        if AUDIT_ENABLED and audit_system:
+            await audit_system.log_action(
+                action=AuditAction.RIDE_COMPLETED,
+                user_id=current_user.id,
+                entity_type="ride_match",
+                entity_id=ride_id,
+                metadata={
+                    "completed_at": completed_at.isoformat(),
+                    "fare": completed_ride["estimated_fare"],
+                    "payment_id": payment_data["id"]
+                }
+            )
+        
+        return {
+            "message": "Ride completed successfully", 
+            "status": RideStatus.COMPLETED,
+            "payment_id": payment_data["id"],
+            "amount": payment_data["amount"],
+            "driver_earnings": payment_data["driver_earnings"]
+        }
+    
+    else:
+        raise HTTPException(status_code=400, detail="Invalid action")
+
 # === PAYMENT ENDPOINTS ===
 
 @api_router.post("/payments/create-session", response_model=Dict[str, Any])
