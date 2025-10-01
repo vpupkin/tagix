@@ -258,7 +258,7 @@ class PaymentTransaction(BaseModel):
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class LocationUpdate(BaseModel):
-    user_id: str
+    user_id: Optional[str] = None
     location: Location
     timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
