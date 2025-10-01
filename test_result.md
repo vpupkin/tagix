@@ -150,6 +150,18 @@ backend:
         agent: "testing"
         comment: "Admin CRUD operations fully tested and working. Fixed MongoDB ObjectId serialization issue. Verified: ✅ Admin user management with audit trails ✅ Admin ride management with audit trails ✅ Admin payment operations with audit trails ✅ Filtered data access with search capabilities ✅ All admin operations create proper audit logs with old/new data capture ✅ Comprehensive audit trail for all admin modifications."
 
+  - task: "Driver notification system debugging"
+    implemented: true
+    working: false
+    file: "/app/backend/server.py"
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: false
+        agent: "testing"
+        comment: "DRIVER NOTIFICATION SYSTEM DEBUGGING COMPLETED - 81.2% success rate (13/16 tests passed). CRITICAL ISSUE IDENTIFIED: WebSocket infrastructure routing problem. ✅ Driver registration and profile creation working ✅ Driver location updates working (fixed LocationUpdate model issue) ✅ Driver online status management working ✅ find_nearby_drivers function working (found 2 nearby drivers) ✅ Ride request creation working ❌ WebSocket connections failing - requests routed to frontend instead of backend ❌ Driver notifications not being delivered. ROOT CAUSE: WebSocket endpoint /ws/{user_id} not properly configured in production ingress/proxy - WebSocket upgrade requests return HTML instead of establishing WebSocket connection. Backend WebSocket handling code is correct, but connections never reach the backend server."
+
 frontend:
   - task: "Enhanced Admin Dashboard UI"
     implemented: true
