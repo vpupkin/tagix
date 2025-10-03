@@ -42,7 +42,11 @@ const AddressAutocomplete = ({ onPlaceSelect, placeholder, value, testId }) => {
   const placesService = React.useRef(null);
 
   React.useEffect(() => {
-    if (!placesLibrary) return;
+    // Only initialize Google Maps services if we have a valid API key
+    const hasValidApiKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY && 
+                          process.env.REACT_APP_GOOGLE_MAPS_API_KEY !== 'your_google_maps_api_key_here';
+    
+    if (!hasValidApiKey || !placesLibrary) return;
     
     try {
       // For now, let's stick with the old API that works reliably
@@ -63,7 +67,10 @@ const AddressAutocomplete = ({ onPlaceSelect, placeholder, value, testId }) => {
   }, [placesLibrary]);
 
   const fetchSuggestions = useCallback(async (input) => {
-    if (!autocompleteService.current || input.length < 3) {
+    const hasValidApiKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY && 
+                          process.env.REACT_APP_GOOGLE_MAPS_API_KEY !== 'your_google_maps_api_key_here';
+    
+    if (!hasValidApiKey || !autocompleteService.current || input.length < 3) {
       setSuggestions([]);
       return;
     }
@@ -142,7 +149,10 @@ const AddressAutocomplete = ({ onPlaceSelect, placeholder, value, testId }) => {
     setInputValue(suggestion.description);
     setSuggestions([]);
     
-    if (!placesService.current) return;
+    const hasValidApiKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY && 
+                          process.env.REACT_APP_GOOGLE_MAPS_API_KEY !== 'your_google_maps_api_key_here';
+    
+    if (!hasValidApiKey || !placesService.current) return;
 
     try {
       // Use the old API that works reliably
@@ -207,7 +217,9 @@ const AddressAutocomplete = ({ onPlaceSelect, placeholder, value, testId }) => {
       )}
       
       {/* Fallback message when Google Maps API is not available */}
-      {!placesLibrary && inputValue.length >= 3 && (
+      {(!process.env.REACT_APP_GOOGLE_MAPS_API_KEY || 
+        process.env.REACT_APP_GOOGLE_MAPS_API_KEY === 'your_google_maps_api_key_here') && 
+        inputValue.length >= 3 && (
         <div className="absolute z-50 w-full mt-1 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
           <div className="text-sm text-yellow-800 mb-2">
             <strong>Google Maps API not configured.</strong> You can:
