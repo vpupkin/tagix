@@ -12,7 +12,6 @@ import DriverDashboard from './components/DriverDashboard';
 import EnhancedDriverDashboard from './components/EnhancedDriverDashboard';
 import EnhancedAdminDashboard from './components/EnhancedAdminDashboard';
 import RideBooking from './components/RideBooking';
-import MockRideBooking from './components/MockRideBooking';
 import RideHistory from './components/RideHistory';
 import PaymentSuccess from './components/PaymentSuccess';
 import Profile from './components/Profile';
@@ -79,7 +78,7 @@ function MainApp() {
           } />
           
           <Route path="/book-ride" element={
-            user && user.role === 'rider' ? <MockRideBooking /> : <Navigate to="/" />
+            user && user.role === 'rider' ? <RideBooking /> : <Navigate to="/" />
           } />
           
           <Route path="/rides" element={
