@@ -196,7 +196,16 @@ const EnhancedAdminDashboard = () => {
       const response = await axios.get(`${API_URL}/api/admin/rides/filtered?${params}`, {
         headers: getAuthHeaders()
       });
-      setRides(response.data.rides || []);
+      
+      console.log('🔍 EnhancedAdminDashboard: Filtered rides response:', response.data);
+      
+      // The backend returns {pending_requests: [...], completed_matches: [...]}
+      const pendingRequests = response.data.pending_requests || [];
+      const completedMatches = response.data.completed_matches || [];
+      const allRides = [...pendingRequests, ...completedMatches];
+      
+      console.log('🔍 Setting rides:', allRides.length, 'pending:', pendingRequests.length, 'completed:', completedMatches.length);
+      setRides(allRides);
     } catch (error) {
       console.error('Error fetching rides:', error);
     }
