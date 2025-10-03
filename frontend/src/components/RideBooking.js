@@ -32,21 +32,75 @@ import { toast } from 'sonner';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
-const AddressAutocomplete = ({ onPlaceSelect, placeholder, value, testId }) => {
+// Simple input component for when Google Maps is not available
+const SimpleAddressInput = ({ onPlaceSelect, placeholder, value, testId }) => {
+  const [inputValue, setInputValue] = useState(value || '');
+
+  const handleInputChange = (e) => {
+    const value = e.target.value;
+    setInputValue(value);
+  };
+
+  const handleSubmit = () => {
+    if (inputValue.trim()) {
+      // Create a simple place object for manual entry
+      const placeData = {
+        formatted_address: inputValue,
+        geometry: {
+          location: {
+            lat: () => 0, // Default coordinates
+            lng: () => 0
+          }
+        },
+        name: inputValue,
+        place_id: `manual_${Date.now()}`
+      };
+      onPlaceSelect && onPlaceSelect(placeData);
+    }
+  };
+
+  return (
+    <div className="relative">
+      <input
+        type="text"
+        value={inputValue}
+        onChange={handleInputChange}
+        placeholder={placeholder}
+        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        data-testid={testId}
+      />
+      {inputValue.length >= 3 && (
+        <div className="absolute z-50 w-full mt-1 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+          <div className="text-sm text-yellow-800 mb-2">
+            <strong>Manual Entry Mode</strong> - Enter coordinates or full address
+          </div>
+          <div className="text-xs text-yellow-700 mb-2">
+            Examples: <code>48.6670336, 9.7910784</code> or <code>Stuttgart, Germany</code>
+          </div>
+          <button
+            onClick={handleSubmit}
+            className="px-3 py-1 bg-yellow-600 text-white text-xs rounded hover:bg-yellow-700"
+          >
+            Use This Location
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Google Maps enabled component
+const GoogleMapsAddressAutocomplete = ({ onPlaceSelect, placeholder, value, testId }) => {
   const [inputValue, setInputValue] = useState(value || '');
   const [suggestions, setSuggestions] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   
-  // Only load Google Maps library if we have a valid API key
-  const hasValidApiKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY && 
-                        process.env.REACT_APP_GOOGLE_MAPS_API_KEY !== 'your_google_maps_api_key_here';
-  
-  const placesLibrary = hasValidApiKey ? useMapsLibrary('places') : null;
+  const placesLibrary = useMapsLibrary('places');
   const autocompleteService = React.useRef(null);
   const placesService = React.useRef(null);
 
   React.useEffect(() => {
-    if (!hasValidApiKey || !placesLibrary) return;
+    if (!placesLibrary) return;
     
     try {
       // For now, let's stick with the old API that works reliably
@@ -64,10 +118,10 @@ const AddressAutocomplete = ({ onPlaceSelect, placeholder, value, testId }) => {
       console.warn('Google Maps Places service not available:', error);
       // Fallback: disable autocomplete features gracefully
     }
-  }, [hasValidApiKey, placesLibrary]);
+  }, [placesLibrary]);
 
   const fetchSuggestions = useCallback(async (input) => {
-    if (!hasValidApiKey || !autocompleteService.current || input.length < 3) {
+    if (!autocompleteService.current || input.length < 3) {
       setSuggestions([]);
       return;
     }
@@ -99,7 +153,7 @@ const AddressAutocomplete = ({ onPlaceSelect, placeholder, value, testId }) => {
       setIsLoading(false);
       setSuggestions([]);
     }
-  }, [hasValidApiKey]);
+  }, []);
 
   const handleInputChange = (e) => {
     const value = e.target.value;
@@ -146,7 +200,7 @@ const AddressAutocomplete = ({ onPlaceSelect, placeholder, value, testId }) => {
     setInputValue(suggestion.description);
     setSuggestions([]);
     
-    if (!hasValidApiKey || !placesService.current) return;
+    if (!placesService.current) return;
 
     try {
       // Use the old API that works reliably
@@ -209,29 +263,34 @@ const AddressAutocomplete = ({ onPlaceSelect, placeholder, value, testId }) => {
           ))}
         </div>
       )}
-      
-      {/* Fallback message when Google Maps API is not available */}
-      {!hasValidApiKey && inputValue.length >= 3 && (
-        <div className="absolute z-50 w-full mt-1 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-          <div className="text-sm text-yellow-800 mb-2">
-            <strong>Google Maps API not configured.</strong> You can:
-          </div>
-          <div className="text-xs text-yellow-700 mb-2">
-            • Enter coordinates: <code>48.6670336, 9.7910784</code>
-          </div>
-          <div className="text-xs text-yellow-700 mb-2">
-            • Enter full address: <code>Stuttgart Central Station, Germany</code>
-          </div>
-          <button
-            onClick={handleManualAddressSubmit}
-            className="px-3 py-1 bg-yellow-600 text-white text-xs rounded hover:bg-yellow-700"
-          >
-            Use This Address
-          </button>
-        </div>
-      )}
     </div>
   );
+};
+
+// Main AddressAutocomplete component that conditionally renders the right version
+const AddressAutocomplete = ({ onPlaceSelect, placeholder, value, testId }) => {
+  const hasValidApiKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY && 
+                        process.env.REACT_APP_GOOGLE_MAPS_API_KEY !== 'your_google_maps_api_key_here';
+  
+  if (hasValidApiKey) {
+    return (
+      <GoogleMapsAddressAutocomplete 
+        onPlaceSelect={onPlaceSelect}
+        placeholder={placeholder}
+        value={value}
+        testId={testId}
+      />
+    );
+  } else {
+    return (
+      <SimpleAddressInput 
+        onPlaceSelect={onPlaceSelect}
+        placeholder={placeholder}
+        value={value}
+        testId={testId}
+      />
+    );
+  }
 };
 
 const RideBooking = () => {
