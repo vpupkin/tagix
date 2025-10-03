@@ -58,12 +58,25 @@ const RiderDashboard = () => {
         return;
       }
       
-      console.log('🔍 Making API call to /api/rides/my-rides...');
-      const response = await axios.get(`${API_URL}/api/rides/my-rides`);
-      console.log('🔍 My rides response:', response.data);
-      const rides = response.data.slice(0, 3); // Get last 3 rides
-      console.log('🔍 Setting recent rides:', rides.length);
-      setRecentRides(rides);
+      console.log('🔍 Making API call to /api/rides/my-requests...');
+      const response = await axios.get(`${API_URL}/api/rides/my-requests`);
+      console.log('🔍 My requests response:', response.data);
+      
+      // Combine pending requests and completed rides
+      const pendingRequests = response.data.pending_requests || [];
+      const completedRides = response.data.completed_rides || [];
+      const allRides = [...pendingRequests, ...completedRides];
+      
+      // Sort by creation date (newest first) and get last 3
+      const sortedRides = allRides.sort((a, b) => 
+        new Date(b.created_at || b.requested_at) - new Date(a.created_at || a.requested_at)
+      );
+      const recentRides = sortedRides.slice(0, 3);
+      
+      console.log('🔍 Setting recent rides:', recentRides.length);
+      console.log('🔍 Total pending requests:', pendingRequests.length);
+      console.log('🔍 Total completed rides:', completedRides.length);
+      setRecentRides(recentRides);
     } catch (error) {
       console.error('❌ Error fetching rides:', error);
       console.error('Error details:', error.response?.data);
@@ -73,12 +86,16 @@ const RiderDashboard = () => {
 
   const fetchUserStats = async () => {
     try {
-      // This would typically come from a dedicated stats endpoint
-      const response = await axios.get(`${API_URL}/api/rides/my-rides`);
-      const rides = response.data;
+      console.log('🔍 RiderDashboard: fetchUserStats called');
+      const response = await axios.get(`${API_URL}/api/rides/my-requests`);
+      const data = response.data;
       
-      const completedRides = rides.filter(ride => ride.status === 'completed');
+      const completedRides = data.completed_rides || [];
       const totalSpent = completedRides.reduce((sum, ride) => sum + (ride.estimated_fare || 0), 0);
+      
+      console.log('🔍 Setting user stats:');
+      console.log('  Total completed rides:', completedRides.length);
+      console.log('  Total spent:', totalSpent);
       
       setStats({
         totalRides: completedRides.length,
@@ -87,7 +104,7 @@ const RiderDashboard = () => {
         favoriteDestination: 'Downtown' // This would be calculated from ride history
       });
     } catch (error) {
-      console.error('Error fetching stats:', error);
+      console.error('❌ Error fetching stats:', error);
     } finally {
       setLoading(false);
     }
