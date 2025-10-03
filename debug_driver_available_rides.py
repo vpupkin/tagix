@@ -112,7 +112,8 @@ def test_driver_available_rides():
             timeout=10
         )
         if response.status_code == 200:
-            print("   Driver set online successfully")
+            data = response.json()
+            print(f"   Driver set online successfully: {data}")
         else:
             print(f"   Driver online status failed: {response.status_code} - {response.text}")
     except Exception as e:
