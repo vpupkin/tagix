@@ -259,7 +259,7 @@ class AdminCRUDOperations:
         filters: DataFilter,
         admin_user_id: str
     ) -> Dict[str, Any]:
-        """Get rides with advanced filtering"""
+        """Get rides with advanced filtering - includes both requests and matches"""
         
         query = {}
         
@@ -282,17 +282,30 @@ class AdminCRUDOperations:
                 date_filter["$lte"] = filters.end_date
             query["created_at"] = date_filter
         
-        total_count = await self.db.ride_matches.count_documents(query)
+        # Get pending requests
+        pending_query = query.copy()
+        pending_count = await self.db.ride_requests.count_documents(pending_query)
         
         sort_direction = -1 if filters.sort_order == "desc" else 1
-        cursor = self.db.ride_matches.find(query)
-        cursor = cursor.sort(filters.sort_by, sort_direction)
-        cursor = cursor.skip(filters.offset).limit(filters.limit)
+        pending_cursor = self.db.ride_requests.find(pending_query)
+        pending_cursor = pending_cursor.sort(filters.sort_by, sort_direction)
+        pending_cursor = pending_cursor.skip(filters.offset).limit(filters.limit)
+        pending_requests = await pending_cursor.to_list(None)
         
-        rides = await cursor.to_list(None)
+        # Get completed matches
+        matches_query = query.copy()
+        matches_count = await self.db.ride_matches.count_documents(matches_query)
+        
+        matches_cursor = self.db.ride_matches.find(matches_query)
+        matches_cursor = matches_cursor.sort(filters.sort_by, sort_direction)
+        matches_cursor = matches_cursor.skip(filters.offset).limit(filters.limit)
+        completed_matches = await matches_cursor.to_list(None)
         
         # Convert MongoDB ObjectIds to strings for JSON serialization
-        rides = convert_objectids_to_strings(rides)
+        pending_requests = convert_objectids_to_strings(pending_requests)
+        completed_matches = convert_objectids_to_strings(completed_matches)
+        
+        total_count = pending_count + matches_count
         
         # Log audit event
         await self.audit.log_action(
@@ -302,18 +315,23 @@ class AdminCRUDOperations:
             metadata={
                 "action": "ride_list_accessed",
                 "filters": filters.model_dump(),
-                "result_count": len(rides)
+                "pending_requests": len(pending_requests),
+                "completed_matches": len(completed_matches),
+                "total_count": total_count
             },
             severity="low"
         )
         
         return {
-            "rides": rides,
+            "pending_requests": pending_requests,
+            "completed_matches": completed_matches,
+            "total_pending": pending_count,
+            "total_completed": matches_count,
             "total_count": total_count,
             "page_info": {
                 "offset": filters.offset,
                 "limit": filters.limit,
-                "has_more": (filters.offset + len(rides)) < total_count
+                "has_more": (filters.offset + len(pending_requests) + len(completed_matches)) < total_count
             }
         }
     

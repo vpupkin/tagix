@@ -686,6 +686,7 @@ async def accept_ride_request(request_id: str, current_user: User = Depends(get_
 
 @api_router.get("/rides/my-rides", response_model=List[Dict[str, Any]])
 async def get_my_rides(current_user: User = Depends(get_current_user)):
+    """Get completed rides for the current user"""
     if current_user.role == UserRole.RIDER:
         rides = await db.ride_matches.find({"rider_id": current_user.id}).to_list(None)
     elif current_user.role == UserRole.DRIVER:
@@ -694,6 +695,191 @@ async def get_my_rides(current_user: User = Depends(get_current_user)):
         rides = await db.ride_matches.find({}).to_list(None)
     
     return convert_objectids_to_strings(rides)
+
+@api_router.get("/rides/my-requests", response_model=Dict[str, Any])
+async def get_my_ride_requests(current_user: User = Depends(get_current_user)):
+    """Get all ride requests and matches for the current user"""
+    if current_user.role == UserRole.RIDER:
+        # Get pending requests
+        pending_requests = await db.ride_requests.find({"rider_id": current_user.id}).to_list(None)
+        # Get completed matches
+        completed_matches = await db.ride_matches.find({"rider_id": current_user.id}).to_list(None)
+        
+        # Log audit event
+        if AUDIT_ENABLED and audit_system:
+            await audit_system.log_action(
+                action=AuditAction.RIDE_QUERY,
+                user_id=current_user.id,
+                entity_type="ride_requests",
+                entity_id=f"rider_requests_{len(pending_requests)}",
+                metadata={"pending_requests": len(pending_requests), "completed_rides": len(completed_matches)}
+            )
+        
+        return {
+            "pending_requests": convert_objectids_to_strings(pending_requests),
+            "completed_rides": convert_objectids_to_strings(completed_matches),
+            "total_pending": len(pending_requests),
+            "total_completed": len(completed_matches)
+        }
+    
+    elif current_user.role == UserRole.DRIVER:
+        # Get available requests (all pending)
+        available_requests = await db.ride_requests.find({"status": RideStatus.PENDING}).to_list(None)
+        # Get driver's completed matches
+        completed_matches = await db.ride_matches.find({"driver_id": current_user.id}).to_list(None)
+        
+        # Log audit event
+        if AUDIT_ENABLED and audit_system:
+            await audit_system.log_action(
+                action=AuditAction.RIDE_QUERY,
+                user_id=current_user.id,
+                entity_type="ride_requests",
+                entity_id=f"driver_requests_{len(available_requests)}",
+                metadata={"available_requests": len(available_requests), "completed_rides": len(completed_matches)}
+            )
+        
+        return {
+            "available_requests": convert_objectids_to_strings(available_requests),
+            "completed_rides": convert_objectids_to_strings(completed_matches),
+            "total_available": len(available_requests),
+            "total_completed": len(completed_matches)
+        }
+    
+    elif current_user.role == UserRole.ADMIN:
+        # Admins can see everything
+        all_requests = await db.ride_requests.find({}).to_list(None)
+        all_matches = await db.ride_matches.find({}).to_list(None)
+        
+        return {
+            "all_requests": convert_objectids_to_strings(all_requests),
+            "all_matches": convert_objectids_to_strings(all_matches),
+            "total_requests": len(all_requests),
+            "total_matches": len(all_matches)
+        }
+    
+    else:
+        raise HTTPException(status_code=403, detail="Access denied")
+
+@api_router.get("/rides/unified", response_model=Dict[str, Any])
+async def get_unified_ride_data(current_user: User = Depends(get_current_user)):
+    """Unified endpoint for comprehensive ride data access based on user role"""
+    
+    if current_user.role == UserRole.ADMIN:
+        # Admins see everything
+        pending_requests = await db.ride_requests.find({}).to_list(None)
+        completed_matches = await db.ride_matches.find({}).to_list(None)
+        
+        # Get statistics
+        total_users = await db.users.count_documents({})
+        online_drivers = await db.users.count_documents({"role": UserRole.DRIVER, "is_online": True})
+        
+        # Log audit event
+        if AUDIT_ENABLED and audit_system:
+            await audit_system.log_action(
+                action=AuditAction.ADMIN_RIDE_MODIFIED,
+                user_id=current_user.id,
+                entity_type="unified_ride_query",
+                entity_id=f"admin_unified_{len(pending_requests)}_{len(completed_matches)}",
+                metadata={
+                    "pending_requests": len(pending_requests),
+                    "completed_matches": len(completed_matches),
+                    "total_users": total_users,
+                    "online_drivers": online_drivers
+                }
+            )
+        
+        return {
+            "role": "admin",
+            "pending_requests": convert_objectids_to_strings(pending_requests),
+            "completed_matches": convert_objectids_to_strings(completed_matches),
+            "statistics": {
+                "total_pending": len(pending_requests),
+                "total_completed": len(completed_matches),
+                "total_rides": len(pending_requests) + len(completed_matches),
+                "total_users": total_users,
+                "online_drivers": online_drivers
+            }
+        }
+    
+    elif current_user.role == UserRole.RIDER:
+        # Riders see their requests and matches
+        pending_requests = await db.ride_requests.find({"rider_id": current_user.id}).to_list(None)
+        completed_matches = await db.ride_matches.find({"rider_id": current_user.id}).to_list(None)
+        
+        # Log audit event
+        if AUDIT_ENABLED and audit_system:
+            await audit_system.log_action(
+                action=AuditAction.RIDE_QUERY,
+                user_id=current_user.id,
+                entity_type="unified_ride_query",
+                entity_id=f"rider_unified_{len(pending_requests)}_{len(completed_matches)}",
+                metadata={
+                    "pending_requests": len(pending_requests),
+                    "completed_matches": len(completed_matches)
+                }
+            )
+        
+        return {
+            "role": "rider",
+            "pending_requests": convert_objectids_to_strings(pending_requests),
+            "completed_matches": convert_objectids_to_strings(completed_matches),
+            "statistics": {
+                "total_pending": len(pending_requests),
+                "total_completed": len(completed_matches),
+                "total_rides": len(pending_requests) + len(completed_matches)
+            }
+        }
+    
+    elif current_user.role == UserRole.DRIVER:
+        # Drivers see available requests and their matches
+        available_requests = await db.ride_requests.find({"status": RideStatus.PENDING}).to_list(None)
+        completed_matches = await db.ride_matches.find({"driver_id": current_user.id}).to_list(None)
+        
+        # Get driver location for distance calculations
+        driver = await db.users.find_one({"id": current_user.id})
+        driver_location = driver.get("current_location") if driver else None
+        
+        # Calculate distances for available requests
+        if driver_location:
+            for request in available_requests:
+                pickup = request["pickup_location"]
+                distance = calculate_distance_km(
+                    Location(**driver_location), Location(**pickup)
+                )
+                request["distance_to_pickup"] = round(distance, 2)
+                request["estimated_pickup_time"] = int(distance * 2)
+        
+        # Log audit event
+        if AUDIT_ENABLED and audit_system:
+            await audit_system.log_action(
+                action=AuditAction.RIDE_QUERY,
+                user_id=current_user.id,
+                entity_type="unified_ride_query",
+                entity_id=f"driver_unified_{len(available_requests)}_{len(completed_matches)}",
+                metadata={
+                    "available_requests": len(available_requests),
+                    "completed_matches": len(completed_matches),
+                    "driver_online": driver.get("is_online", False) if driver else False
+                }
+            )
+        
+        return {
+            "role": "driver",
+            "available_requests": convert_objectids_to_strings(available_requests),
+            "completed_matches": convert_objectids_to_strings(completed_matches),
+            "driver_info": {
+                "is_online": driver.get("is_online", False) if driver else False,
+                "current_location": driver_location
+            },
+            "statistics": {
+                "total_available": len(available_requests),
+                "total_completed": len(completed_matches),
+                "total_rides": len(available_requests) + len(completed_matches)
+            }
+        }
+    
+    else:
+        raise HTTPException(status_code=403, detail="Access denied")
 
 @api_router.post("/rides/{match_id}/complete", response_model=Dict[str, str])
 async def complete_ride(match_id: str, current_user: User = Depends(get_current_user)):
@@ -792,9 +978,9 @@ async def toggle_driver_online(current_user: User = Depends(get_current_user)):
 
 # === RIDE ENDPOINTS ===
 
-@api_router.get("/rides/available", response_model=List[Dict[str, Any]])
+@api_router.get("/rides/available", response_model=Dict[str, Any])
 async def get_available_rides(current_user: User = Depends(get_current_user)):
-    """Get available rides for drivers"""
+    """Get available rides for drivers with enhanced visibility"""
     if current_user.role != UserRole.DRIVER:
         raise HTTPException(status_code=403, detail="Only drivers can view available rides")
     
@@ -813,6 +999,7 @@ async def get_available_rides(current_user: User = Depends(get_current_user)):
     }).to_list(None)
     
     available_rides = []
+    all_requests = []
     driver_location = driver["current_location"]
     
     for request in pending_requests:
@@ -822,15 +1009,19 @@ async def get_available_rides(current_user: User = Depends(get_current_user)):
             Location(**driver_location), Location(**pickup)
         )
         
-        # Only show rides within 10km radius
+        # Add distance info to all requests
+        ride_info = convert_objectids_to_strings(request)
+        ride_info["distance_to_pickup"] = round(distance, 2)
+        ride_info["estimated_pickup_time"] = int(distance * 2)  # 2 minutes per km estimate
+        all_requests.append(ride_info)
+        
+        # Only show rides within 10km radius for available rides
         if distance <= 10.0:
-            ride_info = convert_objectids_to_strings(request)
-            ride_info["distance_to_pickup"] = round(distance, 2)
-            ride_info["estimated_pickup_time"] = int(distance * 2)  # 2 minutes per km estimate
             available_rides.append(ride_info)
     
     # Sort by distance
     available_rides.sort(key=lambda x: x["distance_to_pickup"])
+    all_requests.sort(key=lambda x: x["distance_to_pickup"])
     
     # Log audit event
     if AUDIT_ENABLED and audit_system:
@@ -842,7 +1033,13 @@ async def get_available_rides(current_user: User = Depends(get_current_user)):
             metadata={"rides_found": len(available_rides), "driver_online": True}
         )
     
-    return available_rides
+    return {
+        "available_rides": available_rides,
+        "all_pending_requests": all_requests,
+        "total_available": len(available_rides),
+        "total_pending": len(all_requests),
+        "driver_location": driver_location
+    }
 
 @api_router.post("/rides/{ride_id}/update", response_model=Dict[str, Any])
 async def update_ride_status(ride_id: str, update: RideUpdate, current_user: User = Depends(get_current_user)):
@@ -1359,17 +1556,34 @@ async def get_all_users(current_user: User = Depends(get_current_user)):
     
     return users
 
-@api_router.get("/admin/rides", response_model=List[Dict[str, Any]])
+@api_router.get("/admin/rides", response_model=Dict[str, Any])
 async def get_all_rides(current_user: User = Depends(get_current_user)):
+    """Get all ride requests and matches for admin"""
     if current_user.role != UserRole.ADMIN:
         raise HTTPException(status_code=403, detail="Admin access required")
     
-    rides = await db.ride_matches.find({}).to_list(None)
+    # Get all pending requests
+    pending_requests = await db.ride_requests.find({}).to_list(None)
+    # Get all completed matches
+    completed_matches = await db.ride_matches.find({}).to_list(None)
     
-    # Convert MongoDB ObjectIds to strings for JSON serialization
-    rides = convert_objectids_to_strings(rides)
+    # Log audit event
+    if AUDIT_ENABLED and audit_system:
+        await audit_system.log_action(
+            action=AuditAction.ADMIN_RIDE_MODIFIED,
+            user_id=current_user.id,
+            entity_type="admin_ride_query",
+            entity_id=f"admin_rides_{len(pending_requests)}_{len(completed_matches)}",
+            metadata={"pending_requests": len(pending_requests), "completed_matches": len(completed_matches)}
+        )
     
-    return rides
+    return {
+        "pending_requests": convert_objectids_to_strings(pending_requests),
+        "completed_matches": convert_objectids_to_strings(completed_matches),
+        "total_pending": len(pending_requests),
+        "total_completed": len(completed_matches),
+        "total_rides": len(pending_requests) + len(completed_matches)
+    }
 
 @api_router.get("/admin/stats", response_model=Dict[str, Any])
 async def get_platform_stats(current_user: User = Depends(get_current_user)):
