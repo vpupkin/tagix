@@ -96,11 +96,26 @@ const EnhancedDriverDashboard = () => {
       const response = await axios.get(`${API_URL}/api/rides/available`, {
         headers: getAuthHeaders()
       });
-      setAvailableRides(response.data);
+      
+      // Handle new response format with structured data
+      if (response.data && typeof response.data === 'object') {
+        if (response.data.available_rides) {
+          // New format: { available_rides: [...], total_available: N, ... }
+          setAvailableRides(response.data.available_rides);
+        } else if (Array.isArray(response.data)) {
+          // Old format: direct array
+          setAvailableRides(response.data);
+        } else {
+          setAvailableRides([]);
+        }
+      } else {
+        setAvailableRides([]);
+      }
     } catch (error) {
       if (error.response?.status !== 400) {
         console.error('Error fetching available rides:', error);
       }
+      setAvailableRides([]);
     }
   };
 
