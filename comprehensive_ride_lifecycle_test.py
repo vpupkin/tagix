@@ -246,10 +246,10 @@ class ComprehensiveRideLifecycleTester:
         
         if response and response.status_code == 200:
             data = response.json()
-            if isinstance(data, list):
-                # Find our request
+            if isinstance(data, dict) and 'pending_requests' in data:
+                # Find our request in pending_requests
                 our_request = None
-                for req in data:
+                for req in data['pending_requests']:
                     if req.get('id') == request_id:
                         our_request = req
                         break
@@ -263,7 +263,7 @@ class ComprehensiveRideLifecycleTester:
                                 error=f"Request not found or wrong status: {our_request.get('status') if our_request else 'not found'}")
                     return False
             else:
-                self.log_test("Ride Request Status Check", False, error="Response is not a list")
+                self.log_test("Ride Request Status Check", False, error="Response is not a dict with pending_requests")
                 return False
         else:
             status = response.status_code if response else "No response"
@@ -281,18 +281,19 @@ class ComprehensiveRideLifecycleTester:
         
         if response and response.status_code == 200:
             data = response.json()
-            if isinstance(data, list):
-                available_count = len(data)
+            if isinstance(data, dict) and 'available_rides' in data:
+                available_rides = data['available_rides']
+                available_count = len(available_rides)
                 self.log_test("Driver Available Rides", True, 
                             f"Found {available_count} available rides")
                 
                 # Store available rides for later use
                 if available_count > 0:
-                    self.ride_data['available_rides'] = data
+                    self.ride_data['available_rides'] = available_rides
                     # Find our request in available rides
                     request_id = self.ride_data.get('request_id')
                     our_ride = None
-                    for ride in data:
+                    for ride in available_rides:
                         if ride.get('id') == request_id:
                             our_ride = ride
                             break
@@ -306,7 +307,7 @@ class ComprehensiveRideLifecycleTester:
                         return False
                 return True
             else:
-                self.log_test("Driver Available Rides", False, error="Response is not a list")
+                self.log_test("Driver Available Rides", False, error="Response is not a dict with available_rides")
                 return False
         else:
             status = response.status_code if response else "No response"
@@ -366,10 +367,10 @@ class ComprehensiveRideLifecycleTester:
         
         if response and response.status_code == 200:
             data = response.json()
-            if isinstance(data, list):
-                # Find our request
+            if isinstance(data, dict) and 'pending_requests' in data:
+                # Find our request in pending_requests
                 our_request = None
-                for req in data:
+                for req in data['pending_requests']:
                     if req.get('id') == request_id:
                         our_request = req
                         break
@@ -383,7 +384,7 @@ class ComprehensiveRideLifecycleTester:
                                 error=f"Request status is {our_request.get('status') if our_request else 'not found'}")
                     return False
             else:
-                self.log_test("Ride Status Accepted Check", False, error="Response is not a list")
+                self.log_test("Ride Status Accepted Check", False, error="Response is not a dict with pending_requests")
                 return False
         else:
             status = response.status_code if response else "No response"
@@ -505,11 +506,11 @@ class ComprehensiveRideLifecycleTester:
         
         if response and response.status_code == 200:
             data = response.json()
-            if isinstance(data, list):
-                # Find our request
+            if isinstance(data, dict) and 'completed_rides' in data:
+                # Find our request in completed_rides
                 our_request = None
-                for req in data:
-                    if req.get('id') == request_id:
+                for req in data['completed_rides']:
+                    if req.get('ride_request_id') == request_id:
                         our_request = req
                         break
                 
@@ -522,7 +523,7 @@ class ComprehensiveRideLifecycleTester:
                                 error=f"Request status is {our_request.get('status') if our_request else 'not found'}")
                     return False
             else:
-                self.log_test("Ride Status Completed Check", False, error="Response is not a list")
+                self.log_test("Ride Status Completed Check", False, error="Response is not a dict with completed_rides")
                 return False
         else:
             status = response.status_code if response else "No response"
@@ -760,12 +761,13 @@ class ComprehensiveRideLifecycleTester:
             self.log_test("Rider Ride History", False, error="No rider token available")
             return False
         
-        response = self.make_request('GET', '/api/rides/my-rides', auth_token=token)
+        response = self.make_request('GET', '/api/rides/my-requests', auth_token=token)
         
         if response and response.status_code == 200:
             data = response.json()
-            if isinstance(data, list):
-                ride_count = len(data)
+            if isinstance(data, dict) and 'completed_rides' in data:
+                completed_rides = data['completed_rides']
+                ride_count = len(completed_rides)
                 self.log_test("Rider Ride History", True, 
                             f"Rider can see {ride_count} rides in their history")
                 
@@ -773,8 +775,8 @@ class ComprehensiveRideLifecycleTester:
                 request_id = self.ride_data.get('request_id')
                 our_ride_found = False
                 
-                for ride in data:
-                    if ride.get('id') == request_id:
+                for ride in completed_rides:
+                    if ride.get('ride_request_id') == request_id:
                         our_ride_found = True
                         break
                 
@@ -788,7 +790,7 @@ class ComprehensiveRideLifecycleTester:
                 
                 return True
             else:
-                self.log_test("Rider Ride History", False, error="Response is not a list")
+                self.log_test("Rider Ride History", False, error="Response is not a dict with completed_rides")
                 return False
         else:
             status = response.status_code if response else "No response"
