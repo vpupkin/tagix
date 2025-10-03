@@ -45,10 +45,25 @@ const AddressAutocomplete = ({ onPlaceSelect, placeholder, value, testId }) => {
     if (!placesLibrary) return;
     
     try {
-      autocompleteService.current = new placesLibrary.AutocompleteService();
-      placesService.current = new placesLibrary.PlacesService(
-        document.createElement('div')
-      );
+      // Use the new AutocompleteSuggestion API instead of deprecated AutocompleteService
+      if (placesLibrary.AutocompleteSuggestion) {
+        autocompleteService.current = new placesLibrary.AutocompleteSuggestion();
+      } else if (placesLibrary.AutocompleteService) {
+        // Fallback to old API with warning
+        console.warn('Using deprecated AutocompleteService. Consider upgrading to AutocompleteSuggestion.');
+        autocompleteService.current = new placesLibrary.AutocompleteService();
+      }
+      
+      // Use the new Place API instead of deprecated PlacesService
+      if (placesLibrary.Place) {
+        placesService.current = new placesLibrary.Place();
+      } else if (placesLibrary.PlacesService) {
+        // Fallback to old API with warning
+        console.warn('Using deprecated PlacesService. Consider upgrading to Place.');
+        placesService.current = new placesLibrary.PlacesService(
+          document.createElement('div')
+        );
+      }
     } catch (error) {
       console.warn('Google Maps Places service not available:', error);
       // Fallback: disable autocomplete features gracefully
@@ -70,18 +85,37 @@ const AddressAutocomplete = ({ onPlaceSelect, placeholder, value, testId }) => {
         // Removed country restriction to allow global search
       };
 
-      autocompleteService.current.getPlacePredictions(
-        request,
-        (predictions, status) => {
-          setIsLoading(false);
-          if (status === window.google.maps.places.PlacesServiceStatus.OK && predictions) {
-            setSuggestions(predictions);
-          } else {
-            console.warn('Google Places API error:', status);
-            setSuggestions([]);
+      // Try new API first, fallback to old API
+      if (autocompleteService.current.getPlacePredictions) {
+        // Old API
+        autocompleteService.current.getPlacePredictions(
+          request,
+          (predictions, status) => {
+            setIsLoading(false);
+            if (status === window.google.maps.places.PlacesServiceStatus.OK && predictions) {
+              setSuggestions(predictions);
+            } else {
+              console.warn('Google Places API error:', status);
+              setSuggestions([]);
+            }
           }
+        );
+      } else if (autocompleteService.current.getPlacePredictionsAsync) {
+        // New API
+        try {
+          const predictions = await autocompleteService.current.getPlacePredictionsAsync(request);
+          setIsLoading(false);
+          setSuggestions(predictions || []);
+        } catch (error) {
+          console.warn('Google Places API error:', error);
+          setIsLoading(false);
+          setSuggestions([]);
         }
-      );
+      } else {
+        console.warn('No compatible autocomplete method found');
+        setIsLoading(false);
+        setSuggestions([]);
+      }
     } catch (error) {
       console.error('Error fetching suggestions:', error);
       setIsLoading(false);
@@ -136,25 +170,52 @@ const AddressAutocomplete = ({ onPlaceSelect, placeholder, value, testId }) => {
     
     if (!placesService.current) return;
 
-    const request = {
-      placeId: suggestion.place_id,
-      fields: ['place_id', 'geometry', 'name', 'formatted_address']
-    };
-
-    placesService.current.getDetails(request, (place, status) => {
-      if (status === window.google.maps.places.PlacesServiceStatus.OK && place) {
-        const placeData = {
-          placeId: place.place_id,
-          name: place.name,
-          address: place.formatted_address,
-          location: {
-            latitude: place.geometry.location.lat(),
-            longitude: place.geometry.location.lng()
-          }
+    try {
+      // Try new API first, fallback to old API
+      if (placesService.current.fetchFields) {
+        // New API
+        const place = await placesService.current.fetchFields({
+          placeId: suggestion.place_id,
+          fields: ['id', 'location', 'displayName', 'formattedAddress']
+        });
+        
+        if (place) {
+          const placeData = {
+            placeId: place.id,
+            name: place.displayName,
+            address: place.formattedAddress,
+            location: {
+              latitude: place.location.lat,
+              longitude: place.location.lng
+            }
+          };
+          onPlaceSelect && onPlaceSelect(placeData);
+        }
+      } else if (placesService.current.getDetails) {
+        // Old API
+        const request = {
+          placeId: suggestion.place_id,
+          fields: ['place_id', 'geometry', 'name', 'formatted_address']
         };
-        onPlaceSelect && onPlaceSelect(placeData);
+
+        placesService.current.getDetails(request, (place, status) => {
+          if (status === window.google.maps.places.PlacesServiceStatus.OK && place) {
+            const placeData = {
+              placeId: place.place_id,
+              name: place.name,
+              address: place.formatted_address,
+              location: {
+                latitude: place.geometry.location.lat(),
+                longitude: place.geometry.location.lng()
+              }
+            };
+            onPlaceSelect && onPlaceSelect(placeData);
+          }
+        });
       }
-    });
+    } catch (error) {
+      console.error('Error getting place details:', error);
+    }
   };
 
   return (
@@ -457,7 +518,7 @@ const RideBooking = () => {
           <p className="text-gray-600 mt-1">Where would you like to go?</p>
           
           {/* Google Maps API Status */}
-          {!process.env.REACT_APP_GOOGLE_MAPS_API_KEY && (
+          {(!process.env.REACT_APP_GOOGLE_MAPS_API_KEY || process.env.REACT_APP_GOOGLE_MAPS_API_KEY === 'your_google_maps_api_key_here') && (
             <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
               <div className="flex items-start space-x-3">
                 <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
@@ -471,6 +532,9 @@ const RideBooking = () => {
                   <p className="text-xs text-blue-600 mt-2">
                     <strong>Current mode:</strong> Manual address entry (coordinates or full addresses)
                   </p>
+                  <div className="mt-2 text-xs text-blue-600">
+                    <strong>Test coordinates:</strong> <code>48.6670336, 9.7910784</code> (Stuttgart, Germany)
+                  </div>
                 </div>
               </div>
             </div>
@@ -694,37 +758,59 @@ const RideBooking = () => {
               </CardHeader>
               <CardContent className="p-0">
                 <div className="map-container-large">
-                  <APIProvider apiKey={process.env.REACT_APP_GOOGLE_MAPS_API_KEY}>
-                    <Map
-                      defaultCenter={mapCenter}
-                      center={mapCenter}
-                      defaultZoom={12}
-                      gestureHandling="greedy"
-                      disableDefaultUI={false}
-                    >
-                      {pickupLocation && (
-                        <AdvancedMarker position={{
-                          lat: pickupLocation.location.latitude,
-                          lng: pickupLocation.location.longitude
-                        }}>
-                          <div className="custom-marker bg-green-500 text-white font-bold">
-                            P
-                          </div>
-                        </AdvancedMarker>
-                      )}
-                      
-                      {dropoffLocation && (
-                        <AdvancedMarker position={{
-                          lat: dropoffLocation.location.latitude,
-                          lng: dropoffLocation.location.longitude
-                        }}>
-                          <div className="custom-marker bg-red-500 text-white font-bold">
-                            D
-                          </div>
-                        </AdvancedMarker>
-                      )}
-                    </Map>
-                  </APIProvider>
+                  {process.env.REACT_APP_GOOGLE_MAPS_API_KEY && 
+                   process.env.REACT_APP_GOOGLE_MAPS_API_KEY !== 'your_google_maps_api_key_here' ? (
+                    <APIProvider apiKey={process.env.REACT_APP_GOOGLE_MAPS_API_KEY}>
+                      <Map
+                        defaultCenter={mapCenter}
+                        center={mapCenter}
+                        defaultZoom={12}
+                        gestureHandling="greedy"
+                        disableDefaultUI={false}
+                        onError={(error) => {
+                          console.warn('Google Maps error:', error);
+                        }}
+                      >
+                        {pickupLocation && (
+                          <AdvancedMarker position={{
+                            lat: pickupLocation.location.latitude,
+                            lng: pickupLocation.location.longitude
+                          }}>
+                            <div className="custom-marker bg-green-500 text-white font-bold">
+                              P
+                            </div>
+                          </AdvancedMarker>
+                        )}
+                        
+                        {dropoffLocation && (
+                          <AdvancedMarker position={{
+                            lat: dropoffLocation.location.latitude,
+                            lng: dropoffLocation.location.longitude
+                          }}>
+                            <div className="custom-marker bg-red-500 text-white font-bold">
+                              D
+                            </div>
+                          </AdvancedMarker>
+                        )}
+                      </Map>
+                    </APIProvider>
+                  ) : (
+                    <div className="h-96 bg-gray-100 flex items-center justify-center">
+                      <div className="text-center p-6">
+                        <div className="w-16 h-16 bg-gray-300 rounded-full flex items-center justify-center mx-auto mb-4">
+                          <span className="text-gray-600 text-2xl">🗺️</span>
+                        </div>
+                        <h3 className="text-lg font-medium text-gray-900 mb-2">Map Preview</h3>
+                        <p className="text-sm text-gray-600 mb-4">
+                          Configure Google Maps API key to see interactive map
+                        </p>
+                        <div className="text-xs text-gray-500">
+                          <p>Pickup: {pickupLocation ? pickupLocation.address : 'Not selected'}</p>
+                          <p>Dropoff: {dropoffLocation ? dropoffLocation.address : 'Not selected'}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
