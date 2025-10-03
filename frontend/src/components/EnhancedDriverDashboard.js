@@ -49,11 +49,25 @@ const EnhancedDriverDashboard = () => {
   });
 
   useEffect(() => {
+    console.log('🔍 EnhancedDriverDashboard: useEffect triggered');
+    console.log('🔍 user:', user);
+    console.log('🔍 user.role:', user?.role);
+    console.log('🔍 token:', token ? 'present' : 'missing');
+    
     if (user && user.role === 'driver') {
+      console.log('🔍 Driver detected, fetching all data...');
       fetchAllData();
       // Set up auto-refresh every 30 seconds for available rides
-      const interval = setInterval(fetchAvailableRides, 30000);
-      return () => clearInterval(interval);
+      const interval = setInterval(() => {
+        console.log('🔍 Interval: Refreshing available rides...');
+        fetchAvailableRides();
+      }, 30000);
+      return () => {
+        console.log('🔍 Clearing interval');
+        clearInterval(interval);
+      };
+    } else {
+      console.log('⚠️ Not a driver or user not loaded');
     }
   }, [user, token]);
 
@@ -78,42 +92,66 @@ const EnhancedDriverDashboard = () => {
 
   const fetchDriverProfile = async () => {
     try {
+      console.log('🔍 EnhancedDriverDashboard: fetchDriverProfile called');
       const response = await axios.get(`${API_URL}/api/driver/profile`, {
         headers: getAuthHeaders()
       });
+      console.log('🔍 Driver profile loaded:', response.data);
       setDriverProfile(response.data);
       setIsOnline(response.data.is_online || false);
       setCurrentLocation(response.data.current_location);
     } catch (error) {
-      console.error('Error fetching driver profile:', error);
+      console.log('⚠️ Driver profile not found (404) - driver needs to set up profile');
+      // Don't show error for missing profile, it's expected for new drivers
+      setDriverProfile(null);
+      // Use user data for online status instead
+      if (user) {
+        setIsOnline(user.is_online || false);
+        setCurrentLocation(user.current_location);
+      }
     }
   };
 
   const fetchAvailableRides = async () => {
-    if (!isOnline) return;
+    console.log('🔍 EnhancedDriverDashboard: fetchAvailableRides called');
+    console.log('🔍 isOnline:', isOnline);
+    console.log('🔍 user:', user);
+    
+    if (!isOnline) {
+      console.log('⚠️ Driver not online, skipping fetch');
+      return;
+    }
     
     try {
+      console.log('🔍 Making API call to /api/rides/available...');
       const response = await axios.get(`${API_URL}/api/rides/available`, {
         headers: getAuthHeaders()
       });
+      console.log('🔍 Available rides response:', response.data);
       
       // Handle new response format with structured data
       if (response.data && typeof response.data === 'object') {
         if (response.data.available_rides) {
           // New format: { available_rides: [...], total_available: N, ... }
+          console.log('🔍 Setting available rides (new format):', response.data.available_rides.length);
           setAvailableRides(response.data.available_rides);
         } else if (Array.isArray(response.data)) {
           // Old format: direct array
+          console.log('🔍 Setting available rides (old format):', response.data.length);
           setAvailableRides(response.data);
         } else {
+          console.log('🔍 No rides found, setting empty array');
           setAvailableRides([]);
         }
       } else {
+        console.log('🔍 Invalid response format, setting empty array');
         setAvailableRides([]);
       }
     } catch (error) {
+      console.error('❌ Error fetching available rides:', error);
+      console.error('Error details:', error.response?.data);
       if (error.response?.status !== 400) {
-        console.error('Error fetching available rides:', error);
+        console.error('Non-400 error fetching available rides:', error);
       }
       setAvailableRides([]);
     }
