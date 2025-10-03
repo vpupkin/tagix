@@ -1,0 +1,252 @@
+{
+  "test_type": "comprehensive_ride_lifecycle",
+  "summary": {
+    "total_tests": 28,
+    "passed_tests": 27,
+    "failed_tests": 1,
+    "success_rate": 96.42857142857143,
+    "timestamp": "2025-10-03T16:34:14.916558"
+  },
+  "detailed_results": [
+    {
+      "test_name": "Rider Account Creation",
+      "success": true,
+      "details": "Rider ID: 2649e079-078b-455d-8063-17e4121c635b",
+      "error": "",
+      "timestamp": "2025-10-03T16:34:14.710690"
+    },
+    {
+      "test_name": "Driver Account Creation",
+      "success": true,
+      "details": "Driver ID: b8e27d29-1bff-438a-b2aa-b1930d1de5aa",
+      "error": "",
+      "timestamp": "2025-10-03T16:34:14.716478"
+    },
+    {
+      "test_name": "Admin Account Creation",
+      "success": true,
+      "details": "Admin ID: 3aa36cf1-c69e-44fd-a80c-ea00e1bf381a",
+      "error": "",
+      "timestamp": "2025-10-03T16:34:14.726704"
+    },
+    {
+      "test_name": "Driver Profile Creation",
+      "success": true,
+      "details": "Driver profile created successfully",
+      "error": "",
+      "timestamp": "2025-10-03T16:34:14.735221"
+    },
+    {
+      "test_name": "Driver Location Update",
+      "success": true,
+      "details": "Location updated successfully",
+      "error": "",
+      "timestamp": "2025-10-03T16:34:14.742459"
+    },
+    {
+      "test_name": "Driver Online Status",
+      "success": true,
+      "details": "Driver is now online",
+      "error": "",
+      "timestamp": "2025-10-03T16:34:14.748006"
+    },
+    {
+      "test_name": "Ride Request Creation",
+      "success": true,
+      "details": "Request ID: dd4adbdd-7dbf-4bc3-85ad-8c04666f4e73, Fare: $5.13, Matches: 0",
+      "error": "",
+      "timestamp": "2025-10-03T16:34:14.756206"
+    },
+    {
+      "test_name": "Ride Request Status Check",
+      "success": true,
+      "details": "Request is in pending status as expected",
+      "error": "",
+      "timestamp": "2025-10-03T16:34:14.768388"
+    },
+    {
+      "test_name": "Driver Available Rides",
+      "success": false,
+      "details": "",
+      "error": "HTTP No response",
+      "timestamp": "2025-10-03T16:34:14.781712"
+    },
+    {
+      "test_name": "Ride Acceptance",
+      "success": true,
+      "details": "Match ID: bd43ce15-01e8-40f5-9d37-146860155787, Status: accepted",
+      "error": "",
+      "timestamp": "2025-10-03T16:34:14.790079"
+    },
+    {
+      "test_name": "Ride Status Accepted Check",
+      "success": true,
+      "details": "Request is now in accepted status",
+      "error": "",
+      "timestamp": "2025-10-03T16:34:14.796661"
+    },
+    {
+      "test_name": "Driver Arrival",
+      "success": true,
+      "details": "Driver arrival status updated: driver_arriving",
+      "error": "",
+      "timestamp": "2025-10-03T16:34:14.805587"
+    },
+    {
+      "test_name": "Ride Start",
+      "success": true,
+      "details": "Ride started successfully: in_progress",
+      "error": "",
+      "timestamp": "2025-10-03T16:34:14.816245"
+    },
+    {
+      "test_name": "Ride Completion",
+      "success": true,
+      "details": "Ride completed, Payment ID: f7866693-3f79-4350-bf73-daaba7f40cbc, Amount: $5.13, Driver Earnings: $4.10",
+      "error": "",
+      "timestamp": "2025-10-03T16:34:14.824204"
+    },
+    {
+      "test_name": "Ride Status Completed Check",
+      "success": true,
+      "details": "Request is now in completed status",
+      "error": "",
+      "timestamp": "2025-10-03T16:34:14.833120"
+    },
+    {
+      "test_name": "Payment Processing",
+      "success": true,
+      "details": "Payment processed successfully - Status: completed, Amount: $5.13",
+      "error": "",
+      "timestamp": "2025-10-03T16:34:14.843760"
+    },
+    {
+      "test_name": "Driver Payment Summary",
+      "success": true,
+      "details": "Earnings: $4.10, Rides: 1, Revenue: $5.13",
+      "error": "",
+      "timestamp": "2025-10-03T16:34:14.848817"
+    },
+    {
+      "test_name": "Admin Payment Summary",
+      "success": true,
+      "details": "Platform Revenue: $3.08, Driver Earnings: $12.30, Gross Revenue: $15.38, Transactions: 3",
+      "error": "",
+      "timestamp": "2025-10-03T16:34:14.853257"
+    },
+    {
+      "test_name": "Admin Ride Monitoring",
+      "success": true,
+      "details": "Admin can see 26 pending requests and 3 completed matches",
+      "error": "",
+      "timestamp": "2025-10-03T16:34:14.864750"
+    },
+    {
+      "test_name": "Admin Can See Our Completed Ride",
+      "success": true,
+      "details": "Admin can see our completed ride in the system",
+      "error": "",
+      "timestamp": "2025-10-03T16:34:14.864764"
+    },
+    {
+      "test_name": "Admin User Monitoring",
+      "success": true,
+      "details": "Admin can see 24 users",
+      "error": "",
+      "timestamp": "2025-10-03T16:34:14.871238"
+    },
+    {
+      "test_name": "Admin Can See Our Test Users",
+      "success": true,
+      "details": "Admin can see all our test users",
+      "error": "",
+      "timestamp": "2025-10-03T16:34:14.871261"
+    },
+    {
+      "test_name": "Admin Statistics",
+      "success": true,
+      "details": "Users: 24, Rides: 3, Completed: 3, Revenue: $15.38",
+      "error": "",
+      "timestamp": "2025-10-03T16:34:14.888312"
+    },
+    {
+      "test_name": "Audit Logging",
+      "success": true,
+      "details": "Found 100 total audit logs, 54 ride-related, 8 payment-related, 38 user-related",
+      "error": "",
+      "timestamp": "2025-10-03T16:34:14.900986"
+    },
+    {
+      "test_name": "Driver Ride History",
+      "success": true,
+      "details": "Driver can see 1 rides in their history",
+      "error": "",
+      "timestamp": "2025-10-03T16:34:14.910295"
+    },
+    {
+      "test_name": "Driver Can See Our Completed Ride",
+      "success": true,
+      "details": "Driver can see our completed ride in their history",
+      "error": "",
+      "timestamp": "2025-10-03T16:34:14.910311"
+    },
+    {
+      "test_name": "Rider Ride History",
+      "success": true,
+      "details": "Rider can see 1 rides in their history",
+      "error": "",
+      "timestamp": "2025-10-03T16:34:14.916382"
+    },
+    {
+      "test_name": "Rider Can See Our Completed Ride",
+      "success": true,
+      "details": "Rider can see our completed ride in their history",
+      "error": "",
+      "timestamp": "2025-10-03T16:34:14.916398"
+    }
+  ],
+  "test_data": {
+    "ride_data": {
+      "request_id": "dd4adbdd-7dbf-4bc3-85ad-8c04666f4e73",
+      "estimated_fare": 5.125445191330671,
+      "matches_found": 0,
+      "match_id": "bd43ce15-01e8-40f5-9d37-146860155787",
+      "acceptance_status": "accepted",
+      "arrival_status": "driver_arriving",
+      "start_status": "in_progress",
+      "completion_status": "completed"
+    },
+    "payment_data": {
+      "payment_id": "f7866693-3f79-4350-bf73-daaba7f40cbc",
+      "amount": 5.125445191330671,
+      "driver_earnings": 4.100356153064538,
+      "processing_status": "completed"
+    },
+    "audit_data": {
+      "total_logs": 100,
+      "ride_logs": 54,
+      "payment_logs": 8,
+      "user_logs": 38
+    },
+    "users": {
+      "rider": {
+        "id": "2649e079-078b-455d-8063-17e4121c635b",
+        "email": "test_rider_1759502054@example.com",
+        "name": "Test Rider 1759502054",
+        "role": "rider"
+      },
+      "driver": {
+        "id": "b8e27d29-1bff-438a-b2aa-b1930d1de5aa",
+        "email": "test_driver_1759502054@example.com",
+        "name": "Test Driver 1759502054",
+        "role": "driver"
+      },
+      "admin": {
+        "id": "3aa36cf1-c69e-44fd-a80c-ea00e1bf381a",
+        "email": "test_admin_1759502054@example.com",
+        "name": "Test Admin 1759502054",
+        "role": "admin"
+      }
+    }
+  }
+}
