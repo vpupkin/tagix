@@ -272,12 +272,21 @@ class ComprehensiveRideLifecycleTester:
 
     def test_driver_available_rides(self):
         """Test driver can see available rides"""
+        # First check if server is accessible
+        if not self.check_server_connectivity():
+            self.log_test("Driver Available Rides", False, error="Server not accessible")
+            return False
+        
         token = self.tokens.get('driver')
         if not token:
             self.log_test("Driver Available Rides", False, error="No driver token available")
             return False
         
         response = self.make_request('GET', '/api/rides/available', auth_token=token)
+        
+        if response is None:
+            self.log_test("Driver Available Rides", False, error="Server connection failed")
+            return False
         
         if response and response.status_code == 200:
             data = response.json()
