@@ -44,6 +44,14 @@ class ComprehensiveRideLifecycleTester:
         })
         print()
 
+    def check_server_connectivity(self):
+        """Check if server is accessible"""
+        try:
+            response = self.session.get(f"{self.base_url}/api/health", timeout=5)
+            return response is not None and response.status_code in [200, 404]  # 404 is ok if health endpoint doesn't exist
+        except requests.exceptions.RequestException:
+            return False
+
     def make_request(self, method, endpoint, data=None, headers=None, auth_token=None):
         """Make HTTP request with proper error handling"""
         url = f"{self.base_url}{endpoint}"
