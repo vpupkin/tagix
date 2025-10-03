@@ -33,6 +33,7 @@ const DriverDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [recentRides, setRecentRides] = useState([]);
   const [driverProfile, setDriverProfile] = useState(null);
+  const [availableRides, setAvailableRides] = useState([]);
   const [stats, setStats] = useState({
     totalRides: 0,
     totalEarnings: 0,
@@ -45,6 +46,17 @@ const DriverDashboard = () => {
   useEffect(() => {
     fetchDriverData();
   }, []);
+
+  useEffect(() => {
+    if (isOnline) {
+      fetchAvailableRides();
+      // Set up interval to refresh available rides every 30 seconds
+      const interval = setInterval(fetchAvailableRides, 30000);
+      return () => clearInterval(interval);
+    } else {
+      setAvailableRides([]);
+    }
+  }, [isOnline]);
 
   const fetchDriverData = async () => {
     try {
@@ -66,6 +78,23 @@ const DriverDashboard = () => {
       console.error('Error fetching driver data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchAvailableRides = async () => {
+    if (!isOnline) return;
+    
+    try {
+      const response = await axios.get(`${API_URL}/api/rides/available`);
+      if (response.status === 200) {
+        setAvailableRides(response.data.available_rides || []);
+      }
+    } catch (error) {
+      console.error('Error fetching available rides:', error);
+      if (error.response?.status === 400) {
+        // Driver not online or no location set
+        setAvailableRides([]);
+      }
     }
   };
 
@@ -100,6 +129,11 @@ const DriverDashboard = () => {
       const newStatus = !isOnline;
       setIsOnline(newStatus);
       updateUser({ is_online: newStatus });
+      
+      if (newStatus) {
+        // Fetch available rides when going online
+        setTimeout(() => fetchAvailableRides(), 1000);
+      }
       
       toast.success(`You are now ${newStatus ? 'online' : 'offline'}`);
     } catch (error) {
@@ -360,13 +394,13 @@ const DriverDashboard = () => {
 
           {/* Right Column - Ride Requests and Notifications */}
           <div className="space-y-6">
-            {/* Ride Requests */}
+            {/* Available Rides */}
             <Card className="card-hover">
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
-                  <span>Ride Requests</span>
-                  <Badge variant={rideRequests.length > 0 ? "default" : "secondary"}>
-                    {rideRequests.length}
+                  <span>Available Rides</span>
+                  <Badge variant={availableRides.length > 0 ? "default" : "secondary"}>
+                    {availableRides.length}
                   </Badge>
                 </CardTitle>
                 <CardDescription>
@@ -375,32 +409,32 @@ const DriverDashboard = () => {
               </CardHeader>
               <CardContent>
                 {isOnline ? (
-                  rideRequests.length > 0 ? (
+                  availableRides.length > 0 ? (
                     <div className="space-y-4">
-                      {rideRequests.slice(0, 3).map((request) => (
-                        <div key={request.request_id} className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                      {availableRides.slice(0, 3).map((ride) => (
+                        <div key={ride.id} className="p-4 bg-blue-50 rounded-lg border border-blue-200">
                           <div className="flex items-start justify-between mb-3">
                             <div className="flex-1">
                               <p className="font-medium text-gray-900 text-sm">
-                                {request.pickup_address}
+                                {ride.pickup_location?.address || 'Pickup Location'}
                               </p>
                               <p className="text-xs text-gray-600 mt-1">
-                                → {request.dropoff_address}
+                                → {ride.dropoff_location?.address || 'Destination'}
                               </p>
                             </div>
                             <Badge variant="secondary" className="text-xs">
-                              ${request.estimated_fare}
+                              ${ride.estimated_fare?.toFixed(2) || '0.00'}
                             </Badge>
                           </div>
                           <div className="flex items-center justify-between">
                             <p className="text-xs text-blue-600">
-                              {request.distance_km?.toFixed(1)} km away
+                              {ride.distance_to_pickup?.toFixed(1) || '0.0'} km away
                             </p>
                             <Button 
                               size="sm" 
                               className="btn-primary text-xs px-3 py-1"
-                              onClick={() => acceptRideRequest(request.request_id)}
-                              data-testid={`accept-ride-${request.request_id}`}
+                              onClick={() => acceptRideRequest(ride.id)}
+                              data-testid={`accept-ride-${ride.id}`}
                             >
                               Accept
                             </Button>

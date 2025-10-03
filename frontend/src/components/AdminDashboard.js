@@ -46,6 +46,8 @@ const AdminDashboard = () => {
   });
   const [users, setUsers] = useState([]);
   const [rides, setRides] = useState([]);
+  const [pendingRequests, setPendingRequests] = useState([]);
+  const [completedMatches, setCompletedMatches] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
@@ -63,7 +65,15 @@ const AdminDashboard = () => {
 
       setStats(statsResponse.data);
       setUsers(usersResponse.data);
-      setRides(ridesResponse.data);
+      
+      // Handle the structured rides response
+      const ridesData = ridesResponse.data;
+      setPendingRequests(ridesData.pending_requests || []);
+      setCompletedMatches(ridesData.completed_matches || []);
+      
+      // Combine all rides for the overview tab
+      const allRides = [...(ridesData.pending_requests || []), ...(ridesData.completed_matches || [])];
+      setRides(allRides);
     } catch (error) {
       console.error('Error fetching admin data:', error);
       toast.error('Failed to load dashboard data');
@@ -384,11 +394,15 @@ const AdminDashboard = () => {
 
           {/* Rides Tab */}
           <TabsContent value="rides" className="space-y-6">
+            {/* Pending Requests */}
             <Card className="card-hover">
               <CardHeader>
-                <CardTitle>Ride Monitoring</CardTitle>
+                <CardTitle className="flex items-center justify-between">
+                  <span>Pending Requests ({pendingRequests.length})</span>
+                  <Badge variant="secondary">{pendingRequests.length}</Badge>
+                </CardTitle>
                 <CardDescription>
-                  Monitor all ride requests and completed trips
+                  Ride requests waiting for driver acceptance
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -398,7 +412,6 @@ const AdminDashboard = () => {
                       <TableRow>
                         <TableHead>Ride ID</TableHead>
                         <TableHead>Rider</TableHead>
-                        <TableHead>Driver</TableHead>
                         <TableHead>Route</TableHead>
                         <TableHead>Fare</TableHead>
                         <TableHead>Status</TableHead>
@@ -406,13 +419,12 @@ const AdminDashboard = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {rides.map((ride) => (
+                      {pendingRequests.map((ride) => (
                         <TableRow key={ride.id}>
                           <TableCell className="font-mono text-sm">
                             #{ride.id.slice(-8)}
                           </TableCell>
-                          <TableCell>{ride.rider_id.slice(-8)}</TableCell>
-                          <TableCell>{ride.driver_id.slice(-8)}</TableCell>
+                          <TableCell>{ride.rider_id?.slice(-8) || 'N/A'}</TableCell>
                           <TableCell>
                             <div className="max-w-xs">
                               <p className="text-sm truncate">
@@ -431,6 +443,66 @@ const AdminDashboard = () => {
                           </TableCell>
                           <TableCell>
                             {formatDate(ride.created_at)}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Completed Matches */}
+            <Card className="card-hover">
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <span>Completed Rides ({completedMatches.length})</span>
+                  <Badge variant="default">{completedMatches.length}</Badge>
+                </CardTitle>
+                <CardDescription>
+                  Successfully completed ride matches
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Ride ID</TableHead>
+                        <TableHead>Rider</TableHead>
+                        <TableHead>Driver</TableHead>
+                        <TableHead>Route</TableHead>
+                        <TableHead>Fare</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Completed</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {completedMatches.map((ride) => (
+                        <TableRow key={ride.id}>
+                          <TableCell className="font-mono text-sm">
+                            #{ride.id.slice(-8)}
+                          </TableCell>
+                          <TableCell>{ride.rider_id?.slice(-8) || 'N/A'}</TableCell>
+                          <TableCell>{ride.driver_id?.slice(-8) || 'N/A'}</TableCell>
+                          <TableCell>
+                            <div className="max-w-xs">
+                              <p className="text-sm truncate">
+                                {ride.pickup_location?.address || 'N/A'}
+                              </p>
+                              <p className="text-xs text-gray-500 truncate">
+                                → {ride.dropoff_location?.address || 'N/A'}
+                              </p>
+                            </div>
+                          </TableCell>
+                          <TableCell>{formatCurrency(ride.estimated_fare || 0)}</TableCell>
+                          <TableCell>
+                            <Badge className={getStatusColor(ride.status)}>
+                              {ride.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {formatDate(ride.completed_at || ride.created_at)}
                           </TableCell>
                         </TableRow>
                       ))}
