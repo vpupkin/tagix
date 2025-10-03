@@ -66,8 +66,8 @@ const AddressAutocomplete = ({ onPlaceSelect, placeholder, value, testId }) => {
     try {
       const request = {
         input,
-        types: ['establishment', 'geocode'],
-        componentRestrictions: { country: 'us' }
+        types: ['establishment', 'geocode']
+        // Removed country restriction to allow global search
       };
 
       autocompleteService.current.getPlacePredictions(
@@ -77,6 +77,7 @@ const AddressAutocomplete = ({ onPlaceSelect, placeholder, value, testId }) => {
           if (status === window.google.maps.places.PlacesServiceStatus.OK && predictions) {
             setSuggestions(predictions);
           } else {
+            console.warn('Google Places API error:', status);
             setSuggestions([]);
           }
         }
@@ -92,6 +93,41 @@ const AddressAutocomplete = ({ onPlaceSelect, placeholder, value, testId }) => {
     const value = e.target.value;
     setInputValue(value);
     fetchSuggestions(value);
+  };
+
+  const handleManualAddressSubmit = () => {
+    if (!inputValue.trim()) return;
+    
+    // Try to parse as coordinates first (lat, lng format)
+    const coordMatch = inputValue.match(/^(-?\d+\.?\d*),\s*(-?\d+\.?\d*)$/);
+    if (coordMatch) {
+      const lat = parseFloat(coordMatch[1]);
+      const lng = parseFloat(coordMatch[2]);
+      
+      if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+        const placeData = {
+          placeId: `manual_${Date.now()}`,
+          name: `Location (${lat}, ${lng})`,
+          address: inputValue,
+          location: { latitude: lat, longitude: lng }
+        };
+        onPlaceSelect && onPlaceSelect(placeData);
+        return;
+      }
+    }
+    
+    // If not coordinates, treat as address and use geocoding
+    // For now, we'll create a placeholder location
+    const placeData = {
+      placeId: `manual_${Date.now()}`,
+      name: inputValue,
+      address: inputValue,
+      location: { 
+        latitude: 37.7749, // Default to San Francisco
+        longitude: -122.4194 
+      }
+    };
+    onPlaceSelect && onPlaceSelect(placeData);
   };
 
   const handleSuggestionClick = async (suggestion) => {
@@ -154,6 +190,27 @@ const AddressAutocomplete = ({ onPlaceSelect, placeholder, value, testId }) => {
               </div>
             </div>
           ))}
+        </div>
+      )}
+      
+      {/* Fallback message when Google Maps API is not available */}
+      {!placesLibrary && inputValue.length >= 3 && (
+        <div className="absolute z-50 w-full mt-1 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+          <div className="text-sm text-yellow-800 mb-2">
+            <strong>Google Maps API not configured.</strong> You can:
+          </div>
+          <div className="text-xs text-yellow-700 mb-2">
+            • Enter coordinates: <code>48.6670336, 9.7910784</code>
+          </div>
+          <div className="text-xs text-yellow-700 mb-2">
+            • Enter full address: <code>Stuttgart Central Station, Germany</code>
+          </div>
+          <button
+            onClick={handleManualAddressSubmit}
+            className="px-3 py-1 bg-yellow-600 text-white text-xs rounded hover:bg-yellow-700"
+          >
+            Use This Address
+          </button>
         </div>
       )}
     </div>
@@ -398,6 +455,26 @@ const RideBooking = () => {
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Book a Ride</h1>
           <p className="text-gray-600 mt-1">Where would you like to go?</p>
+          
+          {/* Google Maps API Status */}
+          {!process.env.REACT_APP_GOOGLE_MAPS_API_KEY && (
+            <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-start space-x-3">
+                <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
+                  <span className="text-blue-600 text-sm">ℹ</span>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-blue-900">Google Maps Integration</h3>
+                  <p className="text-sm text-blue-700 mt-1">
+                    To enable real-time address search and autocomplete, configure your Google Maps API key in the <code>.env</code> file.
+                  </p>
+                  <p className="text-xs text-blue-600 mt-2">
+                    <strong>Current mode:</strong> Manual address entry (coordinates or full addresses)
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
