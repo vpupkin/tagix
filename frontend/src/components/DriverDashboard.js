@@ -30,6 +30,13 @@ const DriverDashboard = () => {
   const { user, updateUser } = useAuth();
   const { connected, rideRequests, notifications } = useWebSocket();
   const [isOnline, setIsOnline] = useState(user?.is_online || false);
+  
+  // Update isOnline when user data changes
+  useEffect(() => {
+    console.log('🔍 DriverDashboard: User data changed');
+    console.log('🔍 user.is_online:', user?.is_online);
+    setIsOnline(user?.is_online || false);
+  }, [user?.is_online]);
   const [loading, setLoading] = useState(true);
   const [recentRides, setRecentRides] = useState([]);
   const [driverProfile, setDriverProfile] = useState(null);
@@ -48,12 +55,24 @@ const DriverDashboard = () => {
   }, []);
 
   useEffect(() => {
+    console.log('🔍 DriverDashboard: useEffect for isOnline triggered');
+    console.log('🔍 isOnline:', isOnline);
+    console.log('🔍 user:', user);
+    
     if (isOnline) {
+      console.log('🔍 Driver is online, fetching available rides...');
       fetchAvailableRides();
       // Set up interval to refresh available rides every 30 seconds
-      const interval = setInterval(fetchAvailableRides, 30000);
-      return () => clearInterval(interval);
+      const interval = setInterval(() => {
+        console.log('🔍 Interval: Refreshing available rides...');
+        fetchAvailableRides();
+      }, 30000);
+      return () => {
+        console.log('🔍 Clearing interval');
+        clearInterval(interval);
+      };
     } else {
+      console.log('🔍 Driver is offline, clearing available rides');
       setAvailableRides([]);
     }
   }, [isOnline]);
