@@ -51,8 +51,17 @@ const AdminDashboard = () => {
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
-    fetchDashboardData();
-  }, []);
+    console.log('🔍 AdminDashboard: useEffect triggered');
+    console.log('🔍 User from useAuth:', user);
+    console.log('🔍 Loading state:', loading);
+    
+    if (user && !loading) {
+      console.log('🔍 User is authenticated, fetching dashboard data...');
+      fetchDashboardData();
+    } else {
+      console.log('⚠️ User not authenticated or still loading');
+    }
+  }, [user, loading]);
 
   const fetchDashboardData = async () => {
     try {
@@ -74,6 +83,7 @@ const AdminDashboard = () => {
       
       setRefreshing(true);
       console.log('🔍 Making API calls...');
+      console.log('🔍 Axios default headers:', axios.defaults.headers.common);
       
       const [statsResponse, usersResponse, ridesResponse] = await Promise.all([
         axios.get(`${API_URL}/api/admin/stats`),

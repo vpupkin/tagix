@@ -60,6 +60,20 @@ const DriverDashboard = () => {
 
   const fetchDriverData = async () => {
     try {
+      console.log('🔍 DriverDashboard: fetchDriverData called');
+      console.log('🔍 API_URL:', API_URL);
+      console.log('🔍 User:', user);
+      
+      if (!API_URL) {
+        console.error('❌ API_URL is undefined!');
+        return;
+      }
+      
+      if (!user) {
+        console.error('❌ User not authenticated!');
+        return;
+      }
+      
       const [ridesResponse, profileResponse] = await Promise.allSettled([
         axios.get(`${API_URL}/api/rides/my-rides`),
         axios.get(`${API_URL}/api/driver/profile`)
@@ -67,15 +81,23 @@ const DriverDashboard = () => {
 
       if (ridesResponse.status === 'fulfilled') {
         const rides = ridesResponse.value.data;
+        console.log('🔍 Driver rides loaded:', rides.length);
         setRecentRides(rides.slice(0, 3));
         calculateStats(rides);
+      } else {
+        console.error('❌ Failed to fetch driver rides:', ridesResponse.reason);
       }
 
       if (profileResponse.status === 'fulfilled') {
+        console.log('🔍 Driver profile loaded:', profileResponse.value.data);
         setDriverProfile(profileResponse.value.data);
+      } else {
+        console.log('⚠️ Driver profile not found (404) - driver needs to set up profile');
+        // Don't show error for missing profile, it's expected for new drivers
+        setDriverProfile(null);
       }
     } catch (error) {
-      console.error('Error fetching driver data:', error);
+      console.error('❌ Error fetching driver data:', error);
     } finally {
       setLoading(false);
     }
