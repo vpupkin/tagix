@@ -45,21 +45,13 @@ const AddressAutocomplete = ({ onPlaceSelect, placeholder, value, testId }) => {
     if (!placesLibrary) return;
     
     try {
-      // Use the new AutocompleteSuggestion API instead of deprecated AutocompleteService
-      if (placesLibrary.AutocompleteSuggestion) {
-        autocompleteService.current = new placesLibrary.AutocompleteSuggestion();
-      } else if (placesLibrary.AutocompleteService) {
-        // Fallback to old API with warning
-        console.warn('Using deprecated AutocompleteService. Consider upgrading to AutocompleteSuggestion.');
+      // For now, let's stick with the old API that works reliably
+      // The new API has different initialization requirements
+      if (placesLibrary.AutocompleteService) {
         autocompleteService.current = new placesLibrary.AutocompleteService();
       }
       
-      // Use the new Place API instead of deprecated PlacesService
-      if (placesLibrary.Place) {
-        placesService.current = new placesLibrary.Place();
-      } else if (placesLibrary.PlacesService) {
-        // Fallback to old API with warning
-        console.warn('Using deprecated PlacesService. Consider upgrading to Place.');
+      if (placesLibrary.PlacesService) {
         placesService.current = new placesLibrary.PlacesService(
           document.createElement('div')
         );
@@ -85,37 +77,19 @@ const AddressAutocomplete = ({ onPlaceSelect, placeholder, value, testId }) => {
         // Removed country restriction to allow global search
       };
 
-      // Try new API first, fallback to old API
-      if (autocompleteService.current.getPlacePredictions) {
-        // Old API
-        autocompleteService.current.getPlacePredictions(
-          request,
-          (predictions, status) => {
-            setIsLoading(false);
-            if (status === window.google.maps.places.PlacesServiceStatus.OK && predictions) {
-              setSuggestions(predictions);
-            } else {
-              console.warn('Google Places API error:', status);
-              setSuggestions([]);
-            }
+      // Use the old API that works reliably
+      autocompleteService.current.getPlacePredictions(
+        request,
+        (predictions, status) => {
+          setIsLoading(false);
+          if (status === window.google.maps.places.PlacesServiceStatus.OK && predictions) {
+            setSuggestions(predictions);
+          } else {
+            console.warn('Google Places API error:', status);
+            setSuggestions([]);
           }
-        );
-      } else if (autocompleteService.current.getPlacePredictionsAsync) {
-        // New API
-        try {
-          const predictions = await autocompleteService.current.getPlacePredictionsAsync(request);
-          setIsLoading(false);
-          setSuggestions(predictions || []);
-        } catch (error) {
-          console.warn('Google Places API error:', error);
-          setIsLoading(false);
-          setSuggestions([]);
         }
-      } else {
-        console.warn('No compatible autocomplete method found');
-        setIsLoading(false);
-        setSuggestions([]);
-      }
+      );
     } catch (error) {
       console.error('Error fetching suggestions:', error);
       setIsLoading(false);
@@ -171,48 +145,26 @@ const AddressAutocomplete = ({ onPlaceSelect, placeholder, value, testId }) => {
     if (!placesService.current) return;
 
     try {
-      // Try new API first, fallback to old API
-      if (placesService.current.fetchFields) {
-        // New API
-        const place = await placesService.current.fetchFields({
-          placeId: suggestion.place_id,
-          fields: ['id', 'location', 'displayName', 'formattedAddress']
-        });
-        
-        if (place) {
+      // Use the old API that works reliably
+      const request = {
+        placeId: suggestion.place_id,
+        fields: ['place_id', 'geometry', 'name', 'formatted_address']
+      };
+
+      placesService.current.getDetails(request, (place, status) => {
+        if (status === window.google.maps.places.PlacesServiceStatus.OK && place) {
           const placeData = {
-            placeId: place.id,
-            name: place.displayName,
-            address: place.formattedAddress,
+            placeId: place.place_id,
+            name: place.name,
+            address: place.formatted_address,
             location: {
-              latitude: place.location.lat,
-              longitude: place.location.lng
+              latitude: place.geometry.location.lat(),
+              longitude: place.geometry.location.lng()
             }
           };
           onPlaceSelect && onPlaceSelect(placeData);
         }
-      } else if (placesService.current.getDetails) {
-        // Old API
-        const request = {
-          placeId: suggestion.place_id,
-          fields: ['place_id', 'geometry', 'name', 'formatted_address']
-        };
-
-        placesService.current.getDetails(request, (place, status) => {
-          if (status === window.google.maps.places.PlacesServiceStatus.OK && place) {
-            const placeData = {
-              placeId: place.place_id,
-              name: place.name,
-              address: place.formatted_address,
-              location: {
-                latitude: place.geometry.location.lat(),
-                longitude: place.geometry.location.lng()
-              }
-            };
-            onPlaceSelect && onPlaceSelect(placeData);
-          }
-        });
-      }
+      });
     } catch (error) {
       console.error('Error getting place details:', error);
     }
@@ -558,26 +510,46 @@ const RideBooking = () => {
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="pickup">Pickup Location</Label>
-                  <APIProvider apiKey={process.env.REACT_APP_GOOGLE_MAPS_API_KEY}>
+                  {process.env.REACT_APP_GOOGLE_MAPS_API_KEY && 
+                   process.env.REACT_APP_GOOGLE_MAPS_API_KEY !== 'your_google_maps_api_key_here' ? (
+                    <APIProvider apiKey={process.env.REACT_APP_GOOGLE_MAPS_API_KEY}>
+                      <AddressAutocomplete
+                        onPlaceSelect={handlePickupSelect}
+                        placeholder="Enter pickup location"
+                        value={pickupLocation?.address || ''}
+                        testId="pickup-input"
+                      />
+                    </APIProvider>
+                  ) : (
                     <AddressAutocomplete
                       onPlaceSelect={handlePickupSelect}
-                      placeholder="Enter pickup location"
+                      placeholder="Enter pickup location (coordinates: 48.6670336, 9.7910784)"
                       value={pickupLocation?.address || ''}
                       testId="pickup-input"
                     />
-                  </APIProvider>
+                  )}
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="dropoff">Destination</Label>
-                  <APIProvider apiKey={process.env.REACT_APP_GOOGLE_MAPS_API_KEY}>
+                  {process.env.REACT_APP_GOOGLE_MAPS_API_KEY && 
+                   process.env.REACT_APP_GOOGLE_MAPS_API_KEY !== 'your_google_maps_api_key_here' ? (
+                    <APIProvider apiKey={process.env.REACT_APP_GOOGLE_MAPS_API_KEY}>
+                      <AddressAutocomplete
+                        onPlaceSelect={handleDropoffSelect}
+                        placeholder="Where are you going?"
+                        value={dropoffLocation?.address || ''}
+                        testId="destination-input"
+                      />
+                    </APIProvider>
+                  ) : (
                     <AddressAutocomplete
                       onPlaceSelect={handleDropoffSelect}
-                      placeholder="Where are you going?"
+                      placeholder="Where are you going? (coordinates: 48.7758, 9.1829)"
                       value={dropoffLocation?.address || ''}
                       testId="destination-input"
                     />
-                  </APIProvider>
+                  )}
                 </div>
 
                 {pickupLocation && dropoffLocation && (
