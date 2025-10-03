@@ -1,4 +1,11 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+#TESTING RESULTS
+comprehensive_ride_lifecycle_test_results.json
+comprehensive_ride_visibility_results.json
+ride_request_visibility_test_results.json
+backend_test_results.json
+test_results_objectid_fix.json
+test_results_backend.json
 
 # IDE and editors
 .idea/
