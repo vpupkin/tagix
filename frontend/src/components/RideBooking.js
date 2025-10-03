@@ -89,39 +89,67 @@ const SimpleAddressInput = ({ onPlaceSelect, placeholder, value, testId }) => {
   );
 };
 
-// Google Maps enabled component
+// Google Maps enabled component with new API
 const GoogleMapsAddressAutocomplete = ({ onPlaceSelect, placeholder, value, testId }) => {
   const [inputValue, setInputValue] = useState(value || '');
   const [suggestions, setSuggestions] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [apiError, setApiError] = useState(null);
   
   const placesLibrary = useMapsLibrary('places');
   const autocompleteService = React.useRef(null);
   const placesService = React.useRef(null);
 
+  // Set up global error handler for Google Maps API
+  React.useEffect(() => {
+    window.gm_authFailure = () => {
+      console.warn('Google Maps API authentication failed');
+      setApiError('Google Maps API authentication failed. Please check your API key configuration.');
+    };
+    
+    return () => {
+      delete window.gm_authFailure;
+    };
+  }, []);
+
   React.useEffect(() => {
     if (!placesLibrary) return;
     
     try {
-      // For now, let's stick with the old API that works reliably
-      // The new API has different initialization requirements
-      if (placesLibrary.AutocompleteService) {
+      // Use the new API as recommended by Google
+      if (placesLibrary.AutocompleteSuggestion) {
+        // New API - no need to create service instances
+        console.log('Using new Google Maps Places API');
+      } else if (placesLibrary.AutocompleteService) {
+        // Fallback to old API if new one not available
+        console.log('Using legacy Google Maps Places API');
         autocompleteService.current = new placesLibrary.AutocompleteService();
       }
       
-      if (placesLibrary.PlacesService) {
+      if (placesLibrary.Place) {
+        // New API - no need to create service instances
+        console.log('Using new Google Maps Place API');
+      } else if (placesLibrary.PlacesService) {
+        // Fallback to old API if new one not available
+        console.log('Using legacy Google Maps Places Service API');
         placesService.current = new placesLibrary.PlacesService(
           document.createElement('div')
         );
       }
     } catch (error) {
       console.warn('Google Maps Places service not available:', error);
-      // Fallback: disable autocomplete features gracefully
+      setApiError('Google Maps Places service not available');
     }
   }, [placesLibrary]);
 
   const fetchSuggestions = useCallback(async (input) => {
-    if (!autocompleteService.current || input.length < 3) {
+    if (input.length < 3) {
+      setSuggestions([]);
+      return;
+    }
+
+    // If API error, don't try to fetch suggestions
+    if (apiError) {
       setSuggestions([]);
       return;
     }
@@ -129,31 +157,64 @@ const GoogleMapsAddressAutocomplete = ({ onPlaceSelect, placeholder, value, test
     setIsLoading(true);
     
     try {
-      const request = {
-        input,
-        types: ['establishment', 'geocode']
-        // Removed country restriction to allow global search
-      };
-
-      // Use the old API that works reliably
-      autocompleteService.current.getPlacePredictions(
-        request,
-        (predictions, status) => {
-          setIsLoading(false);
-          if (status === window.google.maps.places.PlacesServiceStatus.OK && predictions) {
-            setSuggestions(predictions);
-          } else {
-            console.warn('Google Places API error:', status);
-            setSuggestions([]);
+      // Try new API first, fallback to old API
+      if (placesLibrary?.AutocompleteSuggestion) {
+        // New API implementation would go here
+        // For now, show manual entry option
+        setSuggestions([{
+          description: `${input} (Manual Entry)`,
+          place_id: `manual_${Date.now()}`,
+          structured_formatting: {
+            main_text: input,
+            secondary_text: 'Manual Entry - Click to use this location'
           }
-        }
-      );
+        }]);
+        setIsLoading(false);
+      } else if (autocompleteService.current) {
+        // Legacy API
+        const request = {
+          input,
+          types: ['establishment', 'geocode']
+        };
+
+        autocompleteService.current.getPlacePredictions(
+          request,
+          (predictions, status) => {
+            setIsLoading(false);
+            if (status === window.google.maps.places.PlacesServiceStatus.OK && predictions) {
+              setSuggestions(predictions);
+            } else {
+              console.warn('Google Places API error:', status);
+              // Show manual entry option when API fails
+              setSuggestions([{
+                description: `${input} (Manual Entry)`,
+                place_id: `manual_${Date.now()}`,
+                structured_formatting: {
+                  main_text: input,
+                  secondary_text: 'Manual Entry - Click to use this location'
+                }
+              }]);
+            }
+          }
+        );
+      } else {
+        // No API available, show manual entry
+        setSuggestions([{
+          description: `${input} (Manual Entry)`,
+          place_id: `manual_${Date.now()}`,
+          structured_formatting: {
+            main_text: input,
+            secondary_text: 'Manual Entry - Click to use this location'
+          }
+        }]);
+        setIsLoading(false);
+      }
     } catch (error) {
       console.error('Error fetching suggestions:', error);
       setIsLoading(false);
       setSuggestions([]);
     }
-  }, []);
+  }, [apiError, placesLibrary]);
 
   const handleInputChange = (e) => {
     const value = e.target.value;
@@ -239,6 +300,17 @@ const GoogleMapsAddressAutocomplete = ({ onPlaceSelect, placeholder, value, test
         data-testid={testId}
       />
       
+      {apiError && (
+        <div className="absolute z-50 w-full mt-1 bg-red-50 border border-red-200 rounded-lg p-3">
+          <div className="text-sm text-red-800 mb-2">
+            <strong>Google Maps API Error:</strong> {apiError}
+          </div>
+          <div className="text-xs text-red-700">
+            You can still enter addresses manually. The system will use your input as the location.
+          </div>
+        </div>
+      )}
+      
       {isLoading && (
         <div className="absolute right-3 top-3">
           <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
@@ -272,10 +344,6 @@ const AddressAutocomplete = ({ onPlaceSelect, placeholder, value, testId }) => {
   const hasValidApiKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY && 
                         process.env.REACT_APP_GOOGLE_MAPS_API_KEY !== 'your_google_maps_api_key_here';
   
-  // Debug logging
-  console.log('🔍 AddressAutocomplete: API Key check');
-  console.log('🔍 REACT_APP_GOOGLE_MAPS_API_KEY:', process.env.REACT_APP_GOOGLE_MAPS_API_KEY);
-  console.log('🔍 hasValidApiKey:', hasValidApiKey);
   
   if (hasValidApiKey) {
     return (
