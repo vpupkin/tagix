@@ -42,12 +42,32 @@ const RiderDashboard = () => {
 
   const fetchRecentRides = async () => {
     try {
+      console.log('🔍 RiderDashboard: fetchRecentRides called');
+      console.log('🔍 API_URL:', API_URL);
+      console.log('🔍 User:', user);
+      
+      if (!API_URL) {
+        console.error('❌ API_URL is undefined!');
+        toast.error('Backend URL not configured');
+        return;
+      }
+      
+      if (!user) {
+        console.error('❌ User not authenticated!');
+        toast.error('Please login first');
+        return;
+      }
+      
+      console.log('🔍 Making API call to /api/rides/my-rides...');
       const response = await axios.get(`${API_URL}/api/rides/my-rides`);
+      console.log('🔍 My rides response:', response.data);
       const rides = response.data.slice(0, 3); // Get last 3 rides
+      console.log('🔍 Setting recent rides:', rides.length);
       setRecentRides(rides);
     } catch (error) {
-      console.error('Error fetching rides:', error);
-      toast.error('Failed to load recent rides');
+      console.error('❌ Error fetching rides:', error);
+      console.error('Error details:', error.response?.data);
+      toast.error(`Failed to load recent rides: ${error.message}`);
     }
   };
 

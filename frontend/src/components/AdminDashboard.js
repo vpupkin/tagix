@@ -56,27 +56,59 @@ const AdminDashboard = () => {
 
   const fetchDashboardData = async () => {
     try {
+      console.log('🔍 AdminDashboard: Starting data fetch...');
+      console.log('🔍 API_URL:', API_URL);
+      console.log('🔍 User:', user);
+      
+      if (!API_URL) {
+        console.error('❌ API_URL is undefined!');
+        toast.error('Backend URL not configured');
+        return;
+      }
+      
+      if (!user) {
+        console.error('❌ User not authenticated!');
+        toast.error('Please login first');
+        return;
+      }
+      
       setRefreshing(true);
+      console.log('🔍 Making API calls...');
+      
       const [statsResponse, usersResponse, ridesResponse] = await Promise.all([
         axios.get(`${API_URL}/api/admin/stats`),
         axios.get(`${API_URL}/api/admin/users`),
         axios.get(`${API_URL}/api/admin/rides`)
       ]);
 
+      console.log('🔍 API responses received:');
+      console.log('Stats:', statsResponse.data);
+      console.log('Users:', usersResponse.data);
+      console.log('Rides:', ridesResponse.data);
+
       setStats(statsResponse.data);
       setUsers(usersResponse.data);
       
       // Handle the structured rides response
       const ridesData = ridesResponse.data;
+      console.log('🔍 Processing rides data:', ridesData);
+      
       setPendingRequests(ridesData.pending_requests || []);
       setCompletedMatches(ridesData.completed_matches || []);
       
       // Combine all rides for the overview tab
       const allRides = [...(ridesData.pending_requests || []), ...(ridesData.completed_matches || [])];
       setRides(allRides);
+      
+      console.log('🔍 Final state:');
+      console.log('Pending requests:', ridesData.pending_requests?.length || 0);
+      console.log('Completed matches:', ridesData.completed_matches?.length || 0);
+      console.log('Total rides:', allRides.length);
+      
     } catch (error) {
-      console.error('Error fetching admin data:', error);
-      toast.error('Failed to load dashboard data');
+      console.error('❌ Error fetching admin data:', error);
+      console.error('Error details:', error.response?.data);
+      toast.error(`Failed to load dashboard data: ${error.message}`);
     } finally {
       setLoading(false);
       setRefreshing(false);

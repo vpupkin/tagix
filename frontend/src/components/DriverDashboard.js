@@ -82,17 +82,42 @@ const DriverDashboard = () => {
   };
 
   const fetchAvailableRides = async () => {
-    if (!isOnline) return;
+    console.log('🔍 DriverDashboard: fetchAvailableRides called');
+    console.log('🔍 isOnline:', isOnline);
+    console.log('🔍 API_URL:', API_URL);
+    console.log('🔍 User:', user);
+    
+    if (!isOnline) {
+      console.log('⚠️ Driver not online, skipping fetch');
+      return;
+    }
+    
+    if (!API_URL) {
+      console.error('❌ API_URL is undefined!');
+      return;
+    }
+    
+    if (!user) {
+      console.error('❌ User not authenticated!');
+      return;
+    }
     
     try {
+      console.log('🔍 Making API call to /api/rides/available...');
       const response = await axios.get(`${API_URL}/api/rides/available`);
+      console.log('🔍 Available rides response:', response.data);
+      
       if (response.status === 200) {
-        setAvailableRides(response.data.available_rides || []);
+        const rides = response.data.available_rides || [];
+        console.log('🔍 Setting available rides:', rides.length);
+        setAvailableRides(rides);
       }
     } catch (error) {
-      console.error('Error fetching available rides:', error);
+      console.error('❌ Error fetching available rides:', error);
+      console.error('Error details:', error.response?.data);
       if (error.response?.status === 400) {
         // Driver not online or no location set
+        console.log('⚠️ Driver not online or no location set');
         setAvailableRides([]);
       }
     }
