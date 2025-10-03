@@ -962,84 +962,167 @@ async def update_location(location_data: LocationUpdate, current_user: User = De
     return {"message": "Location updated successfully"}
 
 @api_router.post("/driver/online", response_model=Dict[str, str])
-async def toggle_driver_online(current_user: User = Depends(get_current_user)):
+async def set_driver_online(current_user: User = Depends(get_current_user)):
+    """Set driver online status to true"""
     if current_user.role != UserRole.DRIVER:
-        raise HTTPException(status_code=403, detail="Only drivers can toggle online status")
+        raise HTTPException(status_code=403, detail="Only drivers can set online status")
     
-    # Toggle online status
-    new_status = not current_user.is_online
-    await db.users.update_one(
+    # Get current status from database to ensure accuracy
+    user_doc = await db.users.find_one({"id": current_user.id})
+    if not user_doc:
+        logger.error(f"Driver {current_user.id} not found in database")
+        raise HTTPException(status_code=404, detail="Driver not found")
+    
+    current_status = user_doc.get("is_online", False)
+    logger.info(f"Driver {current_user.id} current status: {current_status}")
+    
+    # Set online status to true
+    new_status = True
+    
+    # Update database
+    result = await db.users.update_one(
         {"id": current_user.id},
         {"$set": {"is_online": new_status}}
     )
     
-    status_text = "online" if new_status else "offline"
-    return {"message": f"Driver is now {status_text}"}
+    logger.info(f"Update result: matched={result.matched_count}, modified={result.modified_count}")
+    
+    # Verify the update
+    updated_user = await db.users.find_one({"id": current_user.id})
+    if not updated_user:
+        logger.error(f"Driver {current_user.id} not found after update")
+        raise HTTPException(status_code=500, detail="Failed to update driver status")
+    
+    actual_status = updated_user.get("is_online", False)
+    
+    logger.info(f"Driver {current_user.id} online status: {current_status} -> {new_status} (actual: {actual_status})")
+    
+    if actual_status != new_status:
+        logger.error(f"Status update failed! Expected {new_status}, got {actual_status}")
+        raise HTTPException(status_code=500, detail="Failed to update driver online status")
+    
+    return {"message": f"Driver is now online", "status": actual_status}
+
+@api_router.post("/driver/offline", response_model=Dict[str, str])
+async def set_driver_offline(current_user: User = Depends(get_current_user)):
+    """Set driver online status to false"""
+    if current_user.role != UserRole.DRIVER:
+        raise HTTPException(status_code=403, detail="Only drivers can set offline status")
+    
+    # Get current status from database to ensure accuracy
+    user_doc = await db.users.find_one({"id": current_user.id})
+    current_status = user_doc.get("is_online", False) if user_doc else False
+    
+    # Set online status to false
+    new_status = False
+    
+    # Update database
+    result = await db.users.update_one(
+        {"id": current_user.id},
+        {"$set": {"is_online": new_status}}
+    )
+    
+    # Verify the update
+    updated_user = await db.users.find_one({"id": current_user.id})
+    actual_status = updated_user.get("is_online", False) if updated_user else False
+    
+    logger.info(f"Driver {current_user.id} online status: {current_status} -> {new_status} (actual: {actual_status})")
+    
+    return {"message": f"Driver is now offline"}
 
 # === RIDE ENDPOINTS ===
 
 @api_router.get("/rides/available", response_model=Dict[str, Any])
 async def get_available_rides(current_user: User = Depends(get_current_user)):
     """Get available rides for drivers with enhanced visibility"""
-    if current_user.role != UserRole.DRIVER:
-        raise HTTPException(status_code=403, detail="Only drivers can view available rides")
-    
-    # Get driver location
-    driver = await db.users.find_one({"id": current_user.id})
-    if not driver or not driver.get("current_location"):
-        raise HTTPException(status_code=400, detail="Driver location not set. Please update your location first.")
-    
-    if not driver.get("is_online", False):
-        raise HTTPException(status_code=400, detail="Driver must be online to view available rides")
-    
-    # Find pending ride requests
-    pending_requests = await db.ride_requests.find({
-        "status": RideStatus.PENDING,
-        "expires_at": {"$gt": datetime.now(timezone.utc)}
-    }).to_list(None)
-    
-    available_rides = []
-    all_requests = []
-    driver_location = driver["current_location"]
-    
-    for request in pending_requests:
-        # Calculate distance to pickup
-        pickup = request["pickup_location"]
-        distance = calculate_distance_km(
-            Location(**driver_location), Location(**pickup)
-        )
+    try:
+        logger.info(f"Driver {current_user.id} requesting available rides")
         
-        # Add distance info to all requests
-        ride_info = convert_objectids_to_strings(request)
-        ride_info["distance_to_pickup"] = round(distance, 2)
-        ride_info["estimated_pickup_time"] = int(distance * 2)  # 2 minutes per km estimate
-        all_requests.append(ride_info)
+        if current_user.role != UserRole.DRIVER:
+            raise HTTPException(status_code=403, detail="Only drivers can view available rides")
         
-        # Only show rides within 10km radius for available rides
-        if distance <= 10.0:
-            available_rides.append(ride_info)
-    
-    # Sort by distance
-    available_rides.sort(key=lambda x: x["distance_to_pickup"])
-    all_requests.sort(key=lambda x: x["distance_to_pickup"])
-    
-    # Log audit event
-    if AUDIT_ENABLED and audit_system:
-        await audit_system.log_action(
-            action=AuditAction.RIDE_QUERY,
-            user_id=current_user.id,
-            entity_type="ride_discovery",
-            entity_id=f"available_rides_{len(available_rides)}",
-            metadata={"rides_found": len(available_rides), "driver_online": True}
-        )
-    
-    return {
-        "available_rides": available_rides,
-        "all_pending_requests": all_requests,
-        "total_available": len(available_rides),
-        "total_pending": len(all_requests),
-        "driver_location": driver_location
-    }
+        # Get driver location
+        driver = await db.users.find_one({"id": current_user.id})
+        if not driver:
+            logger.error(f"Driver {current_user.id} not found in database")
+            raise HTTPException(status_code=404, detail="Driver not found")
+            
+        if not driver.get("current_location"):
+            logger.warning(f"Driver {current_user.id} has no location set")
+            raise HTTPException(status_code=400, detail="Driver location not set. Please update your location first.")
+        
+        if not driver.get("is_online", False):
+            logger.warning(f"Driver {current_user.id} is not online")
+            raise HTTPException(status_code=400, detail="Driver must be online to view available rides")
+        
+        logger.info(f"Driver {current_user.id} is online and has location set")
+        
+        # Find pending ride requests
+        pending_requests = await db.ride_requests.find({
+            "status": RideStatus.PENDING,
+            "expires_at": {"$gt": datetime.now(timezone.utc)}
+        }).to_list(None)
+        
+        logger.info(f"Found {len(pending_requests)} pending ride requests")
+        
+        available_rides = []
+        all_requests = []
+        driver_location = driver["current_location"]
+        
+        for request in pending_requests:
+            try:
+                # Calculate distance to pickup
+                pickup = request["pickup_location"]
+                distance = calculate_distance_km(
+                    Location(**driver_location), Location(**pickup)
+                )
+                
+                # Add distance info to all requests
+                ride_info = convert_objectids_to_strings(request)
+                ride_info["distance_to_pickup"] = round(distance, 2)
+                ride_info["estimated_pickup_time"] = int(distance * 2)  # 2 minutes per km estimate
+                all_requests.append(ride_info)
+                
+                # Only show rides within 10km radius for available rides
+                if distance <= 10.0:
+                    available_rides.append(ride_info)
+            except Exception as e:
+                logger.error(f"Error processing ride request {request.get('id', 'unknown')}: {e}")
+                continue
+        
+        # Sort by distance
+        available_rides.sort(key=lambda x: x["distance_to_pickup"])
+        all_requests.sort(key=lambda x: x["distance_to_pickup"])
+        
+        logger.info(f"Returning {len(available_rides)} available rides and {len(all_requests)} total requests")
+        
+        # Log audit event
+        if AUDIT_ENABLED and audit_system:
+            try:
+                await audit_system.log_action(
+                    action=AuditAction.RIDE_QUERY,
+                    user_id=current_user.id,
+                    entity_type="ride_discovery",
+                    entity_id=f"available_rides_{len(available_rides)}",
+                    metadata={"rides_found": len(available_rides), "driver_online": True}
+                )
+            except Exception as e:
+                logger.warning(f"Failed to log audit event: {e}")
+        
+        return {
+            "available_rides": available_rides,
+            "all_pending_requests": all_requests,
+            "total_available": len(available_rides),
+            "total_pending": len(all_requests),
+            "driver_location": driver_location
+        }
+        
+    except HTTPException:
+        # Re-raise HTTP exceptions as-is
+        raise
+    except Exception as e:
+        logger.error(f"Unexpected error in get_available_rides for driver {current_user.id}: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error while fetching available rides")
 
 @api_router.post("/rides/{ride_id}/update", response_model=Dict[str, Any])
 async def update_ride_status(ride_id: str, update: RideUpdate, current_user: User = Depends(get_current_user)):
@@ -1868,7 +1951,26 @@ async def get_audit_statistics(current_user: User = Depends(get_current_user)):
 
 @api_router.get("/health")
 async def health_check():
-    return {"status": "healthy", "service": "MobilityHub API"}
+    return {"status": "healthy", "service": "MobilityHub API", "timestamp": datetime.now(timezone.utc).isoformat()}
+
+@api_router.get("/health/detailed")
+async def detailed_health_check():
+    """Detailed health check with database connectivity"""
+    try:
+        # Test database connectivity
+        await db.users.count_documents({})
+        db_status = "connected"
+    except Exception as e:
+        db_status = f"error: {str(e)}"
+    
+    return {
+        "status": "healthy",
+        "service": "MobilityHub API",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "database": db_status,
+        "audit_enabled": AUDIT_ENABLED,
+        "admin_crud_enabled": admin_crud is not None
+    }
 
 @api_router.get("/config")
 async def get_config():
