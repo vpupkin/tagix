@@ -961,49 +961,27 @@ async def update_location(location_data: LocationUpdate, current_user: User = De
     
     return {"message": "Location updated successfully"}
 
-@api_router.post("/driver/online", response_model=Dict[str, str])
+@api_router.post("/driver/online", response_model=Dict[str, Any])
 async def set_driver_online(current_user: User = Depends(get_current_user)):
     """Set driver online status to true"""
     if current_user.role != UserRole.DRIVER:
         raise HTTPException(status_code=403, detail="Only drivers can set online status")
     
-    # Get current status from database to ensure accuracy
-    user_doc = await db.users.find_one({"id": current_user.id})
-    if not user_doc:
+    # Simply set online status to true
+    result = await db.users.update_one(
+        {"id": current_user.id},
+        {"$set": {"is_online": True}}
+    )
+    
+    if result.matched_count == 0:
         logger.error(f"Driver {current_user.id} not found in database")
         raise HTTPException(status_code=404, detail="Driver not found")
     
-    current_status = user_doc.get("is_online", False)
-    logger.info(f"Driver {current_user.id} current status: {current_status}")
+    logger.info(f"Driver {current_user.id} set to online (matched={result.matched_count}, modified={result.modified_count})")
     
-    # Set online status to true
-    new_status = True
-    
-    # Update database
-    result = await db.users.update_one(
-        {"id": current_user.id},
-        {"$set": {"is_online": new_status}}
-    )
-    
-    logger.info(f"Update result: matched={result.matched_count}, modified={result.modified_count}")
-    
-    # Verify the update
-    updated_user = await db.users.find_one({"id": current_user.id})
-    if not updated_user:
-        logger.error(f"Driver {current_user.id} not found after update")
-        raise HTTPException(status_code=500, detail="Failed to update driver status")
-    
-    actual_status = updated_user.get("is_online", False)
-    
-    logger.info(f"Driver {current_user.id} online status: {current_status} -> {new_status} (actual: {actual_status})")
-    
-    if actual_status != new_status:
-        logger.error(f"Status update failed! Expected {new_status}, got {actual_status}")
-        raise HTTPException(status_code=500, detail="Failed to update driver online status")
-    
-    return {"message": f"Driver is now online", "status": actual_status}
+    return {"message": "Driver is now online", "status": "online"}
 
-@api_router.post("/driver/offline", response_model=Dict[str, str])
+@api_router.post("/driver/offline", response_model=Dict[str, Any])
 async def set_driver_offline(current_user: User = Depends(get_current_user)):
     """Set driver online status to false"""
     if current_user.role != UserRole.DRIVER:
@@ -1028,7 +1006,7 @@ async def set_driver_offline(current_user: User = Depends(get_current_user)):
     
     logger.info(f"Driver {current_user.id} online status: {current_status} -> {new_status} (actual: {actual_status})")
     
-    return {"message": f"Driver is now offline"}
+    return {"message": f"Driver is now offline", "status": "offline"}
 
 # === RIDE ENDPOINTS ===
 
