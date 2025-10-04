@@ -1478,9 +1478,9 @@ async def get_payment_summary(current_user: User = Depends(get_current_user)):
     """Get payment summary and revenue calculation"""
     
     if current_user.role == UserRole.DRIVER:
-        # Driver earnings summary
+        # Driver earnings summary - include both completed and pending payments
         pipeline = [
-            {"$match": {"driver_id": current_user.id, "status": PaymentStatus.COMPLETED}},
+            {"$match": {"driver_id": current_user.id, "status": {"$in": [PaymentStatus.COMPLETED, PaymentStatus.PENDING]}}},
             {"$group": {
                 "_id": None,
                 "total_earnings": {"$sum": "$driver_earnings"},
