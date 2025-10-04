@@ -912,32 +912,50 @@ async def complete_ride(match_id: str, current_user: User = Depends(get_current_
 
 @api_router.post("/rides/{match_id}/rate", response_model=Dict[str, str])
 async def rate_ride(match_id: str, rating_request: RideRatingRequest, current_user: User = Depends(get_current_user)):
-    match_doc = await db.ride_matches.find_one({"id": match_id})
-    if not match_doc:
-        raise HTTPException(status_code=404, detail="Ride match not found")
-    
-    # Create the full rating object
-    rating_data = RideRating(
-        ride_id=match_id,
-        rater_id=current_user.id,
-        rating=rating_request.rating,
-        comment=rating_request.comment
-    )
-    
-    # Determine who is being rated
-    if current_user.id == match_doc["rider_id"]:
-        rating_data.rated_id = match_doc["driver_id"]
-    elif current_user.id == match_doc["driver_id"]:
-        rating_data.rated_id = match_doc["rider_id"]
-    else:
-        raise HTTPException(status_code=403, detail="Unauthorized to rate this ride")
-    
-    await db.ratings.insert_one(rating_data.model_dump())
-    
-    # Update user's average rating
-    await update_user_rating(rating_data.rated_id)
-    
-    return {"message": "Rating submitted successfully"}
+    try:
+        logger.info(f"Rating ride {match_id} by user {current_user.id}")
+        
+        match_doc = await db.ride_matches.find_one({"id": match_id})
+        if not match_doc:
+            logger.error(f"Ride match {match_id} not found")
+            raise HTTPException(status_code=404, detail="Ride match not found")
+        
+        logger.info(f"Found ride match: {match_doc}")
+        
+        # Create the full rating object
+        rating_data = RideRating(
+            ride_id=match_id,
+            rater_id=current_user.id,
+            rating=rating_request.rating,
+            comment=rating_request.comment
+        )
+        
+        # Determine who is being rated
+        if current_user.id == match_doc["rider_id"]:
+            rating_data.rated_id = match_doc["driver_id"]
+        elif current_user.id == match_doc["driver_id"]:
+            rating_data.rated_id = match_doc["rider_id"]
+        else:
+            logger.error(f"User {current_user.id} not authorized to rate ride {match_id}")
+            raise HTTPException(status_code=403, detail="Unauthorized to rate this ride")
+        
+        logger.info(f"Rating data: {rating_data.model_dump()}")
+        
+        # Insert rating into database
+        result = await db.ratings.insert_one(rating_data.model_dump())
+        logger.info(f"Rating inserted with ID: {result.inserted_id}")
+        
+        # Update user's average rating
+        await update_user_rating(rating_data.rated_id)
+        logger.info(f"Updated rating for user {rating_data.rated_id}")
+        
+        return {"message": "Rating submitted successfully"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error rating ride {match_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 async def update_user_rating(user_id: str):
     """Update user's average rating based on all ratings received"""
