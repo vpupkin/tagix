@@ -134,12 +134,47 @@ const RiderDashboard = () => {
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    if (!dateString || dateString === 'N/A') {
+      return 'Date not available';
+    }
+    
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) {
+        return 'Invalid date';
+      }
+      
+      return date.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch (error) {
+      return 'Date error';
+    }
+  };
+
+  const calculateDistance = (pickup, dropoff) => {
+    if (!pickup?.latitude || !pickup?.longitude || !dropoff?.latitude || !dropoff?.longitude) {
+      return null;
+    }
+    
+    const R = 6371; // Earth's radius in kilometers
+    const dLat = (dropoff.latitude - pickup.latitude) * Math.PI / 180;
+    const dLon = (dropoff.longitude - pickup.longitude) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(pickup.latitude * Math.PI / 180) * Math.cos(dropoff.latitude * Math.PI / 180) *
+              Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+  };
+
+  const calculateDuration = (distanceKm) => {
+    if (!distanceKm) return null;
+    // Assume average speed of 30 km/h in city traffic
+    const averageSpeed = 30;
+    return Math.round((distanceKm / averageSpeed) * 60); // minutes
   };
 
   const quickActions = [
@@ -346,6 +381,15 @@ const RiderDashboard = () => {
                             <p className="text-sm text-gray-600">
                               {formatDate(ride.created_at || ride.requested_at)}
                             </p>
+                            {(() => {
+                              const distance = calculateDistance(ride.pickup_location, ride.dropoff_location);
+                              const duration = calculateDuration(distance);
+                              return distance && duration ? (
+                                <p className="text-xs text-gray-500">
+                                  {distance.toFixed(1)} km • {duration} min
+                                </p>
+                              ) : null;
+                            })()}
                           </div>
                         </div>
                         <div className="text-right">
