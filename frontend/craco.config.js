@@ -7,6 +7,28 @@ const config = {
 };
 
 module.exports = {
+  devServer: {
+    // Force WebSocket to use localhost only - no port in URL
+    client: {
+      webSocketURL: 'ws://localhost/ws',
+    },
+    // Ensure proper host configuration
+    host: 'localhost',
+    port: 3000,
+    // Disable host check for development
+    allowedHosts: 'all',
+    // Override public path to avoid port conflicts
+    public: 'localhost',
+    // Disable automatic WebSocket URL detection
+    webSocketServer: {
+      type: 'ws',
+      options: {
+        host: 'localhost',
+        port: 3000,
+        path: '/ws',
+      },
+    },
+  },
   webpack: {
     alias: {
       '@': path.resolve(__dirname, 'src'),

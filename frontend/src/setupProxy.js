@@ -1,9 +1,11 @@
 const { createProxyMiddleware } = require('http-proxy-middleware');
 
 module.exports = function(app) {
-  // Get backend URL from environment
+  // Get backend URL from environment and remove port for unified structure
   const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
+  const backendUrlNoPort = backendUrl.replace(/:\d+/, '');
   console.log('🔧 setupProxy.js: Backend URL configured as:', backendUrl);
+  console.log('🔧 setupProxy.js: Backend URL (no port) for WebSocket:', backendUrlNoPort);
   
   // Proxy API requests to backend
   app.use(
@@ -19,17 +21,17 @@ module.exports = function(app) {
     })
   );
 
-  // Proxy WebSocket connections to backend
+  // Proxy WebSocket connections to backend (using URL without port)
   app.use(
     '/ws',
     createProxyMiddleware({
-      target: backendUrl,
+      target: backendUrlNoPort,
       changeOrigin: true,
       secure: false,
       ws: true, // Enable WebSocket proxying
       logLevel: 'debug',
       onProxyReqWs: (proxyReq, req, socket, options, head) => {
-        console.log('🔌 Proxying WebSocket request:', req.url, '->', backendUrl);
+        console.log('🔌 Proxying WebSocket request:', req.url, '->', backendUrlNoPort);
       }
     })
   );
