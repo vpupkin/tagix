@@ -84,9 +84,9 @@ export const WebSocketProvider = ({ children }) => {
         console.log('🔧 Hostname:', window.location.hostname, 'Port:', window.location.port);
       }
       
-      console.log(`Attempting WebSocket connection to: ${wsUrl}/ws/${user.id}`);
-      //const newSocket = new WebSocket(`${wsUrl}/ws/${user.id}`);
-      const newSocket = new WebSocket(`wss://kar.bar/ws/${user.id}`);
+      console.log(`!!!!30000000000 !!! Attempting WebSocket connection to: ${wsUrl}/ws/${user.id}`);
+      const newSocket = new WebSocket(`${wsUrl}/ws/${user.id}`);
+      //const newSocket = new WebSocket(`wss://kar.bar/ws/${user.id}`);
       
       newSocket.onopen = () => {
         console.log('WebSocket connected successfully');
