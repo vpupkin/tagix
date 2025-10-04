@@ -30,6 +30,8 @@ const RiderDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     totalRides: 0,
+    completedRides: 0,
+    pendingRides: 0,
     totalSpent: 0,
     averageRating: 5.0,
     favoriteDestination: 'Not available'
@@ -92,14 +94,19 @@ const RiderDashboard = () => {
       const data = response.data;
       
       const completedRides = data.completed_rides || [];
+      const pendingRides = data.pending_requests || [];
       const totalSpent = completedRides.reduce((sum, ride) => sum + (ride.estimated_fare || 0), 0);
       
       console.log('🔍 Setting user stats:');
-      console.log('  Total completed rides:', completedRides.length);
+      console.log('  Total rides:', completedRides.length + pendingRides.length);
+      console.log('  Completed rides:', completedRides.length);
+      console.log('  Pending rides:', pendingRides.length);
       console.log('  Total spent:', totalSpent);
       
       setStats({
-        totalRides: completedRides.length,
+        totalRides: completedRides.length + pendingRides.length,
+        completedRides: completedRides.length,
+        pendingRides: pendingRides.length,
         totalSpent: totalSpent,
         averageRating: user.rating || 5.0,
         favoriteDestination: 'Downtown' // This would be calculated from ride history
@@ -217,6 +224,7 @@ const RiderDashboard = () => {
                     <div>
                       <p className="text-sm font-medium text-gray-600">Total Rides</p>
                       <p className="text-2xl font-bold text-gray-900">{stats.totalRides}</p>
+                      <p className="text-xs text-gray-500">{stats.completedRides} completed, {stats.pendingRides} pending</p>
                     </div>
                     <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                       <Activity className="h-6 w-6 text-blue-600" />
@@ -231,6 +239,7 @@ const RiderDashboard = () => {
                     <div>
                       <p className="text-sm font-medium text-gray-600">Total Spent</p>
                       <p className="text-2xl font-bold text-gray-900">${stats.totalSpent.toFixed(2)}</p>
+                      <p className="text-xs text-gray-500">From completed rides only</p>
                     </div>
                     <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
                       <CreditCard className="h-6 w-6 text-green-600" />
