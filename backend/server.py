@@ -922,22 +922,24 @@ async def rate_ride(match_id: str, rating_request: RideRatingRequest, current_us
         
         logger.info(f"Found ride match: {match_doc}")
         
+        # Determine who is being rated first
+        rated_id = None
+        if current_user.id == match_doc["rider_id"]:
+            rated_id = match_doc["driver_id"]
+        elif current_user.id == match_doc["driver_id"]:
+            rated_id = match_doc["rider_id"]
+        else:
+            logger.error(f"User {current_user.id} not authorized to rate ride {match_id}")
+            raise HTTPException(status_code=403, detail="Unauthorized to rate this ride")
+        
         # Create the full rating object
         rating_data = RideRating(
             ride_id=match_id,
             rater_id=current_user.id,
+            rated_id=rated_id,
             rating=rating_request.rating,
             comment=rating_request.comment
         )
-        
-        # Determine who is being rated
-        if current_user.id == match_doc["rider_id"]:
-            rating_data.rated_id = match_doc["driver_id"]
-        elif current_user.id == match_doc["driver_id"]:
-            rating_data.rated_id = match_doc["rider_id"]
-        else:
-            logger.error(f"User {current_user.id} not authorized to rate ride {match_id}")
-            raise HTTPException(status_code=403, detail="Unauthorized to rate this ride")
         
         logger.info(f"Rating data: {rating_data.model_dump()}")
         
