@@ -2,6 +2,19 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { APIProvider, Map, AdvancedMarker, useMapsLibrary } from '@vis.gl/react-google-maps';
+
+// Simple debounce function
+function debounce(func, wait) {
+  let timeout;
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+}
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -156,6 +169,9 @@ const GoogleMapsAddressAutocomplete = ({ onPlaceSelect, placeholder, value, test
       return;
     }
 
+    // Add a small delay to prevent rate limiting
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
     setIsLoading(true);
     
     try {
@@ -207,10 +223,18 @@ const GoogleMapsAddressAutocomplete = ({ onPlaceSelect, placeholder, value, test
     }
   }, [apiError, placesLibrary]);
 
+  // Debounced input handler to prevent too many API calls
+  const debouncedFetchSuggestions = useCallback(
+    debounce((value) => {
+      fetchSuggestions(value);
+    }, 500),
+    [fetchSuggestions]
+  );
+
   const handleInputChange = (e) => {
     const value = e.target.value;
     setInputValue(value);
-    fetchSuggestions(value);
+    debouncedFetchSuggestions(value);
   };
 
   const handleManualAddressSubmit = () => {
@@ -866,6 +890,7 @@ const RideBooking = () => {
                         defaultZoom={12}
                         gestureHandling="greedy"
                         disableDefaultUI={false}
+                        mapId="DEMO_MAP_ID"
                         onError={(error) => {
                           console.warn('Google Maps error:', error);
                         }}
