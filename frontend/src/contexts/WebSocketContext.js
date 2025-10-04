@@ -207,33 +207,37 @@ export const WebSocketProvider = ({ children }) => {
       
       // Poll for ride requests (if driver)
       if (user.role === 'driver') {
-        const response = await fetch(`${backendUrl}/api/rides/available`, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('mobility_token')}`,
-            'Content-Type': 'application/json'
+        try {
+          const response = await fetch(`${backendUrl}/api/rides/available`, {
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('mobility_token')}`,
+              'Content-Type': 'application/json'
+            }
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            if (data.ride_requests && data.ride_requests.length > 0) {
+              setRideRequests(data.ride_requests);
+              // Show notification for new requests
+              data.ride_requests.forEach(request => {
+                if (!lastUpdateRef.current || request.created_at > lastUpdateRef.current) {
+                  toast.info(`New ride request: ${request.pickup_address}`);
+                  addNotification({
+                    id: Date.now(),
+                    type: 'ride_request',
+                    title: 'New Ride Request',
+                    message: `${request.pickup_address} to ${request.destination_address}`,
+                    timestamp: new Date(),
+                    data: request
+                  });
+                }
+              });
+              lastUpdateRef.current = new Date().toISOString();
+            }
           }
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          if (data.ride_requests && data.ride_requests.length > 0) {
-            setRideRequests(data.ride_requests);
-            // Show notification for new requests
-            data.ride_requests.forEach(request => {
-              if (!lastUpdateRef.current || request.created_at > lastUpdateRef.current) {
-                toast.info(`New ride request: ${request.pickup_address}`);
-                addNotification({
-                  id: Date.now(),
-                  type: 'ride_request',
-                  title: 'New Ride Request',
-                  message: `${request.pickup_address} to ${request.destination_address}`,
-                  timestamp: new Date(),
-                  data: request
-                });
-              }
-            });
-            lastUpdateRef.current = new Date().toISOString();
-          }
+        } catch (error) {
+          console.log('Driver polling endpoint not available:', error.message);
         }
       }
 
@@ -268,18 +272,27 @@ export const WebSocketProvider = ({ children }) => {
         }
       }
 
-      // Poll for nearby drivers (if rider)
+      // Poll for nearby drivers (if rider) - using existing endpoint
       if (user.role === 'rider') {
-        const response = await fetch(`${backendUrl}/api/drivers/nearby`, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('mobility_token')}`,
-            'Content-Type': 'application/json'
+        try {
+          // Use the existing drivers endpoint instead of /api/drivers/nearby
+          const response = await fetch(`${backendUrl}/api/drivers`, {
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('mobility_token')}`,
+              'Content-Type': 'application/json'
+            }
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            setNearbyDrivers(data.drivers || data || []);
+          } else {
+            // If drivers endpoint doesn't exist, just set empty array
+            setNearbyDrivers([]);
           }
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          setNearbyDrivers(data.drivers || []);
+        } catch (error) {
+          console.log('Drivers polling endpoint not available:', error.message);
+          setNearbyDrivers([]);
         }
       }
 
