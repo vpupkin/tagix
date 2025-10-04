@@ -305,16 +305,40 @@ class AdminCRUDOperations:
         pending_requests = convert_objectids_to_strings(pending_requests)
         completed_matches = convert_objectids_to_strings(completed_matches)
         
-        # Populate driver names for completed matches
+        # Populate driver names for both pending requests and completed matches
+        all_driver_ids = set()
+        for request in pending_requests:
+            if request.get('driver_id'):
+                all_driver_ids.add(request['driver_id'])
         for match in completed_matches:
             if match.get('driver_id'):
-                driver = await self.db.users.find_one({"id": match['driver_id']})
-                if driver:
-                    match['driver_name'] = driver.get('name', 'Unknown Driver')
-                    match['driver_email'] = driver.get('email', 'Unknown Email')
-                else:
-                    match['driver_name'] = 'Driver Not Found'
-                    match['driver_email'] = 'Unknown Email'
+                all_driver_ids.add(match['driver_id'])
+        
+        # Batch fetch driver information
+        drivers = {}
+        if all_driver_ids:
+            driver_cursor = self.db.users.find({"id": {"$in": list(all_driver_ids)}})
+            driver_list = await driver_cursor.to_list(None)
+            for driver in driver_list:
+                drivers[driver['id']] = {
+                    'name': driver.get('name', 'Unknown Driver'),
+                    'email': driver.get('email', 'Unknown Email')
+                }
+        
+        # Add driver names to pending requests
+        for request in pending_requests:
+            if request.get('driver_id') and request['driver_id'] in drivers:
+                request['driver_name'] = drivers[request['driver_id']]['name']
+                request['driver_email'] = drivers[request['driver_id']]['email']
+            else:
+                request['driver_name'] = 'Unassigned'
+                request['driver_email'] = 'N/A'
+        
+        # Add driver names to completed matches
+        for match in completed_matches:
+            if match.get('driver_id') and match['driver_id'] in drivers:
+                match['driver_name'] = drivers[match['driver_id']]['name']
+                match['driver_email'] = drivers[match['driver_id']]['email']
             else:
                 match['driver_name'] = 'Unassigned'
                 match['driver_email'] = 'N/A'
