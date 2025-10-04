@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 const AuthContext = createContext();
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
+console.log('API_URL from environment:', API_URL);
 
 export const useAuth = () => {
   const context = useContext(AuthContext);

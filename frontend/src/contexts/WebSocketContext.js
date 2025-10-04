@@ -21,7 +21,8 @@ export const WebSocketProvider = ({ children }) => {
   const [nearbyDrivers, setNearbyDrivers] = useState([]);
   const [rideRequests, setRideRequests] = useState([]);
   const reconnectAttempts = useRef(0);
-  const maxReconnectAttempts = 5;
+  const maxReconnectAttempts = 3; // Reduced from 5 to 3
+  const reconnectTimeoutRef = useRef(null);
 
   // Connect to WebSocket when user is authenticated
   useEffect(() => {
@@ -36,7 +37,22 @@ export const WebSocketProvider = ({ children }) => {
     };
   }, [isAuthenticated, user]);
 
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+      }
+    };
+  }, []);
+
   const connectWebSocket = () => {
+    // Clear any existing reconnection timeout
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+      reconnectTimeoutRef.current = null;
+    }
+
     if (socket) {
       if (typeof socket.close === 'function') {
         socket.close();
@@ -46,12 +62,14 @@ export const WebSocketProvider = ({ children }) => {
     }
 
     try {
-      const wsUrl = process.env.REACT_APP_BACKEND_URL.replace(/^http/, 'ws');
+      const backendUrl = process.env.REACT_APP_BACKEND_URL;
+      console.log('Backend URL from env:', backendUrl);
+      const wsUrl = backendUrl.replace(/^http/, 'ws');
       console.log(`Attempting WebSocket connection to: ${wsUrl}/ws/${user.id}`);
       const newSocket = new WebSocket(`${wsUrl}/ws/${user.id}`);
       
       newSocket.onopen = () => {
-        console.log('WebSocket connected');
+        console.log('WebSocket connected successfully');
         setConnected(true);
         reconnectAttempts.current = 0;
         
@@ -76,28 +94,43 @@ export const WebSocketProvider = ({ children }) => {
         console.log('WebSocket disconnected:', event.code, event.reason);
         setConnected(false);
         
-        // Attempt to reconnect if not manually closed
+        // Only attempt to reconnect if not manually closed and we haven't exceeded max attempts
         if (event.code !== 1000 && reconnectAttempts.current < maxReconnectAttempts && isAuthenticated) {
-          setTimeout(() => {
-            reconnectAttempts.current++;
-            console.log(`Attempting to reconnect... (${reconnectAttempts.current}/${maxReconnectAttempts})`);
+          const delay = Math.min(Math.pow(2, reconnectAttempts.current) * 2000, 10000); // Max 10 seconds
+          reconnectAttempts.current++;
+          console.log(`Attempting to reconnect... (${reconnectAttempts.current}/${maxReconnectAttempts}) in ${delay/1000}s`);
+          
+          reconnectTimeoutRef.current = setTimeout(() => {
             connectWebSocket();
-          }, Math.pow(2, reconnectAttempts.current) * 1000); // Exponential backoff
+          }, delay);
+        } else if (reconnectAttempts.current >= maxReconnectAttempts) {
+          console.log('Max reconnection attempts reached. WebSocket connection failed.');
+          toast.error('Unable to establish real-time connection. Some features may not work properly.');
         }
       };
 
       newSocket.onerror = (error) => {
         console.error('WebSocket error:', error);
-        toast.error('Connection error. Retrying...');
+        // Only show error toast on first few attempts to avoid spam
+        if (reconnectAttempts.current < 2) {
+          toast.error('Connection error. Retrying...');
+        }
       };
 
       setSocket(newSocket);
     } catch (error) {
       console.error('Failed to create WebSocket connection:', error);
+      toast.error('Failed to establish WebSocket connection');
     }
   };
 
   const disconnectWebSocket = () => {
+    // Clear any pending reconnection timeout
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+      reconnectTimeoutRef.current = null;
+    }
+
     if (socket) {
       if (typeof socket.close === 'function') {
         socket.close(1000, 'User logout'); // Normal closure for WebSocket
@@ -110,6 +143,7 @@ export const WebSocketProvider = ({ children }) => {
     setNotifications([]);
     setNearbyDrivers([]);
     setRideRequests([]);
+    reconnectAttempts.current = 0; // Reset reconnection attempts
   };
 
   const handleWebSocketMessage = (data) => {
