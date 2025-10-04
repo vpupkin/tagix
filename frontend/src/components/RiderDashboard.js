@@ -76,6 +76,7 @@ const RiderDashboard = () => {
       console.log('🔍 Setting recent rides:', recentRides.length);
       console.log('🔍 Total pending requests:', pendingRequests.length);
       console.log('🔍 Total completed rides:', completedRides.length);
+      console.log('🔍 Recent rides data:', recentRides);
       setRecentRides(recentRides);
     } catch (error) {
       console.error('❌ Error fetching rides:', error);
@@ -331,19 +332,19 @@ const RiderDashboard = () => {
                           </div>
                           <div>
                             <p className="font-medium text-gray-900">
-                              {ride.pickup_location?.address || 'Pickup Location'} → {ride.dropoff_location?.address || 'Destination'}
+                              {ride.pickup_location?.address || ride.pickup_address || 'Pickup Location'} → {ride.dropoff_location?.address || ride.dropoff_address || 'Destination'}
                             </p>
                             <p className="text-sm text-gray-600">
-                              {formatDate(ride.created_at)}
+                              {formatDate(ride.created_at || ride.requested_at)}
                             </p>
                           </div>
                         </div>
                         <div className="text-right">
-                          <Badge className={getStatusColor(ride.status)}>
-                            {ride.status.replace('_', ' ')}
+                          <Badge className={getStatusColor(ride.status || 'pending')}>
+                            {(ride.status || 'pending').replace('_', ' ')}
                           </Badge>
                           <p className="text-sm font-medium text-gray-900 mt-1">
-                            ${ride.estimated_fare?.toFixed(2) || '0.00'}
+                            ${(ride.estimated_fare || ride.fare || 0).toFixed(2)}
                           </p>
                         </div>
                       </div>

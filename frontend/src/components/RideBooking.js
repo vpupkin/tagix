@@ -15,6 +15,45 @@ function debounce(func, wait) {
     timeout = setTimeout(later, wait);
   };
 }
+
+// Route Renderer Component
+const RouteRenderer = ({ origin, destination }) => {
+  const mapsLibrary = useMapsLibrary('routes');
+  const [route, setRoute] = useState(null);
+
+  useEffect(() => {
+    if (!mapsLibrary || !origin || !destination) return;
+
+    const directionsService = new mapsLibrary.DirectionsService();
+    const directionsRenderer = new mapsLibrary.DirectionsRenderer({
+      suppressMarkers: true, // We're using our own markers
+      polylineOptions: {
+        strokeColor: '#3B82F6',
+        strokeWeight: 4,
+        strokeOpacity: 0.8
+      }
+    });
+
+    directionsService.route({
+      origin: origin,
+      destination: destination,
+      travelMode: mapsLibrary.TravelMode.DRIVING
+    }, (result, status) => {
+      if (status === 'OK' && result) {
+        setRoute(result);
+        directionsRenderer.setDirections(result);
+      }
+    });
+
+    return () => {
+      if (directionsRenderer) {
+        directionsRenderer.setMap(null);
+      }
+    };
+  }, [mapsLibrary, origin, destination]);
+
+  return null; // This component doesn't render anything visible
+};
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -915,6 +954,20 @@ const RideBooking = () => {
                               D
                             </div>
                           </AdvancedMarker>
+                        )}
+                        
+                        {/* Route visualization */}
+                        {pickupLocation && dropoffLocation && (
+                          <RouteRenderer 
+                            origin={{
+                              lat: pickupLocation.location.latitude,
+                              lng: pickupLocation.location.longitude
+                            }}
+                            destination={{
+                              lat: dropoffLocation.location.latitude,
+                              lng: dropoffLocation.location.longitude
+                            }}
+                          />
                         )}
                       </Map>
                     </APIProvider>
