@@ -26,14 +26,14 @@ export const WebSocketProvider = ({ children }) => {
 
   // Connect to WebSocket when user is authenticated
   useEffect(() => {
-    // WebSocket enabled - let's fix Apache2 configuration
-    const WEBSOCKET_ENABLED = true; // Re-enabled to fix Apache2
+    // TEMPORARILY DISABLE WebSocket to fix port 3000 conflicts
+    const WEBSOCKET_ENABLED = false; // Disabled to fix port 3000 issues
     
     if (WEBSOCKET_ENABLED && isAuthenticated && user) {
       connectWebSocket();
     } else {
       if (isAuthenticated && user) {
-        console.log('🔌 WebSocket temporarily disabled. Enable after fixing Apache2 configuration.');
+        console.log('🔌 WebSocket temporarily disabled to fix port 3000 conflicts.');
       }
       disconnectWebSocket();
     }
