@@ -379,7 +379,7 @@ const RiderDashboard = () => {
                               {ride.pickup_location?.address || ride.pickup_address || 'Pickup Location'} → {ride.dropoff_location?.address || ride.dropoff_address || 'Destination'}
                             </p>
                             <p className="text-sm text-gray-600">
-                              {formatDate(ride.created_at || ride.requested_at)}
+                              {formatDate(ride.created_at || ride.accepted_at || ride.completed_at || ride.requested_at)}
                             </p>
                             {(() => {
                               const distance = calculateDistance(ride.pickup_location, ride.dropoff_location);

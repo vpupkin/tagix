@@ -198,7 +198,7 @@ const RideDetailsModal = ({ ride, isOpen, onClose }) => {
             </div>
             <div>
               <Label className="text-sm font-medium text-gray-600">Created</Label>
-              <p className="text-sm">{formatDate(ride.created_at)}</p>
+              <p className="text-sm">{formatDate(ride.created_at || ride.accepted_at || ride.completed_at || ride.requested_at)}</p>
             </div>
           </div>
           
@@ -267,6 +267,28 @@ const formatDate = (dateString) => {
   } catch (error) {
     return 'Date error';
   }
+};
+
+const calculateDistance = (pickup, dropoff) => {
+  if (!pickup?.latitude || !pickup?.longitude || !dropoff?.latitude || !dropoff?.longitude) {
+    return null;
+  }
+  
+  const R = 6371; // Earth's radius in kilometers
+  const dLat = (dropoff.latitude - pickup.latitude) * Math.PI / 180;
+  const dLon = (dropoff.longitude - pickup.longitude) * Math.PI / 180;
+  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+            Math.cos(pickup.latitude * Math.PI / 180) * Math.cos(dropoff.latitude * Math.PI / 180) *
+            Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
+};
+
+const calculateDuration = (distanceKm) => {
+  if (!distanceKm) return null;
+  // Assume average speed of 30 km/h in city traffic
+  const averageSpeed = 30;
+  return Math.round((distanceKm / averageSpeed) * 60); // minutes
 };
 
 const RideHistory = () => {
@@ -422,7 +444,7 @@ const RideHistory = () => {
                           </Badge>
                         </div>
                         <div className="text-sm text-gray-500">
-                          {formatDate(ride.created_at)}
+                          {formatDate(ride.created_at || ride.accepted_at || ride.completed_at || ride.requested_at)}
                         </div>
                         <div className="text-sm font-mono text-gray-400">
                           #{ride.id.slice(-8)}
@@ -460,7 +482,13 @@ const RideHistory = () => {
                               ${ride.estimated_fare?.toFixed(2) || '0.00'}
                             </p>
                             <p className="text-sm text-gray-500">
-                              {ride.estimated_distance_km?.toFixed(1) || 'N/A'} km • {ride.estimated_duration_minutes || 'N/A'} min
+                              {(() => {
+                                const distance = calculateDistance(ride.pickup_location, ride.dropoff_location);
+                                const duration = calculateDuration(distance);
+                                return distance && duration 
+                                  ? `${distance.toFixed(1)} km • ${duration} min`
+                                  : `${ride.estimated_distance_km?.toFixed(1) || 'N/A'} km • ${ride.estimated_duration_minutes || 'N/A'} min`;
+                              })()}
                             </p>
                           </div>
                           
