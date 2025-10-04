@@ -1061,8 +1061,8 @@ async def get_available_rides(current_user: User = Depends(get_current_user)):
                 ride_info["estimated_pickup_time"] = int(distance * 2)  # 2 minutes per km estimate
                 all_requests.append(ride_info)
                 
-                # Only show rides within 10km radius for available rides
-                if distance <= 10.0:
+                # Only show rides within 25km radius for available rides (increased from 10km)
+                if distance <= 25.0:
                     available_rides.append(ride_info)
             except Exception as e:
                 logger.error(f"Error processing ride request {request.get('id', 'unknown')}: {e}")
