@@ -23,27 +23,17 @@ export const WebSocketProvider = ({ children }) => {
   const reconnectAttempts = useRef(0);
   const maxReconnectAttempts = 3; // Reduced from 5 to 3
   const reconnectTimeoutRef = useRef(null);
-  const pollingIntervalRef = useRef(null);
-  const lastUpdateRef = useRef(null);
 
   // Connect to WebSocket when user is authenticated
   useEffect(() => {
-    // TEMPORARILY DISABLE WebSocket to fix port 3000 conflicts
-    const WEBSOCKET_ENABLED = false; // Disabled to fix port 3000 issues
-    
-    if (WEBSOCKET_ENABLED && isAuthenticated && user) {
+    if (isAuthenticated && user) {
       connectWebSocket();
     } else {
-      if (isAuthenticated && user) {
-        console.log('🔌 WebSocket temporarily disabled. Using polling for real-time updates.');
-        startPollingUpdates();
-      }
       disconnectWebSocket();
     }
 
     return () => {
       disconnectWebSocket();
-      stopPollingUpdates();
     };
   }, [isAuthenticated, user]);
 
@@ -74,19 +64,7 @@ export const WebSocketProvider = ({ children }) => {
     try {
       const backendUrl = process.env.REACT_APP_BACKEND_URL;
       console.log('Backend URL from env:', backendUrl);
-      
-      // Unified WebSocket URL structure - no port in URL
-      let wsUrl;
-      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-        // Development: Use localhost without port
-        wsUrl = `ws://localhost`;
-        console.log('🔧 Development mode: Using localhost (no port) for WebSocket');
-      } else {
-        // Production: Use backend URL without port
-        wsUrl = backendUrl.replace(/^http/, 'ws').replace(/:\d+/, '');
-        console.log('🔧 Production mode: Using backend URL (no port) for WebSocket');
-      }
-      
+      const wsUrl = backendUrl.replace(/^http/, 'ws');
       console.log(`Attempting WebSocket connection to: ${wsUrl}/ws/${user.id}`);
       const newSocket = new WebSocket(`${wsUrl}/ws/${user.id}`);
       
@@ -168,138 +146,6 @@ export const WebSocketProvider = ({ children }) => {
     reconnectAttempts.current = 0; // Reset reconnection attempts
   };
 
-  // Polling-based updates (alternative to WebSocket)
-  const startPollingUpdates = () => {
-    if (pollingIntervalRef.current) {
-      clearInterval(pollingIntervalRef.current);
-    }
-
-    console.log('🔄 Starting polling for real-time updates...');
-    setConnected(true); // Simulate connection status
-
-    // Poll every 5 seconds for updates
-    pollingIntervalRef.current = setInterval(async () => {
-      try {
-        await pollForUpdates();
-      } catch (error) {
-        console.error('Polling error:', error);
-      }
-    }, 5000);
-
-    // Initial poll
-    pollForUpdates();
-  };
-
-  const stopPollingUpdates = () => {
-    if (pollingIntervalRef.current) {
-      clearInterval(pollingIntervalRef.current);
-      pollingIntervalRef.current = null;
-    }
-    console.log('🛑 Stopped polling for updates');
-    setConnected(false);
-  };
-
-  const pollForUpdates = async () => {
-    if (!user) return;
-
-    try {
-      const backendUrl = process.env.REACT_APP_BACKEND_URL;
-      
-      // Poll for ride requests (if driver)
-      if (user.role === 'driver') {
-        try {
-          const response = await fetch(`${backendUrl}/api/rides/available`, {
-            headers: {
-              'Authorization': `Bearer ${localStorage.getItem('mobility_token')}`,
-              'Content-Type': 'application/json'
-            }
-          });
-          
-          if (response.ok) {
-            const data = await response.json();
-            if (data.ride_requests && data.ride_requests.length > 0) {
-              setRideRequests(data.ride_requests);
-              // Show notification for new requests
-              data.ride_requests.forEach(request => {
-                if (!lastUpdateRef.current || request.created_at > lastUpdateRef.current) {
-                  toast.info(`New ride request: ${request.pickup_address}`);
-                  addNotification({
-                    id: Date.now(),
-                    type: 'ride_request',
-                    title: 'New Ride Request',
-                    message: `${request.pickup_address} to ${request.destination_address}`,
-                    timestamp: new Date(),
-                    data: request
-                  });
-                }
-              });
-              lastUpdateRef.current = new Date().toISOString();
-            }
-          }
-        } catch (error) {
-          console.log('Driver polling endpoint not available:', error.message);
-        }
-      }
-
-      // Poll for ride status updates (if rider)
-      if (user.role === 'rider') {
-        const response = await fetch(`${backendUrl}/api/rides/my-requests`, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('mobility_token')}`,
-            'Content-Type': 'application/json'
-          }
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          // Check for status changes in pending requests
-          if (data.pending_requests) {
-            data.pending_requests.forEach(request => {
-              if (request.status === 'accepted' && (!lastUpdateRef.current || request.updated_at > lastUpdateRef.current)) {
-                toast.success(`Driver ${request.driver_name} accepted your ride!`);
-                addNotification({
-                  id: Date.now(),
-                  type: 'ride_accepted',
-                  title: 'Ride Accepted!',
-                  message: `${request.driver_name} is on the way`,
-                  timestamp: new Date(),
-                  data: request
-                });
-              }
-            });
-            lastUpdateRef.current = new Date().toISOString();
-          }
-        }
-      }
-
-      // Poll for nearby drivers (if rider) - using existing endpoint
-      if (user.role === 'rider') {
-        try {
-          // Use the existing drivers endpoint instead of /api/drivers/nearby
-          const response = await fetch(`${backendUrl}/api/drivers`, {
-            headers: {
-              'Authorization': `Bearer ${localStorage.getItem('mobility_token')}`,
-              'Content-Type': 'application/json'
-            }
-          });
-          
-          if (response.ok) {
-            const data = await response.json();
-            setNearbyDrivers(data.drivers || data || []);
-          } else {
-            // If drivers endpoint doesn't exist, just set empty array
-            setNearbyDrivers([]);
-          }
-        } catch (error) {
-          console.log('Drivers polling endpoint not available:', error.message);
-          setNearbyDrivers([]);
-        }
-      }
-
-    } catch (error) {
-      console.error('Error polling for updates:', error);
-    }
-  };
 
   const handleWebSocketMessage = (data) => {
     console.log('WebSocket message received:', data);
