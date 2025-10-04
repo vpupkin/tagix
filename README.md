@@ -658,6 +658,8 @@ const socket = new WebSocket('ws://localhost:8001/ws/{user_id}');
    4. Fill pickup/destination → SUCCESS
    5. Select vehicle type → SUCCESS
    6. View fare estimate → SUCCESS
+   7. See route visualization on map → SUCCESS
+   8. View pending requests in dashboard → SUCCESS
    ```
 
 2. **Driver Registration & Profile** ✅
@@ -667,6 +669,8 @@ const socket = new WebSocket('ws://localhost:8001/ws/{user_id}');
    2. Create driver profile → SUCCESS
    3. Toggle online status → SUCCESS
    4. Receive ride notifications → SUCCESS
+   5. See available rides within 25km radius → SUCCESS
+   6. View ride distance and pickup time estimates → SUCCESS
    ```
 
 3. **Admin Platform Management** ✅
@@ -676,6 +680,7 @@ const socket = new WebSocket('ws://localhost:8001/ws/{user_id}');
    2. Access admin dashboard → SUCCESS
    3. View platform statistics → SUCCESS
    4. Monitor user activity → SUCCESS
+   5. View structured ride data (pending/completed) → SUCCESS
    ```
 
 #### Performance Testing
@@ -699,6 +704,80 @@ After testing, the database contains:
 - **Active Rides**: 0 (test environment)
 - **Payment Transactions**: 0 (test environment)
 - **Driver Profiles**: 1 created successfully
+
+## 🔧 Recent Fixes & Improvements
+
+### Frontend Enhancements
+
+#### ✅ Route Visualization Fixed
+- **Issue**: Map showed pickup and destination markers but no route line
+- **Solution**: Added RouteRenderer component using Google Maps Directions API
+- **Result**: Users now see blue route lines connecting pickup and destination points
+- **Features**: 
+  - Interactive route visualization with 4px stroke width
+  - Blue color (#3B82F6) with 80% opacity
+  - Driving directions optimized for ride-sharing
+
+#### ✅ Rider Dashboard Display Fixed
+- **Issue**: Rider dashboard showed "No rides yet" despite having pending requests
+- **Solution**: Fixed data field handling to support multiple address formats
+- **Result**: Riders now see their pending requests and completed rides
+- **Improvements**:
+  - Support for both `pickup_location.address` and `pickup_address` formats
+  - Enhanced status and fare display with fallback values
+  - Better date handling for both `created_at` and `requested_at` fields
+
+#### ✅ Google Maps Integration Enhanced
+- **Issue**: Autocomplete not working and API errors
+- **Solution**: Implemented robust error handling and fallback mechanisms
+- **Features**:
+  - Conditional component rendering based on API key validity
+  - Debounced autocomplete to prevent rate limiting (429 errors)
+  - Manual entry fallback when API is unavailable
+  - Global error handler for authentication failures
+  - Map ID configuration to fix Advanced Markers warnings
+
+### Backend Improvements
+
+#### ✅ Driver Ride Matching Algorithm Fixed
+- **Issue**: Drivers saw 0 available rides despite pending requests being nearby
+- **Root Cause**: 10km radius limit was too restrictive (requests were 12-13km away)
+- **Solution**: Increased radius from 10km to 25km for better ride matching
+- **Result**: Drivers now see all nearby ride requests within realistic distance
+- **Impact**: Improved driver utilization and rider experience
+
+#### ✅ API Response Structure Standardized
+- **Issue**: Inconsistent data structures between different endpoints
+- **Solution**: Standardized response formats across all ride-related endpoints
+- **Improvements**:
+  - Structured responses with `pending_requests` and `completed_matches`
+  - Consistent distance calculations and pickup time estimates
+  - Enhanced error handling and logging
+
+### Performance Optimizations
+
+#### ✅ Rate Limiting Prevention
+- **Issue**: Google Maps API rate limiting (429 errors) due to excessive calls
+- **Solution**: Implemented debouncing with 500ms delay and 300ms internal delay
+- **Result**: Reduced API calls and eliminated rate limiting errors
+
+#### ✅ Component Loading Optimization
+- **Issue**: Google Maps library loading unnecessarily when API key invalid
+- **Solution**: Conditional hook usage to prevent library loading
+- **Result**: Faster page loads and better error handling
+
+### Documentation Updates
+
+#### ✅ Google Maps Setup Guide
+- Created comprehensive setup guide (`frontend/GOOGLE_MAPS_SETUP.md`)
+- Added quick fix guide for API key restrictions (`frontend/QUICK_FIX_GUIDE.md`)
+- Provided test files for API key validation
+- Included troubleshooting steps for common issues
+
+#### ✅ API Testing Tools
+- Created test HTML file for direct Google Maps API testing
+- Added debugging scripts for driver ride matching
+- Enhanced error logging and debugging capabilities
 
 ## ❓ Q&A / Troubleshooting
 
@@ -739,9 +818,12 @@ echo $MONGO_URL
 #### Q: Google Maps not loading or address autocomplete not working
 **A**: Verify Google Maps API key configuration:
 1. Check API key is valid and has proper permissions
-2. Enable required APIs: Maps JavaScript API, Places API
+2. Enable required APIs: Maps JavaScript API, Places API, Geocoding API, Directions API
 3. Update both backend and frontend `.env` files
 4. Restart services after updating configuration
+5. **New**: Use the test file `frontend/test-api-key.html` to validate your API key
+6. **New**: Check `frontend/QUICK_FIX_GUIDE.md` for API key restriction issues
+7. **New**: Disable ad blockers that might block Google Maps requests
 
 #### Q: Stripe payments failing or webhook errors
 **A**: Verify Stripe configuration:
@@ -764,6 +846,28 @@ wscat -c ws://localhost:8001/ws/test-user-id
 # Check if port 8001 is open
 netstat -tlnp | grep :8001
 ```
+
+#### Q: Driver sees 0 available rides despite pending requests
+**A**: This was a common issue that has been fixed:
+1. **Root Cause**: 10km radius limit was too restrictive
+2. **Solution**: Radius increased to 25km (fixed in latest version)
+3. **Verification**: Check if you're running the latest backend version
+4. **Manual Check**: Use browser console to see distance calculations
+5. **Expected**: Drivers should now see rides up to 25km away
+
+#### Q: Rider dashboard shows "No rides yet" despite having requests
+**A**: This issue has been resolved:
+1. **Root Cause**: Data field format mismatches
+2. **Solution**: Enhanced field handling for multiple address formats
+3. **Verification**: Check browser console for ride data logs
+4. **Expected**: Riders should see both pending requests and completed rides
+
+#### Q: Map shows markers but no route line between pickup and destination
+**A**: Route visualization has been implemented:
+1. **Root Cause**: Missing Directions API integration
+2. **Solution**: Added RouteRenderer component with Google Maps Directions API
+3. **Verification**: Select both pickup and destination locations
+4. **Expected**: Blue route line should appear connecting the two points
 
 ### Performance Issues
 
