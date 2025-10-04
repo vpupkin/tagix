@@ -70,7 +70,20 @@ export const WebSocketProvider = ({ children }) => {
     try {
       const backendUrl = process.env.REACT_APP_BACKEND_URL;
       console.log('Backend URL from env:', backendUrl);
-      const wsUrl = backendUrl.replace(/^http/, 'ws');
+      
+      // For development, use localhost:3000 for WebSocket connections
+      // For production, use the backend URL
+      let wsUrl;
+      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        // Development: Connect directly to localhost:3000 (React dev server)
+        wsUrl = `ws://localhost:3000`;
+        console.log('🔧 Development mode: Using localhost:3000 for WebSocket');
+      } else {
+        // Production: Use backend URL
+        wsUrl = backendUrl.replace(/^http/, 'ws');
+        console.log('🔧 Production mode: Using backend URL for WebSocket');
+      }
+      
       console.log(`Attempting WebSocket connection to: ${wsUrl}/ws/${user.id}`);
       const newSocket = new WebSocket(`${wsUrl}/ws/${user.id}`);
       

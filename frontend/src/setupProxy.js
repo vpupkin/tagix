@@ -1,14 +1,21 @@
 const { createProxyMiddleware } = require('http-proxy-middleware');
 
 module.exports = function(app) {
+  // Get backend URL from environment
+  const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
+  console.log('🔧 setupProxy.js: Backend URL configured as:', backendUrl);
+  
   // Proxy API requests to backend
   app.use(
     '/api',
     createProxyMiddleware({
-      target: process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001',
+      target: backendUrl,
       changeOrigin: true,
       secure: false,
-      logLevel: 'debug'
+      logLevel: 'debug',
+      onProxyReq: (proxyReq, req, res) => {
+        console.log('🔄 Proxying API request:', req.method, req.url, '->', backendUrl);
+      }
     })
   );
 
@@ -16,11 +23,14 @@ module.exports = function(app) {
   app.use(
     '/ws',
     createProxyMiddleware({
-      target: process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001',
+      target: backendUrl,
       changeOrigin: true,
       secure: false,
       ws: true, // Enable WebSocket proxying
-      logLevel: 'debug'
+      logLevel: 'debug',
+      onProxyReqWs: (proxyReq, req, socket, options, head) => {
+        console.log('🔌 Proxying WebSocket request:', req.url, '->', backendUrl);
+      }
     })
   );
 };
