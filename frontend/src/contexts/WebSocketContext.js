@@ -26,9 +26,15 @@ export const WebSocketProvider = ({ children }) => {
 
   // Connect to WebSocket when user is authenticated
   useEffect(() => {
-    if (isAuthenticated && user) {
+    // WebSocket enabled - let's fix Apache2 configuration
+    const WEBSOCKET_ENABLED = true; // Re-enabled to fix Apache2
+    
+    if (WEBSOCKET_ENABLED && isAuthenticated && user) {
       connectWebSocket();
     } else {
+      if (isAuthenticated && user) {
+        console.log('🔌 WebSocket temporarily disabled. Enable after fixing Apache2 configuration.');
+      }
       disconnectWebSocket();
     }
 
