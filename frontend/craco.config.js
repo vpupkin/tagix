@@ -8,10 +8,6 @@ const config = {
 
 module.exports = {
   devServer: {
-    // Force WebSocket to use localhost only - no port in URL
-    client: {
-      webSocketURL: 'ws://localhost/ws',
-    },
     // Ensure proper host configuration
     host: 'localhost',
     port: 3000,
@@ -19,15 +15,20 @@ module.exports = {
     allowedHosts: 'all',
     // Override public path to avoid port conflicts
     public: 'localhost',
-    // Disable automatic WebSocket URL detection
-    webSocketServer: {
-      type: 'ws',
-      options: {
-        host: 'localhost',
+    // Disable live reload to prevent WebSocket issues
+    liveReload: false,
+    hot: false,
+    // Force WebSocket to use localhost only - no port in URL
+    client: {
+      webSocketURL: {
+        hostname: 'localhost',
+        pathname: '/ws',
         port: 3000,
-        path: '/ws',
+        protocol: 'ws',
       },
     },
+    // Completely disable WebSocket for hot reload to avoid port conflicts
+    webSocketServer: false,
   },
   webpack: {
     alias: {
@@ -35,32 +36,17 @@ module.exports = {
     },
     configure: (webpackConfig) => {
       
-      // Disable hot reload completely if environment variable is set
-      if (config.disableHotReload) {
-        // Remove hot reload related plugins
-        webpackConfig.plugins = webpackConfig.plugins.filter(plugin => {
-          return !(plugin.constructor.name === 'HotModuleReplacementPlugin');
-        });
-        
-        // Disable watch mode
-        webpackConfig.watch = false;
-        webpackConfig.watchOptions = {
-          ignored: /.*/, // Ignore all files
-        };
-      } else {
-        // Add ignored patterns to reduce watched directories
-        webpackConfig.watchOptions = {
-          ...webpackConfig.watchOptions,
-          ignored: [
-            '**/node_modules/**',
-            '**/.git/**',
-            '**/build/**',
-            '**/dist/**',
-            '**/coverage/**',
-            '**/public/**',
-          ],
-        };
-      }
+      // Always disable hot reload to prevent WebSocket conflicts
+      // Remove hot reload related plugins
+      webpackConfig.plugins = webpackConfig.plugins.filter(plugin => {
+        return !(plugin.constructor.name === 'HotModuleReplacementPlugin');
+      });
+      
+      // Disable watch mode
+      webpackConfig.watch = false;
+      webpackConfig.watchOptions = {
+        ignored: /.*/, // Ignore all files
+      };
       
       return webpackConfig;
     },
