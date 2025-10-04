@@ -305,6 +305,58 @@ class AdminCRUDOperations:
         pending_requests = convert_objectids_to_strings(pending_requests)
         completed_matches = convert_objectids_to_strings(completed_matches)
         
+        # Populate driver names for completed matches
+        for match in completed_matches:
+            if match.get('driver_id'):
+                driver = await self.db.users.find_one({"id": match['driver_id']})
+                if driver:
+                    match['driver_name'] = driver.get('name', 'Unknown Driver')
+                    match['driver_email'] = driver.get('email', 'Unknown Email')
+                else:
+                    match['driver_name'] = 'Driver Not Found'
+                    match['driver_email'] = 'Unknown Email'
+            else:
+                match['driver_name'] = 'Unassigned'
+                match['driver_email'] = 'N/A'
+        
+        # Populate rider names for both pending requests and completed matches
+        all_ride_ids = set()
+        for ride in pending_requests:
+            if ride.get('rider_id'):
+                all_ride_ids.add(ride['rider_id'])
+        for match in completed_matches:
+            if match.get('rider_id'):
+                all_ride_ids.add(match['rider_id'])
+        
+        # Batch fetch rider information
+        riders = {}
+        if all_ride_ids:
+            rider_cursor = self.db.users.find({"id": {"$in": list(all_ride_ids)}})
+            rider_list = await rider_cursor.to_list(None)
+            for rider in rider_list:
+                riders[rider['id']] = {
+                    'name': rider.get('name', 'Unknown Rider'),
+                    'email': rider.get('email', 'Unknown Email')
+                }
+        
+        # Add rider names to pending requests
+        for request in pending_requests:
+            if request.get('rider_id') and request['rider_id'] in riders:
+                request['rider_name'] = riders[request['rider_id']]['name']
+                request['rider_email'] = riders[request['rider_id']]['email']
+            else:
+                request['rider_name'] = 'Rider Not Found'
+                request['rider_email'] = 'Unknown Email'
+        
+        # Add rider names to completed matches
+        for match in completed_matches:
+            if match.get('rider_id') and match['rider_id'] in riders:
+                match['rider_name'] = riders[match['rider_id']]['name']
+                match['rider_email'] = riders[match['rider_id']]['email']
+            else:
+                match['rider_name'] = 'Rider Not Found'
+                match['rider_email'] = 'Unknown Email'
+        
         total_count = pending_count + matches_count
         
         # Log audit event
@@ -429,6 +481,41 @@ class AdminCRUDOperations:
         
         # Convert MongoDB ObjectIds to strings for JSON serialization
         payments = convert_objectids_to_strings(payments)
+        
+        # Populate driver and rider names for payments
+        all_user_ids = set()
+        for payment in payments:
+            if payment.get('driver_id'):
+                all_user_ids.add(payment['driver_id'])
+            if payment.get('rider_id'):
+                all_user_ids.add(payment['rider_id'])
+        
+        # Batch fetch user information
+        users = {}
+        if all_user_ids:
+            user_cursor = self.db.users.find({"id": {"$in": list(all_user_ids)}})
+            user_list = await user_cursor.to_list(None)
+            for user in user_list:
+                users[user['id']] = {
+                    'name': user.get('name', 'Unknown User'),
+                    'email': user.get('email', 'Unknown Email')
+                }
+        
+        # Add user names to payments
+        for payment in payments:
+            if payment.get('driver_id') and payment['driver_id'] in users:
+                payment['driver_name'] = users[payment['driver_id']]['name']
+                payment['driver_email'] = users[payment['driver_id']]['email']
+            else:
+                payment['driver_name'] = 'Unknown Driver'
+                payment['driver_email'] = 'Unknown Email'
+            
+            if payment.get('rider_id') and payment['rider_id'] in users:
+                payment['rider_name'] = users[payment['rider_id']]['name']
+                payment['rider_email'] = users[payment['rider_id']]['email']
+            else:
+                payment['rider_name'] = 'Unknown Rider'
+                payment['rider_email'] = 'Unknown Email'
         
         # Calculate summary statistics
         total_amount = await self.db.payment_transactions.aggregate([

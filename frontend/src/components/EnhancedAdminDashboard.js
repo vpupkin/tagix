@@ -1035,8 +1035,18 @@ const EnhancedAdminDashboard = () => {
                         {rides.slice(0, 10).map((ride) => (
                           <TableRow key={ride.id}>
                             <TableCell className="font-mono text-sm">{ride.id?.slice(-8)}</TableCell>
-                            <TableCell className="font-mono text-sm">{ride.rider_id?.slice(-8)}</TableCell>
-                            <TableCell className="font-mono text-sm">{ride.driver_id?.slice(-8) || 'Unassigned'}</TableCell>
+                            <TableCell className="text-sm">
+                              <div>
+                                <div className="font-medium">{ride.rider_name || 'Unknown Rider'}</div>
+                                <div className="text-xs text-gray-500 font-mono">{ride.rider_id?.slice(-8)}</div>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-sm">
+                              <div>
+                                <div className="font-medium">{ride.driver_name || 'Unassigned'}</div>
+                                <div className="text-xs text-gray-500 font-mono">{ride.driver_id?.slice(-8) || 'N/A'}</div>
+                              </div>
+                            </TableCell>
                             <TableCell>
                               <Badge className={getStatusColor(ride.status)}>
                                 {ride.status?.toUpperCase()}
@@ -1151,8 +1161,18 @@ const EnhancedAdminDashboard = () => {
                           <TableRow key={payment.id}>
                             <TableCell className="font-mono text-sm">{payment.id?.slice(-8)}</TableCell>
                             <TableCell className="font-mono text-sm">{payment.ride_id?.slice(-8)}</TableCell>
-                            <TableCell className="font-mono text-sm">{payment.rider_id?.slice(-8)}</TableCell>
-                            <TableCell className="font-mono text-sm">{payment.driver_id?.slice(-8)}</TableCell>
+                            <TableCell className="text-sm">
+                              <div>
+                                <div className="font-medium">{payment.rider_name || 'Unknown Rider'}</div>
+                                <div className="text-xs text-gray-500 font-mono">{payment.rider_id?.slice(-8)}</div>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-sm">
+                              <div>
+                                <div className="font-medium">{payment.driver_name || 'Unknown Driver'}</div>
+                                <div className="text-xs text-gray-500 font-mono">{payment.driver_id?.slice(-8)}</div>
+                              </div>
+                            </TableCell>
                             <TableCell className="font-semibold">${payment.amount}</TableCell>
                             <TableCell className="font-semibold text-green-600">${payment.driver_earnings}</TableCell>
                             <TableCell className="font-semibold text-purple-600">${payment.platform_fee}</TableCell>
