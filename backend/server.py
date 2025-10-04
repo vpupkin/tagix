@@ -664,10 +664,10 @@ async def accept_ride_request(request_id: str, current_user: User = Depends(get_
         accepted_at=datetime.now(timezone.utc)
     )
     
-    # Update request status
+    # Update request status and driver_id
     await db.ride_requests.update_one(
         {"id": request_id}, 
-        {"$set": {"status": RideStatus.ACCEPTED}}
+        {"$set": {"status": RideStatus.ACCEPTED, "driver_id": current_user.id}}
     )
     
     # Save ride match
@@ -1230,7 +1230,7 @@ async def update_ride_status(ride_id: str, update: RideUpdate, current_user: Use
         }
         
         await db.ride_matches.insert_one(match_data)
-        await db.ride_requests.update_one({"id": ride_id}, {"$set": {"status": RideStatus.ACCEPTED}})
+        await db.ride_requests.update_one({"id": ride_id}, {"$set": {"status": RideStatus.ACCEPTED, "driver_id": current_user.id}})
         
         # Log audit
         if AUDIT_ENABLED and audit_system:
