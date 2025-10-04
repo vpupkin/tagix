@@ -17,6 +17,7 @@ import {
   Square,
   Navigation2
 } from 'lucide-react';
+import DriverLocationManager from './DriverLocationManager';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -135,6 +136,14 @@ const EnhancedDriverDashboard = () => {
           // New format: { available_rides: [...], total_available: N, ... }
           console.log('🔍 Setting available rides (new format):', response.data.available_rides.length);
           setAvailableRides(response.data.available_rides);
+          
+          // Update current location with radius info
+          if (response.data.driver_location && response.data.radius_km) {
+            setCurrentLocation({
+              ...response.data.driver_location,
+              radius_km: response.data.radius_km
+            });
+          }
         } else if (Array.isArray(response.data)) {
           // Old format: direct array
           console.log('🔍 Setting available rides (old format):', response.data.length);
@@ -449,6 +458,25 @@ const EnhancedDriverDashboard = () => {
           </div>
         </div>
 
+        {/* Location & Preferences Manager */}
+        <div className="mb-8">
+          <DriverLocationManager 
+            onLocationUpdate={(location) => {
+              setCurrentLocation(location);
+              // Refresh available rides when location changes
+              if (isOnline) {
+                fetchAvailableRides();
+              }
+            }}
+            onPreferencesUpdate={(preferences) => {
+              // Refresh available rides when radius changes
+              if (isOnline) {
+                fetchAvailableRides();
+              }
+            }}
+          />
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Active Ride */}
           {activeRide && (
@@ -512,10 +540,17 @@ const EnhancedDriverDashboard = () => {
           {/* Available Rides */}
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold flex items-center">
-                <Navigation className="h-5 w-5 mr-2 text-purple-600" />
-                Available Rides ({availableRides.length})
-              </h3>
+              <div>
+                <h3 className="text-lg font-semibold flex items-center">
+                  <Navigation className="h-5 w-5 mr-2 text-purple-600" />
+                  Available Rides ({availableRides.length})
+                </h3>
+                {currentLocation && (
+                  <p className="text-sm text-gray-600 mt-1">
+                    Within {currentLocation.radius_km || 25}km of {currentLocation.address || 'your location'}
+                  </p>
+                )}
+              </div>
               {isOnline && (
                 <button
                   onClick={fetchAvailableRides}

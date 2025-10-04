@@ -1008,6 +1008,61 @@ async def set_driver_offline(current_user: User = Depends(get_current_user)):
     
     return {"message": f"Driver is now offline", "status": "offline"}
 
+@api_router.get("/driver/preferences", response_model=Dict[str, Any])
+async def get_driver_preferences(current_user: User = Depends(get_current_user)):
+    """Get driver preferences including radius settings"""
+    if current_user.role != UserRole.DRIVER:
+        raise HTTPException(status_code=403, detail="Only drivers can access preferences")
+    
+    driver = await db.users.find_one({"id": current_user.id})
+    if not driver:
+        raise HTTPException(status_code=404, detail="Driver not found")
+    
+    preferences = driver.get("preferences", {})
+    return {
+        "radius_km": preferences.get("radius_km", 25),  # Default 25km
+        "auto_accept": preferences.get("auto_accept", False),
+        "notifications_enabled": preferences.get("notifications_enabled", True),
+        "current_location": driver.get("current_location"),
+        "is_online": driver.get("is_online", False)
+    }
+
+@api_router.post("/driver/preferences", response_model=Dict[str, Any])
+async def update_driver_preferences(
+    preferences: Dict[str, Any], 
+    current_user: User = Depends(get_current_user)
+):
+    """Update driver preferences including radius settings"""
+    if current_user.role != UserRole.DRIVER:
+        raise HTTPException(status_code=403, detail="Only drivers can update preferences")
+    
+    # Validate radius (between 5km and 50km)
+    radius_km = preferences.get("radius_km", 25)
+    if not isinstance(radius_km, (int, float)) or radius_km < 5 or radius_km > 50:
+        raise HTTPException(status_code=400, detail="Radius must be between 5 and 50 kilometers")
+    
+    # Update driver preferences
+    result = await db.users.update_one(
+        {"id": current_user.id},
+        {
+            "$set": {
+                "preferences": {
+                    "radius_km": radius_km,
+                    "auto_accept": preferences.get("auto_accept", False),
+                    "notifications_enabled": preferences.get("notifications_enabled", True),
+                    "updated_at": datetime.now(timezone.utc)
+                }
+            }
+        }
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Driver not found")
+    
+    logger.info(f"Driver {current_user.id} preferences updated: radius={radius_km}km")
+    
+    return {"message": "Preferences updated successfully", "radius_km": radius_km}
+
 # === RIDE ENDPOINTS ===
 
 @api_router.get("/rides/available", response_model=Dict[str, Any])
@@ -1019,7 +1074,7 @@ async def get_available_rides(current_user: User = Depends(get_current_user)):
         if current_user.role != UserRole.DRIVER:
             raise HTTPException(status_code=403, detail="Only drivers can view available rides")
         
-        # Get driver location
+        # Get driver location and preferences
         driver = await db.users.find_one({"id": current_user.id})
         if not driver:
             logger.error(f"Driver {current_user.id} not found in database")
@@ -1033,7 +1088,11 @@ async def get_available_rides(current_user: User = Depends(get_current_user)):
             logger.warning(f"Driver {current_user.id} is not online")
             raise HTTPException(status_code=400, detail="Driver must be online to view available rides")
         
-        logger.info(f"Driver {current_user.id} is online and has location set")
+        # Get driver's preferred radius (default 25km)
+        preferences = driver.get("preferences", {})
+        radius_km = preferences.get("radius_km", 25)
+        
+        logger.info(f"Driver {current_user.id} is online and has location set, radius: {radius_km}km")
         
         # Find pending ride requests
         pending_requests = await db.ride_requests.find({
@@ -1061,8 +1120,8 @@ async def get_available_rides(current_user: User = Depends(get_current_user)):
                 ride_info["estimated_pickup_time"] = int(distance * 2)  # 2 minutes per km estimate
                 all_requests.append(ride_info)
                 
-                # Only show rides within 25km radius for available rides (increased from 10km)
-                if distance <= 25.0:
+                # Only show rides within driver's preferred radius
+                if distance <= radius_km:
                     available_rides.append(ride_info)
             except Exception as e:
                 logger.error(f"Error processing ride request {request.get('id', 'unknown')}: {e}")
@@ -1092,7 +1151,8 @@ async def get_available_rides(current_user: User = Depends(get_current_user)):
             "all_pending_requests": all_requests,
             "total_available": len(available_rides),
             "total_pending": len(all_requests),
-            "driver_location": driver_location
+            "driver_location": driver_location,
+            "radius_km": radius_km
         }
         
     except HTTPException:
