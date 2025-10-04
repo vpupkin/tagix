@@ -262,7 +262,13 @@ class LocationUpdate(BaseModel):
     location: Location
     timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
+class RideRatingRequest(BaseModel):
+    """Request model for rating a ride"""
+    rating: int = Field(..., ge=1, le=5)
+    comment: Optional[str] = None
+
 class RideRating(BaseModel):
+    """Full rating model stored in database"""
     ride_id: str
     rater_id: str  # who is giving the rating
     rated_id: str  # who is being rated
@@ -905,13 +911,18 @@ async def complete_ride(match_id: str, current_user: User = Depends(get_current_
     return {"message": "Ride completed successfully"}
 
 @api_router.post("/rides/{match_id}/rate", response_model=Dict[str, str])
-async def rate_ride(match_id: str, rating_data: RideRating, current_user: User = Depends(get_current_user)):
+async def rate_ride(match_id: str, rating_request: RideRatingRequest, current_user: User = Depends(get_current_user)):
     match_doc = await db.ride_matches.find_one({"id": match_id})
     if not match_doc:
         raise HTTPException(status_code=404, detail="Ride match not found")
     
-    rating_data.ride_id = match_id
-    rating_data.rater_id = current_user.id
+    # Create the full rating object
+    rating_data = RideRating(
+        ride_id=match_id,
+        rater_id=current_user.id,
+        rating=rating_request.rating,
+        comment=rating_request.comment
+    )
     
     # Determine who is being rated
     if current_user.id == match_doc["rider_id"]:
