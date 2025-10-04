@@ -478,13 +478,14 @@ class AdminCRUDOperations:
         
         if filters.search_term:
             query["$or"] = [
-                {"session_id": {"$regex": filters.search_term, "$options": "i"}},
+                {"transaction_id": {"$regex": filters.search_term, "$options": "i"}},
                 {"ride_id": {"$regex": filters.search_term, "$options": "i"}},
-                {"user_id": {"$regex": filters.search_term, "$options": "i"}}
+                {"driver_id": {"$regex": filters.search_term, "$options": "i"}},
+                {"rider_id": {"$regex": filters.search_term, "$options": "i"}}
             ]
         
         if filters.status:
-            query["payment_status"] = filters.status
+            query["status"] = filters.status
         
         if filters.start_date or filters.end_date:
             date_filter = {}
@@ -494,10 +495,10 @@ class AdminCRUDOperations:
                 date_filter["$lte"] = filters.end_date
             query["created_at"] = date_filter
         
-        total_count = await self.db.payment_transactions.count_documents(query)
+        total_count = await self.db.payments.count_documents(query)
         
         sort_direction = -1 if filters.sort_order == "desc" else 1
-        cursor = self.db.payment_transactions.find(query)
+        cursor = self.db.payments.find(query)
         cursor = cursor.sort(filters.sort_by, sort_direction)
         cursor = cursor.skip(filters.offset).limit(filters.limit)
         
@@ -542,7 +543,7 @@ class AdminCRUDOperations:
                 payment['rider_email'] = 'Unknown Email'
         
         # Calculate summary statistics
-        total_amount = await self.db.payment_transactions.aggregate([
+        total_amount = await self.db.payments.aggregate([
             {"$match": query},
             {"$group": {"_id": None, "total": {"$sum": "$amount"}}}
         ]).to_list(None)
