@@ -25,7 +25,7 @@ module.exports = function(app) {
       target: backendUrl,
       changeOrigin: true,
       secure: false,
-      ws: true, // Enable WebSocket proxying
+      ws: false, // Enable WebSocket proxying
       logLevel: 'debug',
       onProxyReqWs: (proxyReq, req, socket, options, head) => {
         console.log('🔌 Proxying WebSocket request:', req.url, '->', backendUrl);
