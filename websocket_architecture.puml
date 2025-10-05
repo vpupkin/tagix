@@ -1,0 +1,156 @@
+@startuml WebSocket Online Architecture - Tagix Ride-Sharing Platform
+
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam sequenceArrowThickness 2
+skinparam roundcorner 20
+skinparam maxmessagesize 60
+
+title WebSocket Online Architecture - Tagix Ride-Sharing Platform
+
+actor "Rider" as Rider
+actor "Driver" as Driver
+participant "React Frontend\n(localhost:3000)" as Frontend
+participant "React Dev Server\nProxy" as Proxy
+participant "FastAPI Backend\n(localhost:8001)" as Backend
+participant "WebSocket Manager" as WSManager
+participant "MongoDB" as DB
+
+== Environment Detection & Connection Setup ==
+
+Rider -> Frontend: Access application
+Frontend -> Frontend: Check environment\n(localhost vs kar.bar)
+alt Development Mode
+    Frontend -> Frontend: wsUrl = "ws://localhost:3000"
+    note right: Environment detection:\n- hostname === 'localhost'\n- port === '3000'\n- href.includes('localhost:3000')
+else Production Mode
+    Frontend -> Frontend: wsUrl = "wss://kar.bar/be"
+    note right: Production URL without port conflicts
+end
+
+== WebSocket Connection Establishment ==
+
+Frontend -> Proxy: WebSocket connection\nws://localhost:3000/ws/{user_id}
+Proxy -> Backend: Proxy WebSocket to\nws://localhost:8001/ws/{user_id}
+Backend -> WSManager: manager.connect(websocket, user_id)
+WSManager -> WSManager: Store connection in\nactive_connections[user_id]
+WSManager -> Backend: Connection accepted
+Backend -> Proxy: WebSocket connection established
+Proxy -> Frontend: WebSocket connection established
+
+Frontend -> Frontend: setConnected(true)
+Frontend -> Proxy: Send initial message\n{type: 'connection_established', user_id, user_type}
+Proxy -> Backend: Forward message
+Backend -> WSManager: Process connection message
+
+== Real-time Location Updates ==
+
+Driver -> Frontend: Update location
+Frontend -> Proxy: location_update message\n{type: 'location_update', location: {lat, lng, accuracy}}
+Proxy -> Backend: Forward location update
+Backend -> WSManager: Update user_locations[user_id]
+WSManager -> DB: Update user location in database
+DB -> WSManager: Location updated
+WSManager -> Backend: Location stored
+
+== Ride Request Flow ==
+
+Rider -> Frontend: Request ride
+Frontend -> Proxy: POST /api/rides/request
+Proxy -> Backend: Forward API request
+Backend -> DB: Create ride request
+DB -> Backend: Request created
+Backend -> Backend: find_nearby_drivers(request)
+Backend -> DB: Query drivers within radius
+DB -> Backend: Return nearby drivers
+
+loop For each nearby driver (top 5)
+    Backend -> WSManager: send_personal_message(ride_request_data, driver_id)
+    WSManager -> Backend: Check if driver connected
+    alt Driver is online
+        Backend -> Proxy: WebSocket message to driver
+        Proxy -> Frontend: Forward to driver's WebSocket
+        Frontend -> Driver: Show ride request notification
+    else Driver is offline
+        note right: Skip offline driver
+    end
+end
+
+Backend -> Proxy: Return request_id and matches_found
+Proxy -> Frontend: API response
+Frontend -> Rider: Show ride request status
+
+== Driver Response to Ride Request ==
+
+Driver -> Frontend: Accept/Decline ride
+Frontend -> Proxy: POST /api/rides/{id}/accept or /decline
+Proxy -> Backend: Forward driver response
+Backend -> DB: Update ride status
+DB -> Backend: Status updated
+Backend -> WSManager: send_personal_message(ride_accepted, rider_id)
+WSManager -> Backend: Check rider connection
+Backend -> Proxy: WebSocket message to rider
+Proxy -> Frontend: Forward to rider's WebSocket
+Frontend -> Rider: Show driver accepted notification
+
+== Real-time Notifications ==
+
+note over WSManager: Various notification types:
+note over WSManager: - ride_request\n- ride_accepted\n- ride_started\n- ride_completed\n- payment_required\n- proximity_alert\n- nearby_drivers_update
+
+Backend -> WSManager: send_personal_message(notification_data, user_id)
+WSManager -> Backend: Check user connection
+alt User is online
+    Backend -> Proxy: WebSocket notification
+    Proxy -> Frontend: Forward notification
+    Frontend -> Frontend: handleWebSocketMessage(data)
+    Frontend -> Frontend: Show toast notification
+    Frontend -> Frontend: Update UI state
+else User is offline
+    note right: Notification not delivered
+end
+
+== Proximity Broadcasting ==
+
+Backend -> WSManager: broadcast_nearby(message, location, radius_km)
+WSManager -> WSManager: Calculate distances for all users
+loop For each user within radius
+    WSManager -> Backend: send_personal_message(proximity_alert, user_id)
+    Backend -> Proxy: WebSocket proximity alert
+    Proxy -> Frontend: Forward proximity alert
+    Frontend -> Frontend: Show proximity notification
+end
+
+== Connection Management ==
+
+note over WSManager: Connection lifecycle:
+note over WSManager: - connect(): Store WebSocket connection\n- disconnect(): Remove connection and location\n- send_personal_message(): Send to specific user\n- broadcast_nearby(): Send to users in radius
+
+== Error Handling & Reconnection ==
+
+Frontend -> Frontend: WebSocket connection lost
+Frontend -> Frontend: Start reconnection attempts (max 3)
+loop Reconnection attempts
+    Frontend -> Proxy: Attempt WebSocket reconnection
+    alt Connection successful
+        Proxy -> Backend: WebSocket reconnected
+        Backend -> WSManager: Re-establish connection
+        WSManager -> Backend: Connection restored
+        Frontend -> Frontend: setConnected(true)
+        break
+    else Connection failed
+        Frontend -> Frontend: Wait before retry
+    end
+end
+
+== WebSocket Disconnection ==
+
+Frontend -> Proxy: WebSocket disconnect
+Proxy -> Backend: WebSocket disconnect
+Backend -> WSManager: manager.disconnect(user_id)
+WSManager -> WSManager: Remove from active_connections
+WSManager -> WSManager: Remove from user_locations
+WSManager -> Backend: User disconnected
+Backend -> Backend: Log disconnection
+
+@enduml
