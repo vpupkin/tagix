@@ -234,3 +234,6 @@ echo "REACT_APP_BACKEND_URL=https://kar.bar:8001" > frontend/.env.local
 3. Update backend CORS to allow your domain
 
 This bypasses Apache2 entirely for WebSocket connections.
+
+
+

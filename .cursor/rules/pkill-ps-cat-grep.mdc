@@ -1,0 +1,6 @@
+any console commands should be prepared for runnung over prompt to developer and interact with him in respect that thenode-js and python enviroment are located on fully another server and not acessible over direct running from cursor 
+---
+description:
+globs:
+alwaysApply: true
+---

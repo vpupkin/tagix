@@ -14,7 +14,31 @@ import json
 import asyncio
 import time
 from geopy.distance import geodesic
-from emergentintegrations.payments.stripe.checkout import StripeCheckout, CheckoutSessionResponse, CheckoutStatusResponse, CheckoutSessionRequest
+# from emergentintegrations.payments.stripe.checkout import StripeCheckout, CheckoutSessionResponse, CheckoutStatusResponse, CheckoutSessionRequest
+
+# Mock classes for development
+class StripeCheckout:
+    def __init__(self, api_key, webhook_url):
+        self.api_key = api_key
+        self.webhook_url = webhook_url
+    
+    def create_checkout_session(self, request):
+        return {"id": "mock_session_id", "url": "https://mock-checkout.com"}
+
+class CheckoutSessionRequest:
+    def __init__(self, **kwargs):
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+
+class CheckoutSessionResponse:
+    def __init__(self, **kwargs):
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+
+class CheckoutStatusResponse:
+    def __init__(self, **kwargs):
+        for key, value in kwargs.items():
+            setattr(self, key, value)
 from dotenv import load_dotenv
 from pathlib import Path
 
