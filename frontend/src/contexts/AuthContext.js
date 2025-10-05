@@ -1,11 +1,12 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
 import { toast } from 'sonner';
+import { getApiUrl } from '../utils/config';
 
 const AuthContext = createContext();
 
-const API_URL = process.env.REACT_APP_BACKEND_URL;
-console.log('API_URL from environment:', API_URL);
+const API_URL = getApiUrl();
+console.log('🔧 Using unified API_URL:', API_URL);
 
 export const useAuth = () => {
   const context = useContext(AuthContext);

@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState, useRef } from 'r
 import { useAuth } from './AuthContext';
 import { toast } from 'sonner';
 import io from 'socket.io-client';
+import { getWebSocketUrl, getApiUrl } from '../utils/config';
 
 const WebSocketContext = createContext();
 
@@ -62,27 +63,13 @@ export const WebSocketProvider = ({ children }) => {
     }
 
     try {
-      const backendUrl = process.env.REACT_APP_BACKEND_URL;
-      console.log('Backend URL from env:', backendUrl);
+      // Use unified configuration
+      const wsUrl = getWebSocketUrl();
+      const backendUrl = getApiUrl();
       
-      // Use localhost for WebSocket to avoid port 3000 conflicts
-      let wsUrl;
-      const isDevelopment = window.location.hostname === 'localhost' || 
-                           window.location.hostname === '127.0.0.1' ||
-                           window.location.port === '3000' ||
-                           window.location.href.includes('localhost:3000');
-      
-      if (isDevelopment) {
-        // Development: Use localhost:3000 for WebSocket (React dev server proxy)
-        wsUrl = `ws://localhost:3000`;
-        console.log('🔧 Development mode: Using localhost:3000 for WebSocket (via proxy)');
-        console.log('🔧 Hostname:', window.location.hostname, 'Port:', window.location.port);
-      } else {
-        // Production: Use backend URL without port conflicts
-        wsUrl = backendUrl.replace(/^http/, 'ws').replace(/:\d+/, '');
-        console.log('🔧 Production mode: Using backend URL (no port) for WebSocket');
-        console.log('🔧 Hostname:', window.location.hostname, 'Port:', window.location.port);
-      }
+      console.log('🔧 Using unified configuration:');
+      console.log('🔧 WebSocket URL:', wsUrl);
+      console.log('🔧 Backend URL:', backendUrl);
       
       console.log(`!!!!30000000000 !!! Attempting WebSocket connection to: ${wsUrl}/ws/${user.id}`);
       const newSocket = new WebSocket(`${wsUrl}/ws/${user.id}`);

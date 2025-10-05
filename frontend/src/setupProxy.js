@@ -1,8 +1,18 @@
 const { createProxyMiddleware } = require('http-proxy-middleware');
 
 module.exports = function(app) {
-  const backendUrl = process.env.REACT_APP_BACKEND_URL || 'http://localhost:8001';
-  console.log('🔧 setupProxy.js: Backend URL configured as:', backendUrl);
+  // Auto-detect backend URL based on environment
+  let backendUrl;
+  const isDevelopment = process.env.NODE_ENV === 'development' || 
+                       process.env.NODE_ENV === undefined;
+  
+  if (isDevelopment) {
+    backendUrl = 'http://localhost:8001';
+    console.log('🔧 setupProxy.js: Development mode - Backend URL:', backendUrl);
+  } else {
+    backendUrl = process.env.REACT_APP_BACKEND_URL || 'https://kar.bar/be';
+    console.log('🔧 setupProxy.js: Production mode - Backend URL:', backendUrl);
+  }
   
   // Proxy API requests to backend
   app.use(
@@ -25,7 +35,7 @@ module.exports = function(app) {
       target: backendUrl,
       changeOrigin: true,
       secure: false,
-      ws: false, // Enable WebSocket proxying
+      ws: true, // Enable WebSocket proxying
       logLevel: 'debug',
       onProxyReqWs: (proxyReq, req, socket, options, head) => {
         console.log('🔌 Proxying WebSocket request:', req.url, '->', backendUrl);
