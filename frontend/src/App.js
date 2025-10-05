@@ -15,6 +15,7 @@ import RideBooking from './components/RideBooking';
 import RideHistory from './components/RideHistory';
 import PaymentSuccess from './components/PaymentSuccess';
 import Profile from './components/Profile';
+import GravatarDemo from './components/GravatarDemo';
 
 // Auth context
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -88,6 +89,8 @@ function MainApp() {
           <Route path="/profile" element={
             user ? <Profile /> : <Navigate to="/" />
           } />
+          
+          <Route path="/gravatar-demo" element={<GravatarDemo />} />
           
           <Route path="/payment-success" element={
             user ? <PaymentSuccess /> : <Navigate to="/" />

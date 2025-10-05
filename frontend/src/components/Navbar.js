@@ -11,6 +11,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
+import GravatarAvatar from './ui/GravatarAvatar';
 import { 
   Car, 
   User, 
@@ -189,9 +190,12 @@ const Navbar = ({ onAuthClick }) => {
                       className="flex items-center space-x-2 p-2"
                       data-testid="user-menu-button"
                     >
-                      <div className="w-8 h-8 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
-                        {user.name.charAt(0).toUpperCase()}
-                      </div>
+                      <GravatarAvatar 
+                        name={user.name} 
+                        userId={user.id} 
+                        size={32}
+                        showBorder={false}
+                      />
                       <span className="hidden sm:block font-medium text-gray-700">
                         {user.name}
                       </span>

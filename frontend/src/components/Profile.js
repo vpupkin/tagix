@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import axios from 'axios';
+import GravatarAvatar from './ui/GravatarAvatar';
 import { 
   User, 
   Mail, 
@@ -193,9 +194,13 @@ const Profile = () => {
             <Card className="card-hover">
               <CardHeader className="text-center">
                 <div className="relative mx-auto mb-4">
-                  <div className="w-24 h-24 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white text-3xl font-bold">
-                    {user?.name?.charAt(0)?.toUpperCase() || 'U'}
-                  </div>
+                  <GravatarAvatar 
+                    name={user?.name || 'User'} 
+                    userId={user?.id || 'default'} 
+                    size={96}
+                    showBorder={true}
+                    borderColor="#E5E7EB"
+                  />
                   <button className="absolute bottom-0 right-0 w-8 h-8 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-gray-50 transition-colors">
                     <Camera className="h-4 w-4 text-gray-600" />
                   </button>
