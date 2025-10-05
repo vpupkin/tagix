@@ -203,9 +203,20 @@ const Navbar = ({ onAuthClick }) => {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56">
                     <div className="p-3 border-b">
-                      <div className="font-medium">{user.name}</div>
-                      <div className="text-sm text-gray-500">{user.email}</div>
-                      <Badge variant="secondary" className="mt-1 text-xs">
+                      <div className="flex items-center space-x-3 mb-2">
+                        <GravatarAvatar 
+                          name={user.name} 
+                          userId={user.id} 
+                          size={40}
+                          showBorder={true}
+                          borderColor="#E5E7EB"
+                        />
+                        <div>
+                          <div className="font-medium">{user.name}</div>
+                          <div className="text-sm text-gray-500">{user.email}</div>
+                        </div>
+                      </div>
+                      <Badge variant="secondary" className="text-xs">
                         {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
                       </Badge>
                     </div>
