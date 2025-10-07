@@ -1,0 +1,124 @@
+{
+  "cursor_agent_deploy": {
+    "version": "1.0.0",
+    "description": "Cursor Agent Auto-Deploy Pipeline Configuration",
+    "project_root": "/home/i1/git/tagix",
+    "directories": {
+      "frontend": "frontend",
+      "backend": "backend",
+      "logs": "logs",
+      "analysis": "analysis"
+    },
+    "file_watching": {
+      "enabled": true,
+      "cooldown_seconds": 30,
+      "exclude_patterns": [
+        "*.log",
+        "*.tmp",
+        "*.pyc",
+        "__pycache__",
+        "node_modules",
+        ".git",
+        "*.swp",
+        "*.swo"
+      ],
+      "include_extensions": [
+        ".py",
+        ".js",
+        ".jsx",
+        ".ts",
+        ".tsx",
+        ".json",
+        ".md",
+        ".sh",
+        ".yaml",
+        ".yml"
+      ]
+    },
+    "testing": {
+      "backend": {
+        "enabled": true,
+        "command": "python -m pytest . -v --tb=short",
+        "timeout": 300
+      },
+      "frontend": {
+        "enabled": true,
+        "command": "npm test -- --watchAll=false --passWithNoTests",
+        "timeout": 300
+      },
+      "integration": {
+        "enabled": true,
+        "command": "python comprehensive_ride_lifecycle_test.py",
+        "timeout": 600
+      }
+    },
+    "deployment": {
+      "auto_commit": true,
+      "auto_push": true,
+      "build_frontend": true,
+      "restart_services": true,
+      "restart_script": "restart_services.sh"
+    },
+    "verification": {
+      "api_endpoints": {
+        "enabled": true,
+        "script": "test_kar_bar_connection.js",
+        "timeout": 30
+      },
+      "websocket": {
+        "enabled": true,
+        "script": "test_websocket_connection.js",
+        "timeout": 30
+      },
+      "homepage": {
+        "enabled": true,
+        "url": "https://kar.bar",
+        "timeout": 30
+      }
+    },
+    "ai_analysis": {
+      "enabled": true,
+      "success_rating_thresholds": {
+        "excellent": 90,
+        "good": 75,
+        "fair": 50,
+        "poor": 0
+      },
+      "recommendations": {
+        "websocket_fix": "Review Apache2 WebSocket configuration (see APACHE2_WEBSOCKET_FIX_GUIDE.md)",
+        "api_fix": "Check backend service status and CORS configuration",
+        "homepage_fix": "Verify frontend build and deployment process"
+      }
+    },
+    "notifications": {
+      "enabled": true,
+      "channels": {
+        "file": {
+          "enabled": true,
+          "path": ".cursor_deploy_complete"
+        },
+        "slack": {
+          "enabled": false,
+          "webhook_url": "",
+          "channel": "#deployments"
+        },
+        "teams": {
+          "enabled": false,
+          "webhook_url": "",
+          "channel": "Deployments"
+        }
+      }
+    },
+    "history": {
+      "enabled": true,
+      "max_deployments": 100,
+      "file": "cursor_deployment_history.json"
+    },
+    "logging": {
+      "level": "INFO",
+      "file": "cursor_agent_deploy.log",
+      "max_size_mb": 100,
+      "backup_count": 5
+    }
+  }
+}

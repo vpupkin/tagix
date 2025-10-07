@@ -1,4 +1,21 @@
 {
+  "name": "tagix",
+  "version": "1.0.0",
+  "description": "Cursor Agent Auto-Deploy Pipeline for Tagix",
+  "scripts": {
+    "cursor-agent:start": "python3 cursor_agent_deploy.py --mode watch",
+    "cursor-agent:deploy": "python3 cursor_agent_deploy.py --mode deploy",
+    "cursor-agent:test": "python3 cursor_agent_deploy.py --mode test",
+    "cursor-agent:analyze": "python3 cursor_agent_deploy.py --mode analyze",
+    "cursor-agent:install": "pip install -r cursor_agent_requirements.txt",
+    "cursor-agent:status": "ps aux | grep cursor_agent_deploy",
+    "cursor-agent:stop": "pkill -f cursor_agent_deploy",
+    "cursor-agent:logs": "tail -f cursor_agent_deploy.log",
+    "deploy": "python3 cursor_agent_deploy.py --mode deploy",
+    "watch": "python3 cursor_agent_deploy.py --mode watch",
+    "test": "python3 cursor_agent_deploy.py --mode test",
+    "analyze": "python3 cursor_agent_deploy.py --mode analyze"
+  },
   "dependencies": {
     "ws": "^8.18.3"
   }
