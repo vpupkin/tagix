@@ -1,0 +1,80 @@
+services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:7.0
+    container_name: tagix-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password123
+      MONGO_INITDB_DATABASE: tagix_db
+    ports:
+      - "27018:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - tagix-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: tagix-backend
+    restart: unless-stopped
+    environment:
+      - MONGO_URL=mongodb://admin:password123@mongodb:27017/tagix_db?authSource=admin
+      - DB_NAME=tagix_db
+      - JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
+      - CORS_ORIGINS=http://localhost:3000,http://localhost:3001,https://kar.bar
+      - GOOGLE_MAPS_API_KEY=${GOOGLE_MAPS_API_KEY:-}
+      - STRIPE_API_KEY=${STRIPE_API_KEY:-}
+    ports:
+      - "8001:8001"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - tagix-network
+    # Mount source code for hot reload
+    volumes:
+      - ./backend:/app
+      - /app/__pycache__
+    command: ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "8001", "--reload"]
+
+  # Frontend React App
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: tagix-frontend
+    restart: unless-stopped
+    environment:
+      - REACT_APP_API_URL=http://backend:8001
+      - REACT_APP_WS_URL=ws://backend:8001
+      - REACT_APP_GOOGLE_MAPS_API_KEY=${GOOGLE_MAPS_API_KEY:-}
+    ports:
+      - "3000:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - tagix-network
+    # Mount source code for hot reload
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    command: ["yarn", "start"]
+
+volumes:
+  mongodb_data:
+
+networks:
+  tagix-network:
+    driver: bridge
+

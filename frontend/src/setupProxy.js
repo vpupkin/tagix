@@ -7,8 +7,15 @@ module.exports = function(app) {
                        process.env.NODE_ENV === undefined;
   
   if (isDevelopment) {
-    backendUrl = 'http://localhost:8001';
-    console.log('🔧 setupProxy.js: Development mode - Backend URL:', backendUrl);
+    // Check if we're running in Docker (containerized environment)
+    const isDocker = process.env.REACT_APP_API_URL;
+    if (isDocker) {
+      backendUrl = process.env.REACT_APP_API_URL;
+      console.log('🔧 setupProxy.js: Docker mode - Backend URL:', backendUrl);
+    } else {
+      backendUrl = 'http://localhost:8001';
+      console.log('🔧 setupProxy.js: Local development mode - Backend URL:', backendUrl);
+    }
   } else {
     backendUrl = process.env.REACT_APP_BACKEND_URL || 'https://kar.bar/be';
     console.log('🔧 setupProxy.js: Production mode - Backend URL:', backendUrl);
