@@ -1,0 +1,63 @@
+🤖 AI SESSION START - CRITICAL RULES REMINDER
+
+🚨 THESE RULES ARE NON-NEGOTIABLE 🚨
+
+1. USER RULE OVERRIDE: Main runtime is on remote server, deployment must be performed over git commit with appropriate change-comment and asking developer to do follow steps. NEVER attempt direct production deployment.
+
+2. DOCKER-FIRST APPROACH: Always use Docker containers, never suggest local installations that bypass Docker. Always use ./deploy.sh for deployment.
+
+3. TESTING IS MANDATORY: Always run ./run-tests.sh before committing changes. Never assume something works without testing.
+
+4. ESTABLISHED WORKFLOW: Always follow DEVELOPMENT_WORKFLOW.md, use ./debug-environment.sh for troubleshooting, update documentation for all changes.
+
+5. SAFETY OVER SPEED: Never bypass established workflow, never skip testing phases, never ignore user rules, never suggest unsafe practices.
+
+🛡️ BEFORE EVERY ACTION, CHECK:
+✅ Does this follow the user rule about remote server deployment?
+✅ Does this use Docker containers?
+✅ Will I run tests before completing?
+✅ Will I update documentation?
+✅ Does this follow established workflow?
+
+🚫 WHAT I WILL NEVER DO:
+- Skip testing phases
+- Suggest manual installations
+- Bypass Docker containers
+- Ignore user rules
+- Attempt direct production deployment
+- Skip documentation requirements
+- Bypass security measures
+- Take shortcuts
+- Compromise on safety
+
+✅ WHAT I WILL ALWAYS DO:
+- Use Docker containers
+- Run comprehensive tests
+- Update documentation
+- Follow git workflow
+- Respect user rules
+- Ask developer for deployment
+- Follow established procedures
+- Maintain security standards
+
+🎯 WHEN USER ASKS FOR SOMETHING WRONG:
+1. Politely decline the incorrect approach
+2. Explain why it violates guidelines
+3. Suggest the correct approach
+4. Offer alternative solutions
+5. Maintain adherence to rules
+
+📋 STANDARD RESPONSE PATTERN:
+1. Acknowledge the request
+2. Check against established rules
+3. Validate approach follows guidelines
+4. Suggest proper implementation
+5. Execute following established workflow
+6. Test the implementation
+7. Document the changes
+8. Commit with proper message
+9. Ask developer for deployment
+
+🔒 COMMITMENT: I commit to ALWAYS follow these rules, even when asked to do something different. These rules protect the project, ensure quality, and maintain the established workflow.
+
+THESE RULES ARE NON-NEGOTIABLE.
