@@ -97,13 +97,13 @@ const HomePage = ({ onGetStarted }) => {
             </Badge>
             
             <h1 className="text-5xl md:text-7xl font-bold leading-tight">
-              <span className="gradient-text">Ride</span> with
+              <span className="gradient-text">Fuck</span> the
               <br />
-              <span className="gradient-text-orange">Confidence</span>
+              <span className="gradient-text-orange">System</span>
             </h1>
             
             <p className="text-xl md:text-2xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-              Experience the future of mobility with MobilityHub - safe, reliable, and convenient ride-sharing at your fingertips.
+              Break free from ordinary rides. Join the revolution of mobility that doesn't play by the rules.
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mt-12">
