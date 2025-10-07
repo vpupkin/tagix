@@ -714,6 +714,29 @@ async def accept_ride_request(request_id: str, current_user: User = Depends(get_
         "message": "Ride request accepted successfully"
     }
 
+@api_router.post("/rides/{request_id}/decline", response_model=Dict[str, Any])
+async def decline_ride_request(request_id: str, current_user: User = Depends(get_current_user)):
+    if current_user.role != UserRole.DRIVER:
+        raise HTTPException(status_code=403, detail="Only drivers can decline ride requests")
+    
+    # Get the ride request
+    request_doc = await db.ride_requests.find_one({"id": request_id})
+    if not request_doc:
+        raise HTTPException(status_code=404, detail="Ride request not found")
+    
+    # Log the decline for analytics
+    await db.ride_declines.insert_one({
+        "id": str(uuid.uuid4()),
+        "request_id": request_id,
+        "driver_id": current_user.id,
+        "declined_at": datetime.utcnow(),
+        "reason": "Driver declined"
+    })
+    
+    return {
+        "message": "Ride request declined successfully"
+    }
+
 @api_router.get("/rides/my-rides", response_model=List[Dict[str, Any]])
 async def get_my_rides(current_user: User = Depends(get_current_user)):
     """Get completed rides for the current user"""
@@ -910,6 +933,115 @@ async def get_unified_ride_data(current_user: User = Depends(get_current_user)):
     
     else:
         raise HTTPException(status_code=403, detail="Access denied")
+
+@api_router.post("/rides/{match_id}/start", response_model=Dict[str, str])
+async def start_ride(match_id: str, current_user: User = Depends(get_current_user)):
+    """Driver starts the ride"""
+    if current_user.role != UserRole.DRIVER:
+        raise HTTPException(status_code=403, detail="Only drivers can start rides")
+    
+    match_doc = await db.ride_matches.find_one({"id": match_id})
+    if not match_doc:
+        raise HTTPException(status_code=404, detail="Ride match not found")
+    
+    if match_doc["driver_id"] != current_user.id:
+        raise HTTPException(status_code=403, detail="Unauthorized to start this ride")
+    
+    # Update ride status
+    await db.ride_matches.update_one(
+        {"id": match_id},
+        {"$set": {"status": RideStatus.IN_PROGRESS, "started_at": datetime.now(timezone.utc)}}
+    )
+    
+    # Notify rider
+    await manager.send_personal_message(
+        json.dumps({
+            "type": "ride_started",
+            "match_id": match_id,
+            "driver_name": current_user.name,
+            "message": "Your ride has started! Enjoy your journey."
+        }),
+        match_doc["rider_id"]
+    )
+    
+    return {"message": "Ride started successfully"}
+
+@api_router.post("/rides/{match_id}/arrived", response_model=Dict[str, str])
+async def driver_arrived(match_id: str, current_user: User = Depends(get_current_user)):
+    """Driver notifies they have arrived at pickup location"""
+    if current_user.role != UserRole.DRIVER:
+        raise HTTPException(status_code=403, detail="Only drivers can mark arrival")
+    
+    match_doc = await db.ride_matches.find_one({"id": match_id})
+    if not match_doc:
+        raise HTTPException(status_code=404, detail="Ride match not found")
+    
+    if match_doc["driver_id"] != current_user.id:
+        raise HTTPException(status_code=403, detail="Unauthorized to mark arrival for this ride")
+    
+    # Update ride status
+    await db.ride_matches.update_one(
+        {"id": match_id},
+        {"$set": {"status": RideStatus.DRIVER_ARRIVED, "arrived_at": datetime.now(timezone.utc)}}
+    )
+    
+    # Notify rider
+    await manager.send_personal_message(
+        json.dumps({
+            "type": "driver_arrived",
+            "match_id": match_id,
+            "driver_name": current_user.name,
+            "driver_phone": current_user.phone,
+            "vehicle_info": getattr(current_user, 'vehicle_info', 'Standard vehicle'),
+            "message": "Your driver has arrived at the pickup location"
+        }),
+        match_doc["rider_id"]
+    )
+    
+    return {"message": "Arrival notification sent successfully"}
+
+@api_router.post("/rides/{match_id}/message", response_model=Dict[str, str])
+async def send_ride_message(match_id: str, message_data: dict, current_user: User = Depends(get_current_user)):
+    """Send a message between driver and rider during a ride"""
+    match_doc = await db.ride_matches.find_one({"id": match_id})
+    if not match_doc:
+        raise HTTPException(status_code=404, detail="Ride match not found")
+    
+    # Check if user is part of this ride
+    if current_user.id not in [match_doc["driver_id"], match_doc["rider_id"]]:
+        raise HTTPException(status_code=403, detail="Unauthorized to send messages for this ride")
+    
+    # Determine recipient
+    recipient_id = match_doc["rider_id"] if current_user.id == match_doc["driver_id"] else match_doc["driver_id"]
+    
+    # Save message to database
+    message_record = {
+        "id": str(uuid.uuid4()),
+        "match_id": match_id,
+        "sender_id": current_user.id,
+        "recipient_id": recipient_id,
+        "message": message_data.get("message", ""),
+        "message_type": message_data.get("type", "text"),
+        "sent_at": datetime.now(timezone.utc)
+    }
+    
+    await db.ride_messages.insert_one(message_record)
+    
+    # Send real-time notification
+    await manager.send_personal_message(
+        json.dumps({
+            "type": "ride_message",
+            "match_id": match_id,
+            "sender_name": current_user.name,
+            "sender_role": current_user.role,
+            "message": message_data.get("message", ""),
+            "message_type": message_data.get("type", "text"),
+            "sent_at": message_record["sent_at"].isoformat()
+        }),
+        recipient_id
+    )
+    
+    return {"message": "Message sent successfully"}
 
 @api_router.post("/rides/{match_id}/complete", response_model=Dict[str, str])
 async def complete_ride(match_id: str, current_user: User = Depends(get_current_user)):

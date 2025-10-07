@@ -190,6 +190,15 @@ export const WebSocketProvider = ({ children }) => {
         }
         break;
 
+      case 'ride_no_longer_available':
+        if (user.role === 'driver') {
+          toast.info('Ride no longer available', {
+            description: 'This ride request has been accepted by another driver',
+            duration: 5000
+          });
+        }
+        break;
+
       case 'ride_cancelled':
         toast.error('Ride has been cancelled', {
           description: data.reason || 'No reason provided'
@@ -246,6 +255,26 @@ export const WebSocketProvider = ({ children }) => {
         toast.warning('Payment required', {
           description: 'Please complete payment to finish your ride',
           duration: 10000
+        });
+        break;
+
+      case 'ride_message':
+        // Handle direct messages between driver and rider
+        const isFromDriver = data.sender_role === 'driver';
+        const senderLabel = isFromDriver ? 'Driver' : 'Rider';
+        
+        toast.info(`Message from ${senderLabel}`, {
+          description: data.message,
+          duration: 8000
+        });
+        
+        addNotification({
+          id: Date.now(),
+          type: 'ride_message',
+          title: `Message from ${data.sender_name}`,
+          message: data.message,
+          timestamp: new Date(data.sent_at),
+          data: data
         });
         break;
 
