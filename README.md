@@ -7,6 +7,7 @@
   <img src="https://img.shields.io/badge/Database-MongoDB-47A248" alt="Database">
   <img src="https://img.shields.io/badge/Payments-Stripe-635BFF" alt="Payments">
   <img src="https://img.shields.io/badge/Maps-Google%20Maps-4285F4" alt="Maps">
+  <img src="https://img.shields.io/badge/Docker-Containerized-2496ED" alt="Docker">
 </div>
 
 ## 📋 Table of Contents
@@ -17,6 +18,7 @@
 - [Installation](#installation)
 - [Configuration](#configuration)
 - [Deployment](#deployment)
+- [🐳 Docker Deployment](#-docker-deployment)
 - [Starting the Application](#starting-the-application)
 - [Administration Guide](#administration-guide)
 - [API Documentation](#api-documentation)
@@ -271,31 +273,247 @@ REACT_APP_GOOGLE_MAPS_API_KEY=YOUR_GOOGLE_MAPS_API_KEY
    REACT_APP_BACKEND_URL=https://api.yourdomain.com
    ```
 
-### Docker Deployment (Optional)
+## 🐳 Docker Deployment
 
-1. **Backend Dockerfile**
-   ```dockerfile
-   FROM python:3.11-slim
-   WORKDIR /app
-   COPY requirements.txt .
-   RUN pip install -r requirements.txt
-   COPY . .
-   EXPOSE 8001
-   CMD ["python", "server.py"]
+### Quick Start with Docker
+
+The easiest way to run MobilityHub is using Docker. All services are containerized and configured to work together seamlessly.
+
+#### Prerequisites
+- Docker and Docker Compose installed
+- Git (to clone the repository)
+
+#### One-Command Deployment
+```bash
+# Clone the repository
+git clone <repository-url>
+cd tagix
+
+# Deploy everything with one command
+./deploy.sh
+```
+
+This will:
+- Build optimized Docker images
+- Start all services (Frontend, Backend, MongoDB)
+- Run health checks
+- Verify WebSocket connectivity
+- Display service URLs and status
+
+### Service Architecture
+
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Frontend      │    │    Backend      │    │    MongoDB      │
+│   (React)       │◄──►│   (FastAPI)     │◄──►│   (Database)    │
+│   Port: 3000    │    │   Port: 8001    │    │   Port: 27018   │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+```
+
+### Docker Services
+
+#### Frontend Service
+- **Image**: `tagix-frontend`
+- **Base**: Node.js 20 Alpine
+- **Port**: 3000 (external) → 3000 (container)
+- **Features**: Hot reload, WebSocket proxy, ESLint disabled for performance
+- **Environment**: Development mode with Docker networking
+
+#### Backend Service
+- **Image**: `tagix-backend`
+- **Base**: Python 3.10 Slim
+- **Port**: 8001 (external) → 8001 (container)
+- **Features**: FastAPI with WebSocket support, health checks
+- **Dependencies**: All Python packages optimized for Python 3.10
+
+#### MongoDB Service
+- **Image**: `mongo:7.0`
+- **Port**: 27018 (external) → 27017 (container)
+- **Features**: Persistent data, health checks, authentication
+- **Volume**: `mongodb_data` for data persistence
+
+### Docker Commands
+
+#### Basic Operations
+```bash
+# Start all services
+./deploy.sh
+
+# Stop all services
+docker-compose down
+
+# View service status
+docker ps
+
+# View logs
+docker logs tagix-frontend -f
+docker logs tagix-backend -f
+docker logs tagix-mongodb -f
+```
+
+#### Development Commands
+```bash
+# Restart a specific service
+docker restart tagix-frontend
+
+# Execute commands in containers
+docker exec -it tagix-backend bash
+docker exec -it tagix-frontend sh
+
+# View real-time logs
+docker-compose logs -f
+
+# Clean rebuild (removes all containers and images)
+./deploy.sh --clean
+```
+
+#### Health Checks
+```bash
+# Check if services are healthy
+curl -I http://localhost:3000
+curl -I http://localhost:8001/api/health
+
+# Test WebSocket connectivity
+node test_frontend_websocket.js
+```
+
+### Environment Configuration
+
+#### Frontend Environment Variables
+```bash
+REACT_APP_API_URL=http://backend:8001    # Backend service URL
+REACT_APP_WS_URL=ws://backend:8001       # WebSocket URL
+REACT_APP_GOOGLE_MAPS_API_KEY=your_key   # Google Maps API key
+```
+
+#### Backend Environment Variables
+```bash
+MONGO_URL=mongodb://admin:password123@mongodb:27017/tagix_db?authSource=admin
+DB_NAME=tagix_db
+JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
+CORS_ORIGINS=http://localhost:3000,http://localhost:3001,https://kar.bar
+GOOGLE_MAPS_API_KEY=your_key
+STRIPE_API_KEY=your_stripe_key
+```
+
+### Docker Networking
+
+The services communicate through a custom Docker network `tagix_tagix-network`:
+
+- **Frontend** → **Backend**: `http://backend:8001`
+- **Backend** → **MongoDB**: `mongodb://mongodb:27017`
+- **External Access**: `localhost:3000`, `localhost:8001`, `localhost:27018`
+
+### Performance Optimizations
+
+#### Build Optimizations
+- **Multi-stage builds**: Optimized image sizes
+- **Layer caching**: Faster rebuilds
+- **Alpine Linux**: Minimal base images
+- **Node.js 20**: Latest LTS with better performance
+- **Python 3.10**: Optimized dependency versions
+
+#### Runtime Optimizations
+- **Health checks**: Automatic service monitoring
+- **Resource limits**: Prevent memory leaks
+- **Volume mounts**: Hot reload for development
+- **Network isolation**: Secure container communication
+
+### Troubleshooting
+
+#### Common Issues
+
+1. **Port Conflicts**
+   ```bash
+   # Check if ports are in use
+   sudo lsof -i :3000
+   sudo lsof -i :8001
+   sudo lsof -i :27018
+   
+   # Stop conflicting services
+   sudo systemctl stop mongod  # If MongoDB is running locally
    ```
 
-2. **Frontend Dockerfile**
-   ```dockerfile
-   FROM node:18-alpine
-   WORKDIR /app
-   COPY package.json yarn.lock ./
-   RUN yarn install
-   COPY . .
-   RUN yarn build
-   FROM nginx:alpine
-   COPY --from=0 /app/build /usr/share/nginx/html
-   EXPOSE 3000
+2. **Container Won't Start**
+   ```bash
+   # Check container logs
+   docker logs tagix-frontend
+   docker logs tagix-backend
+   
+   # Remove and recreate containers
+   docker-compose down
+   docker-compose up -d
    ```
+
+3. **WebSocket Connection Issues**
+   ```bash
+   # Test WebSocket connectivity
+   node test_frontend_websocket.js
+   
+   # Check proxy configuration
+   docker logs tagix-frontend | grep "setupProxy"
+   ```
+
+4. **Permission Issues**
+   ```bash
+   # Fix file permissions
+   sudo chown -R $USER:$USER .
+   
+   # Clean Docker cache
+   docker system prune -a
+   ```
+
+#### Debug Mode
+```bash
+# Run with verbose logging
+docker-compose up --build
+
+# Access container shell
+docker exec -it tagix-backend bash
+docker exec -it tagix-frontend sh
+```
+
+### Production Considerations
+
+#### Security
+- Change default passwords in production
+- Use environment files for sensitive data
+- Enable HTTPS with reverse proxy
+- Configure firewall rules
+
+#### Scaling
+- Use Docker Swarm or Kubernetes for multi-host deployment
+- Configure load balancers for high availability
+- Set up monitoring and logging
+- Implement backup strategies
+
+#### Monitoring
+```bash
+# Monitor resource usage
+docker stats
+
+# Check service health
+docker-compose ps
+
+# View service logs
+docker-compose logs --tail=100
+```
+
+### File Structure
+```
+tagix/
+├── docker-compose.yml          # Service orchestration
+├── deploy.sh                   # Deployment script
+├── frontend/
+│   ├── Dockerfile             # Frontend container config
+│   ├── .dockerignore          # Docker ignore rules
+│   └── src/setupProxy.js      # WebSocket proxy config
+├── backend/
+│   ├── Dockerfile             # Backend container config
+│   ├── .dockerignore          # Docker ignore rules
+│   └── requirements.txt       # Python dependencies
+└── test_*.js                  # WebSocket test scripts
+```
 
 3. **Docker Compose**
    ```yaml
