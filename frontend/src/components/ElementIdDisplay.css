@@ -1,0 +1,53 @@
+/* Element ID Display - Makes all IDs VERY visible */
+[id]::after {
+  content: " [" attr(id) "]";
+  font-size: 10px;
+  color: #ff0000;
+  font-family: monospace;
+  background: rgba(255, 255, 0, 0.95);
+  padding: 2px 4px;
+  border-radius: 3px;
+  margin-left: 6px;
+  position: relative;
+  z-index: 1000;
+  pointer-events: none;
+  user-select: text;
+  font-weight: bold;
+  border: 1px solid #ff0000;
+  display: inline-block;
+  white-space: nowrap;
+}
+
+/* Make IDs even more visible on hover */
+[id]:hover::after {
+  background: rgba(255, 0, 0, 0.95);
+  color: #ffffff;
+  font-weight: bold;
+  font-size: 11px;
+}
+
+/* Ensure IDs are selectable and copyable */
+[id]::after {
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+}
+
+/* Force visibility of hidden elements */
+[id] {
+  position: relative !important;
+}
+
+/* Make sure table cells with IDs are visible */
+[id*="admin-user"] {
+  min-width: 120px !important;
+  display: table-cell !important;
+}
+
+/* Force Actions column to be visible */
+[id*="actions"] {
+  display: table-cell !important;
+  visibility: visible !important;
+  width: 120px !important;
+}

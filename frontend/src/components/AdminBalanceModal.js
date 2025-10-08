@@ -15,6 +15,7 @@ import { Badge } from '@/components/ui/badge';
 import { DollarSign, TrendingUp, TrendingDown, RefreshCw, X, Wallet } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
+import './ElementIdDisplay.css';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -152,39 +153,40 @@ const AdminBalanceModal = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <Card className="w-full max-w-4xl mx-4 max-h-[90vh] overflow-y-auto">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <div className="flex items-center space-x-2">
-            <Wallet className="h-5 w-5 text-green-600" />
-            <CardTitle className="text-lg">Balance Management</CardTitle>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" id="admin-balance-modal-overlay">
+      <Card className="w-full max-w-4xl mx-4 max-h-[90vh] overflow-y-auto" id="admin-balance-modal-container">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2" id="admin-balance-modal-header">
+          <div className="flex items-center space-x-2" id="admin-balance-modal-header-info">
+            <Wallet className="h-5 w-5 text-green-600" id="admin-balance-modal-header-icon" />
+            <CardTitle className="text-lg" id="admin-balance-modal-title">Balance Management</CardTitle>
           </div>
           <Button
             variant="ghost"
             size="sm"
             onClick={handleClose}
             className="h-8 w-8 p-0"
+            id="admin-balance-modal-close-button"
           >
-            <X className="h-4 w-4" />
+            <X className="h-4 w-4" id="admin-balance-modal-close-icon" />
           </Button>
         </CardHeader>
         
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-6" id="admin-balance-modal-content">
           {/* User Info */}
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <h3 className="font-semibold text-lg">{userName}</h3>
-            <p className="text-sm text-gray-600">{userEmail}</p>
-            <Badge variant="outline" className="mt-1">
+          <div className="bg-gray-50 p-4 rounded-lg" id="admin-balance-modal-user-info">
+            <h3 className="font-semibold text-lg" id="admin-balance-modal-user-name">{userName}</h3>
+            <p className="text-sm text-gray-600" id="admin-balance-modal-user-email">{userEmail}</p>
+            <Badge variant="outline" className="mt-1" id="admin-balance-modal-user-role-badge">
               {userRole}
             </Badge>
           </div>
 
           {/* Current Balance */}
-          <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-semibold text-lg text-green-800">Current Balance</h3>
-                <p className="text-2xl font-bold text-green-900">
+          <div className="bg-green-50 p-4 rounded-lg border border-green-200" id="admin-balance-modal-current-balance">
+            <div className="flex items-center justify-between" id="admin-balance-modal-balance-container">
+              <div id="admin-balance-modal-balance-info">
+                <h3 className="font-semibold text-lg text-green-800" id="admin-balance-modal-balance-label">Current Balance</h3>
+                <p className="text-2xl font-bold text-green-900" id="admin-balance-modal-balance-amount">
                   {loading ? 'Loading...' : formatCurrency(balance)}
                 </p>
               </div>
@@ -194,20 +196,21 @@ const AdminBalanceModal = ({
                 onClick={fetchUserBalance}
                 disabled={loading}
                 className="flex items-center space-x-1"
+                id="admin-balance-modal-refresh-button"
               >
-                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-                <span>Refresh</span>
+                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} id="admin-balance-modal-refresh-icon" />
+                <span id="admin-balance-modal-refresh-text">Refresh</span>
               </Button>
             </div>
           </div>
 
           {/* Transaction Form */}
-          <div className="space-y-4">
-            <h3 className="font-semibold text-lg">New Transaction</h3>
+          <div className="space-y-4" id="admin-balance-modal-transaction-form">
+            <h3 className="font-semibold text-lg" id="admin-balance-modal-transaction-form-title">New Transaction</h3>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="amount">Amount</Label>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4" id="admin-balance-modal-transaction-form-grid">
+              <div className="space-y-2" id="admin-balance-modal-amount-field">
+                <Label htmlFor="amount" id="admin-balance-modal-amount-label">Amount</Label>
                 <Input
                   id="amount"
                   type="number"
@@ -219,25 +222,25 @@ const AdminBalanceModal = ({
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="transaction_type">Type</Label>
+              <div className="space-y-2" id="admin-balance-modal-type-field">
+                <Label htmlFor="transaction_type" id="admin-balance-modal-type-label">Type</Label>
                 <Select 
                   value={transactionForm.transaction_type} 
                   onValueChange={(value) => setTransactionForm(prev => ({ ...prev, transaction_type: value }))}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger id="admin-balance-modal-type-select-trigger">
                     <SelectValue placeholder="Select type" />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="credit">Credit (Add Money)</SelectItem>
-                    <SelectItem value="debit">Debit (Remove Money)</SelectItem>
-                    <SelectItem value="refund">Refund</SelectItem>
+                  <SelectContent id="admin-balance-modal-type-select-content">
+                    <SelectItem value="credit" id="admin-balance-modal-type-credit">Credit (Add Money)</SelectItem>
+                    <SelectItem value="debit" id="admin-balance-modal-type-debit">Debit (Remove Money)</SelectItem>
+                    <SelectItem value="refund" id="admin-balance-modal-type-refund">Refund</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="description">Description</Label>
+              <div className="space-y-2" id="admin-balance-modal-description-field">
+                <Label htmlFor="description" id="admin-balance-modal-description-label">Description</Label>
                 <Input
                   id="description"
                   placeholder="Transaction description"
@@ -247,28 +250,29 @@ const AdminBalanceModal = ({
               </div>
             </div>
 
-            <div className="flex justify-end">
+            <div className="flex justify-end" id="admin-balance-modal-submit-container">
               <Button
                 onClick={handleTransaction}
                 disabled={transactionLoading || !transactionForm.amount || !transactionForm.description}
                 className="flex items-center space-x-2"
+                id="admin-balance-modal-submit-button"
               >
-                <DollarSign className="h-4 w-4" />
-                <span>{transactionLoading ? 'Processing...' : 'Process Transaction'}</span>
+                <DollarSign className="h-4 w-4" id="admin-balance-modal-submit-icon" />
+                <span id="admin-balance-modal-submit-text">{transactionLoading ? 'Processing...' : 'Process Transaction'}</span>
               </Button>
             </div>
           </div>
 
           {/* Recent Transactions */}
-          <div className="space-y-4">
-            <h3 className="font-semibold text-lg">Recent Transactions</h3>
+          <div className="space-y-4" id="admin-balance-modal-transactions-section">
+            <h3 className="font-semibold text-lg" id="admin-balance-modal-transactions-title">Recent Transactions</h3>
             
             {loading ? (
-              <div className="text-center py-4">Loading transactions...</div>
+              <div className="text-center py-4" id="admin-balance-modal-transactions-loading">Loading transactions...</div>
             ) : transactions.length === 0 ? (
-              <div className="text-center py-4 text-gray-500">No transactions found</div>
+              <div className="text-center py-4 text-gray-500" id="admin-balance-modal-transactions-empty">No transactions found</div>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-2" id="admin-balance-modal-transactions-list">
                 {transactions.map((transaction) => (
                   <div key={transaction.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <div className="flex items-center space-x-3">

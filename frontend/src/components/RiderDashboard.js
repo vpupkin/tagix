@@ -245,30 +245,30 @@ const RiderDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8" data-testid="rider-dashboard">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 py-8" data-testid="rider-dashboard" id="rider-dashboard-main">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" id="rider-dashboard-container">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">
+        <div className="mb-8" id="rider-dashboard-header">
+          <div className="flex items-center justify-between" id="rider-dashboard-header-content">
+            <div id="rider-dashboard-welcome">
+              <h1 className="text-3xl font-bold text-gray-900" id="rider-dashboard-title">
                 Welcome back, {user.name}! 🚗
               </h1>
-              <p className="text-gray-600 mt-1">
+              <p className="text-gray-600 mt-1" id="rider-dashboard-subtitle">
                 Ready for your next journey?
               </p>
             </div>
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-3" id="rider-dashboard-header-actions">
               <div className={`flex items-center space-x-2 px-3 py-1 rounded-full text-sm ${
                 connected ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-              }`}>
+              }`} id="rider-dashboard-connection-status">
                 <div className={`w-2 h-2 rounded-full ${
                   connected ? 'bg-green-400' : 'bg-red-400'
-                }`} />
-                <span>{connected ? 'Online' : 'Offline'}</span>
+                }`} id="rider-dashboard-connection-indicator" />
+                <span id="rider-dashboard-connection-text">{connected ? 'Online' : 'Offline'}</span>
               </div>
-              <Link to="/book-ride">
-                <Button className="btn-primary" data-testid="quick-book-ride">
+              <Link to="/book-ride" id="rider-dashboard-book-ride-link">
+                <Button className="btn-primary" data-testid="quick-book-ride" id="rider-dashboard-book-ride-button">
                   <Plus className="h-4 w-4 mr-2" />
                   Book Ride
                 </Button>
@@ -277,81 +277,81 @@ const RiderDashboard = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8" id="rider-dashboard-grid">
           {/* Left Column - Stats and Quick Actions */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-6" id="rider-dashboard-left-column">
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-              <Card className="card-hover">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Total Rides</p>
-                      <p className="text-2xl font-bold text-gray-900">{stats.totalRides}</p>
-                      <p className="text-xs text-gray-500">{stats.completedRides} completed, {stats.pendingRides} pending</p>
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4" id="rider-dashboard-stats-grid">
+              <Card className="card-hover" id="rider-dashboard-total-rides-card">
+                <CardContent className="p-6" id="rider-dashboard-total-rides-content">
+                  <div className="flex items-center justify-between" id="rider-dashboard-total-rides-layout">
+                    <div id="rider-dashboard-total-rides-info">
+                      <p className="text-sm font-medium text-gray-600" id="rider-dashboard-total-rides-label">Total Rides</p>
+                      <p className="text-2xl font-bold text-gray-900" id="rider-dashboard-total-rides-value">{stats.totalRides}</p>
+                      <p className="text-xs text-gray-500" id="rider-dashboard-total-rides-details">{stats.completedRides} completed, {stats.pendingRides} pending</p>
                     </div>
-                    <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center" id="rider-dashboard-total-rides-icon">
                       <Activity className="h-6 w-6 text-blue-600" />
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="card-hover">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Total Spent</p>
-                      <p className="text-2xl font-bold text-gray-900">${stats.totalSpent.toFixed(2)}</p>
-                      <p className="text-xs text-gray-500">From completed rides only</p>
+              <Card className="card-hover" id="rider-dashboard-total-spent-card">
+                <CardContent className="p-6" id="rider-dashboard-total-spent-content">
+                  <div className="flex items-center justify-between" id="rider-dashboard-total-spent-layout">
+                    <div id="rider-dashboard-total-spent-info">
+                      <p className="text-sm font-medium text-gray-600" id="rider-dashboard-total-spent-label">Total Spent</p>
+                      <p className="text-2xl font-bold text-gray-900" id="rider-dashboard-total-spent-value">${stats.totalSpent.toFixed(2)}</p>
+                      <p className="text-xs text-gray-500" id="rider-dashboard-total-spent-details">From completed rides only</p>
                     </div>
-                    <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                    <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center" id="rider-dashboard-total-spent-icon">
                       <CreditCard className="h-6 w-6 text-green-600" />
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="card-hover">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Your Rating</p>
-                      <div className="flex items-center space-x-1">
-                        <p className="text-2xl font-bold text-gray-900">{stats.averageRating}</p>
-                        <Star className="h-5 w-5 text-yellow-400 fill-current" />
+              <Card className="card-hover" id="rider-dashboard-rating-card">
+                <CardContent className="p-6" id="rider-dashboard-rating-content">
+                  <div className="flex items-center justify-between" id="rider-dashboard-rating-layout">
+                    <div id="rider-dashboard-rating-info">
+                      <p className="text-sm font-medium text-gray-600" id="rider-dashboard-rating-label">Your Rating</p>
+                      <div className="flex items-center space-x-1" id="rider-dashboard-rating-display">
+                        <p className="text-2xl font-bold text-gray-900" id="rider-dashboard-rating-value">{stats.averageRating}</p>
+                        <Star className="h-5 w-5 text-yellow-400 fill-current" id="rider-dashboard-rating-star" />
                       </div>
                     </div>
-                    <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+                    <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center" id="rider-dashboard-rating-icon">
                       <Star className="h-6 w-6 text-yellow-600" />
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="card-hover">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Favorite</p>
-                      <p className="text-lg font-bold text-gray-900 truncate">{stats.favoriteDestination}</p>
+              <Card className="card-hover" id="rider-dashboard-favorite-card">
+                <CardContent className="p-6" id="rider-dashboard-favorite-content">
+                  <div className="flex items-center justify-between" id="rider-dashboard-favorite-layout">
+                    <div id="rider-dashboard-favorite-info">
+                      <p className="text-sm font-medium text-gray-600" id="rider-dashboard-favorite-label">Favorite</p>
+                      <p className="text-lg font-bold text-gray-900 truncate" id="rider-dashboard-favorite-value">{stats.favoriteDestination}</p>
                     </div>
-                    <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                    <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center" id="rider-dashboard-favorite-icon">
                       <MapPin className="h-6 w-6 text-purple-600" />
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="card-hover">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Balance</p>
-                      <p className="text-2xl font-bold text-gray-900">${balance.currentBalance.toFixed(2)}</p>
-                      <p className="text-xs text-gray-500">Available funds</p>
+              <Card className="card-hover" id="rider-dashboard-balance-card">
+                <CardContent className="p-6" id="rider-dashboard-balance-content">
+                  <div className="flex items-center justify-between" id="rider-dashboard-balance-layout">
+                    <div id="rider-dashboard-balance-info">
+                      <p className="text-sm font-medium text-gray-600" id="rider-dashboard-balance-label">Balance</p>
+                      <p className="text-2xl font-bold text-gray-900" id="rider-dashboard-balance-value">${balance.currentBalance.toFixed(2)}</p>
+                      <p className="text-xs text-gray-500" id="rider-dashboard-balance-details">Available funds</p>
                     </div>
-                    <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                    <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center" id="rider-dashboard-balance-icon">
                       <Wallet className="h-6 w-6 text-green-600" />
                     </div>
                   </div>
@@ -360,27 +360,27 @@ const RiderDashboard = () => {
             </div>
 
             {/* Quick Actions */}
-            <Card className="card-hover">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
+            <Card className="card-hover" id="rider-dashboard-quick-actions-card">
+              <CardHeader id="rider-dashboard-quick-actions-header">
+                <CardTitle className="flex items-center space-x-2" id="rider-dashboard-quick-actions-title">
                   <Zap className="h-5 w-5 text-indigo-600" />
                   <span>Quick Actions</span>
                 </CardTitle>
-                <CardDescription>
+                <CardDescription id="rider-dashboard-quick-actions-description">
                   Get things done with just one click
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <CardContent id="rider-dashboard-quick-actions-content">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4" id="rider-dashboard-quick-actions-grid">
                   {quickActions.map((action, index) => (
-                    <Link key={index} to={action.action} data-testid={action.testId}>
-                      <div className="group cursor-pointer p-4 rounded-xl border border-gray-200 hover:border-indigo-200 hover:shadow-md transition-all duration-200">
-                        <div className={`w-12 h-12 bg-gradient-to-r ${action.color} rounded-lg flex items-center justify-center text-white mb-3 group-hover:scale-105 transition-transform duration-200`}>
+                    <Link key={index} to={action.action} data-testid={action.testId} id={`rider-dashboard-quick-action-${index}`}>
+                      <div className="group cursor-pointer p-4 rounded-xl border border-gray-200 hover:border-indigo-200 hover:shadow-md transition-all duration-200" id={`rider-dashboard-quick-action-card-${index}`}>
+                        <div className={`w-12 h-12 bg-gradient-to-r ${action.color} rounded-lg flex items-center justify-center text-white mb-3 group-hover:scale-105 transition-transform duration-200`} id={`rider-dashboard-quick-action-icon-${index}`}>
                           {action.icon}
                         </div>
-                        <h3 className="font-semibold text-gray-900 mb-1">{action.title}</h3>
-                        <p className="text-sm text-gray-600">{action.description}</p>
-                        <ChevronRight className="h-4 w-4 text-gray-400 mt-2 group-hover:text-indigo-600 transition-colors duration-200" />
+                        <h3 className="font-semibold text-gray-900 mb-1" id={`rider-dashboard-quick-action-title-${index}`}>{action.title}</h3>
+                        <p className="text-sm text-gray-600" id={`rider-dashboard-quick-action-description-${index}`}>{action.description}</p>
+                        <ChevronRight className="h-4 w-4 text-gray-400 mt-2 group-hover:text-indigo-600 transition-colors duration-200" id={`rider-dashboard-quick-action-arrow-${index}`} />
                       </div>
                     </Link>
                   ))}
@@ -389,58 +389,58 @@ const RiderDashboard = () => {
             </Card>
 
             {/* Recent Rides */}
-            <Card className="card-hover">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="flex items-center space-x-2">
+            <Card className="card-hover" id="rider-dashboard-recent-rides-card">
+              <CardHeader id="rider-dashboard-recent-rides-header">
+                <div className="flex items-center justify-between" id="rider-dashboard-recent-rides-header-content">
+                  <div id="rider-dashboard-recent-rides-title-section">
+                    <CardTitle className="flex items-center space-x-2" id="rider-dashboard-recent-rides-title">
                       <History className="h-5 w-5 text-indigo-600" />
                       <span>Recent Rides</span>
                     </CardTitle>
-                    <CardDescription>
+                    <CardDescription id="rider-dashboard-recent-rides-description">
                       Your latest ride history
                     </CardDescription>
                   </div>
-                  <Link to="/rides">
-                    <Button variant="outline" size="sm">
+                  <Link to="/rides" id="rider-dashboard-view-all-rides-link">
+                    <Button variant="outline" size="sm" id="rider-dashboard-view-all-rides-button">
                       View All
                       <ChevronRight className="h-4 w-4 ml-1" />
                     </Button>
                   </Link>
                 </div>
               </CardHeader>
-              <CardContent>
+              <CardContent id="rider-dashboard-recent-rides-content">
                 {recentRides.length > 0 ? (
-                  <div className="space-y-4">
+                  <div className="space-y-4" id="rider-dashboard-recent-rides-list">
                     {recentRides.map((ride) => (
-                      <div key={ride.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                        <div className="flex items-center space-x-4">
-                          <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
+                      <div key={ride.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg" id={`rider-dashboard-ride-${ride.id}`}>
+                        <div className="flex items-center space-x-4" id={`rider-dashboard-ride-info-${ride.id}`}>
+                          <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center" id={`rider-dashboard-ride-icon-${ride.id}`}>
                             <Navigation className="h-5 w-5 text-indigo-600" />
                           </div>
-                          <div>
-                            <p className="font-medium text-gray-900">
+                          <div id={`rider-dashboard-ride-details-${ride.id}`}>
+                            <p className="font-medium text-gray-900" id={`rider-dashboard-ride-route-${ride.id}`}>
                               {ride.pickup_location?.address || ride.pickup_address || 'Pickup Location'} → {ride.dropoff_location?.address || ride.dropoff_address || 'Destination'}
                             </p>
-                            <p className="text-sm text-gray-600">
+                            <p className="text-sm text-gray-600" id={`rider-dashboard-ride-date-${ride.id}`}>
                               {formatDate(ride.created_at || ride.accepted_at || ride.completed_at || ride.requested_at)}
                             </p>
                             {(() => {
                               const distance = calculateDistance(ride.pickup_location, ride.dropoff_location);
                               const duration = calculateDuration(distance);
                               return distance && duration ? (
-                                <p className="text-xs text-gray-500">
+                                <p className="text-xs text-gray-500" id={`rider-dashboard-ride-distance-${ride.id}`}>
                                   {distance.toFixed(1)} km • {duration} min
                                 </p>
                               ) : null;
                             })()}
                           </div>
                         </div>
-                        <div className="text-right">
-                          <Badge className={getStatusColor(ride.status || 'pending')}>
+                        <div className="text-right" id={`rider-dashboard-ride-status-${ride.id}`}>
+                          <Badge className={getStatusColor(ride.status || 'pending')} id={`rider-dashboard-ride-badge-${ride.id}`}>
                             {(ride.status || 'pending').replace('_', ' ')}
                           </Badge>
-                          <p className="text-sm font-medium text-gray-900 mt-1">
+                          <p className="text-sm font-medium text-gray-900 mt-1" id={`rider-dashboard-ride-fare-${ride.id}`}>
                             ${(ride.estimated_fare || ride.fare || 0).toFixed(2)}
                           </p>
                         </div>
@@ -448,11 +448,11 @@ const RiderDashboard = () => {
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-8">
-                    <Car className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                    <p className="text-gray-500 mb-4">No recent rides found</p>
-                    <Link to="/book-ride">
-                      <Button className="btn-primary">
+                  <div className="text-center py-8" id="rider-dashboard-no-rides">
+                    <Car className="h-12 w-12 text-gray-300 mx-auto mb-4" id="rider-dashboard-no-rides-icon" />
+                    <p className="text-gray-500 mb-4" id="rider-dashboard-no-rides-message">No recent rides found</p>
+                    <Link to="/book-ride" id="rider-dashboard-no-rides-book-link">
+                      <Button className="btn-primary" id="rider-dashboard-no-rides-book-button">
                         Book Your First Ride
                       </Button>
                     </Link>
@@ -463,74 +463,74 @@ const RiderDashboard = () => {
           </div>
 
           {/* Right Column - Notifications and Tips */}
-          <div className="space-y-6">
+          <div className="space-y-6" id="rider-dashboard-right-column">
             {/* Notifications */}
-            <Card className="card-hover">
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
+            <Card className="card-hover" id="rider-dashboard-notifications-card">
+              <CardHeader id="rider-dashboard-notifications-header">
+                <CardTitle className="flex items-center justify-between" id="rider-dashboard-notifications-title">
                   <span>Recent Notifications</span>
-                  <Badge variant="secondary">{notifications.length}</Badge>
+                  <Badge variant="secondary" id="rider-dashboard-notifications-count">{notifications.length}</Badge>
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent id="rider-dashboard-notifications-content">
                 {notifications.length > 0 ? (
-                  <div className="space-y-3">
+                  <div className="space-y-3" id="rider-dashboard-notifications-list">
                     {notifications.slice(0, 5).map((notification) => (
-                      <div key={notification.id} className="p-3 bg-gray-50 rounded-lg">
-                        <p className="font-medium text-sm text-gray-900">{notification.title}</p>
-                        <p className="text-xs text-gray-600 mt-1">{notification.message}</p>
-                        <p className="text-xs text-gray-400 mt-2">
+                      <div key={notification.id} className="p-3 bg-gray-50 rounded-lg" id={`rider-dashboard-notification-${notification.id}`}>
+                        <p className="font-medium text-sm text-gray-900" id={`rider-dashboard-notification-title-${notification.id}`}>{notification.title}</p>
+                        <p className="text-xs text-gray-600 mt-1" id={`rider-dashboard-notification-message-${notification.id}`}>{notification.message}</p>
+                        <p className="text-xs text-gray-400 mt-2" id={`rider-dashboard-notification-time-${notification.id}`}>
                           {new Date(notification.timestamp).toLocaleTimeString()}
                         </p>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-4">
-                    <p className="text-gray-500 text-sm">No new notifications</p>
+                  <div className="text-center py-4" id="rider-dashboard-no-notifications">
+                    <p className="text-gray-500 text-sm" id="rider-dashboard-no-notifications-message">No new notifications</p>
                   </div>
                 )}
               </CardContent>
             </Card>
 
             {/* Tips Card */}
-            <Card className="card-hover bg-gradient-to-br from-indigo-50 to-purple-50 border-indigo-200">
-              <CardHeader>
-                <CardTitle className="text-indigo-900">💡 Rider Tips</CardTitle>
+            <Card className="card-hover bg-gradient-to-br from-indigo-50 to-purple-50 border-indigo-200" id="rider-dashboard-tips-card">
+              <CardHeader id="rider-dashboard-tips-header">
+                <CardTitle className="text-indigo-900" id="rider-dashboard-tips-title">💡 Rider Tips</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="space-y-2">
-                  <p className="text-sm text-indigo-800 font-medium">🕒 Book in advance</p>
-                  <p className="text-xs text-indigo-700">Schedule your rides during peak hours to avoid waiting.</p>
+              <CardContent className="space-y-3" id="rider-dashboard-tips-content">
+                <div className="space-y-2" id="rider-dashboard-tip-1">
+                  <p className="text-sm text-indigo-800 font-medium" id="rider-dashboard-tip-1-title">🕒 Book in advance</p>
+                  <p className="text-xs text-indigo-700" id="rider-dashboard-tip-1-description">Schedule your rides during peak hours to avoid waiting.</p>
                 </div>
-                <div className="space-y-2">
-                  <p className="text-sm text-indigo-800 font-medium">⭐ Rate your driver</p>
-                  <p className="text-xs text-indigo-700">Help maintain service quality by rating your experience.</p>
+                <div className="space-y-2" id="rider-dashboard-tip-2">
+                  <p className="text-sm text-indigo-800 font-medium" id="rider-dashboard-tip-2-title">⭐ Rate your driver</p>
+                  <p className="text-xs text-indigo-700" id="rider-dashboard-tip-2-description">Help maintain service quality by rating your experience.</p>
                 </div>
-                <div className="space-y-2">
-                  <p className="text-sm text-indigo-800 font-medium">📍 Be precise with location</p>
-                  <p className="text-xs text-indigo-700">Provide clear pickup instructions to save time.</p>
+                <div className="space-y-2" id="rider-dashboard-tip-3">
+                  <p className="text-sm text-indigo-800 font-medium" id="rider-dashboard-tip-3-title">📍 Be precise with location</p>
+                  <p className="text-xs text-indigo-700" id="rider-dashboard-tip-3-description">Provide clear pickup instructions to save time.</p>
                 </div>
               </CardContent>
             </Card>
 
             {/* Safety Card */}
-            <Card className="card-hover bg-gradient-to-br from-emerald-50 to-green-50 border-emerald-200">
-              <CardHeader>
-                <CardTitle className="text-emerald-900">🛡️ Safety First</CardTitle>
+            <Card className="card-hover bg-gradient-to-br from-emerald-50 to-green-50 border-emerald-200" id="rider-dashboard-safety-card">
+              <CardHeader id="rider-dashboard-safety-header">
+                <CardTitle className="text-emerald-900" id="rider-dashboard-safety-title">🛡️ Safety First</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="space-y-2">
-                  <p className="text-sm text-emerald-800 font-medium">Check driver details</p>
-                  <p className="text-xs text-emerald-700">Always verify driver photo and license plate.</p>
+              <CardContent className="space-y-3" id="rider-dashboard-safety-content">
+                <div className="space-y-2" id="rider-dashboard-safety-tip-1">
+                  <p className="text-sm text-emerald-800 font-medium" id="rider-dashboard-safety-tip-1-title">Check driver details</p>
+                  <p className="text-xs text-emerald-700" id="rider-dashboard-safety-tip-1-description">Always verify driver photo and license plate.</p>
                 </div>
-                <div className="space-y-2">
-                  <p className="text-sm text-emerald-800 font-medium">Share your trip</p>
-                  <p className="text-xs text-emerald-700">Let friends know your trip details for safety.</p>
+                <div className="space-y-2" id="rider-dashboard-safety-tip-2">
+                  <p className="text-sm text-emerald-800 font-medium" id="rider-dashboard-safety-tip-2-title">Share your trip</p>
+                  <p className="text-xs text-emerald-700" id="rider-dashboard-safety-tip-2-description">Let friends know your trip details for safety.</p>
                 </div>
-                <div className="space-y-2">
-                  <p className="text-sm text-emerald-800 font-medium">Emergency contact</p>
-                  <p className="text-xs text-emerald-700">Use in-app emergency features if needed.</p>
+                <div className="space-y-2" id="rider-dashboard-safety-tip-3">
+                  <p className="text-sm text-emerald-800 font-medium" id="rider-dashboard-safety-tip-3-title">Emergency contact</p>
+                  <p className="text-xs text-emerald-700" id="rider-dashboard-safety-tip-3-description">Use in-app emergency features if needed.</p>
                 </div>
               </CardContent>
             </Card>

@@ -32,11 +32,15 @@ import {
 import { toast } from 'sonner';
 import AdminNotificationModal from './AdminNotificationModal';
 import AdminBalanceModal from './AdminBalanceModal';
+import './ElementIdDisplay.css';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
 const AdminDashboard = () => {
   const { user } = useAuth();
+  
+  // Debug mode - force show all elements
+  const DEBUG_MODE = true;
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     total_users: 0,
@@ -271,20 +275,48 @@ const AdminDashboard = () => {
           </div>
         </div>
 
+        {/* HARDCODED BALANCE BUTTON - ALWAYS VISIBLE */}
+        <div className="bg-red-100 border-4 border-red-600 p-6 rounded-lg mb-6" id="hardcoded-balance-button-container">
+          <h2 className="text-xl font-bold text-red-800 mb-4" id="hardcoded-balance-button-title">🚨 BALANCE BUTTON ID (HARDCODED)</h2>
+          <div className="bg-white p-4 border-2 border-red-500 rounded" id="hardcoded-balance-button-content">
+            <p className="text-lg font-mono text-red-900" id="hardcoded-balance-button-id">
+              <strong>NEW BALANCE BUTTON ID:</strong> admin-user-balance-button-530eed2f-73dd-4b43-974c-612d199555dc
+            </p>
+            <p className="text-sm text-red-700 mt-2" id="hardcoded-balance-button-note">
+              This ID should be on the NEW BALANCE button (FIRST COLUMN) for DRRRRRRR2nd driver
+            </p>
+            <Button 
+              className="mt-4 bg-red-600 hover:bg-red-700 text-white" 
+              id="hardcoded-balance-button-test"
+              onClick={() => {
+                const button = document.getElementById('admin-user-balance-button-530eed2f-73dd-4b43-974c-612d199555dc');
+                if (button) {
+                  alert('NEW Balance button found in FIRST COLUMN!');
+                  button.click();
+                } else {
+                  alert('NEW Balance button NOT found! First column missing.');
+                }
+              }}
+            >
+              Test Balance Button
+            </Button>
+          </div>
+        </div>
+
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card className="card-hover">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Total Users</p>
-                  <p className="text-3xl font-bold text-gray-900">{stats.total_users}</p>
-                  <p className="text-sm text-gray-500 mt-1">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8" id="admin-dashboard-stats-grid">
+          <Card className="card-hover" id="admin-dashboard-total-users-card">
+            <CardContent className="p-6" id="admin-dashboard-total-users-content">
+              <div className="flex items-center justify-between" id="admin-dashboard-total-users-container">
+                <div id="admin-dashboard-total-users-info">
+                  <p className="text-sm font-medium text-gray-600" id="admin-dashboard-total-users-label">Total Users</p>
+                  <p className="text-3xl font-bold text-gray-900" id="admin-dashboard-total-users-count">{stats.total_users}</p>
+                  <p className="text-sm text-gray-500 mt-1" id="admin-dashboard-total-users-breakdown">
                     {stats.total_riders} riders • {stats.total_drivers} drivers
                   </p>
                 </div>
-                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <Users className="h-6 w-6 text-blue-600" />
+                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center" id="admin-dashboard-total-users-icon-container">
+                  <Users className="h-6 w-6 text-blue-600" id="admin-dashboard-total-users-icon" />
                 </div>
               </div>
             </CardContent>
@@ -343,12 +375,12 @@ const AdminDashboard = () => {
         </div>
 
         {/* Tabs for Different Views */}
-        <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="users">User Management</TabsTrigger>
-            <TabsTrigger value="rides">Ride Monitoring</TabsTrigger>
-            <TabsTrigger value="analytics">Analytics</TabsTrigger>
+        <Tabs defaultValue="overview" className="space-y-6" id="admin-dashboard-tabs">
+          <TabsList className="grid w-full grid-cols-4" id="admin-dashboard-tabs-list">
+            <TabsTrigger value="overview" id="admin-dashboard-tab-overview">Overview</TabsTrigger>
+            <TabsTrigger value="users" id="admin-dashboard-tab-users">User Management</TabsTrigger>
+            <TabsTrigger value="rides" id="admin-dashboard-tab-rides">Ride Monitoring</TabsTrigger>
+            <TabsTrigger value="analytics" id="admin-dashboard-tab-analytics">Analytics</TabsTrigger>
           </TabsList>
 
           {/* Overview Tab */}
@@ -439,64 +471,69 @@ const AdminDashboard = () => {
           </TabsContent>
 
           {/* Users Tab */}
-          <TabsContent value="users" className="space-y-6">
-            <Card className="card-hover">
-              <CardHeader>
-                <CardTitle>User Management</CardTitle>
-                <CardDescription>
+          <TabsContent value="users" className="space-y-6" id="admin-dashboard-users-tab-content">
+            <Card className="card-hover" id="admin-dashboard-users-card">
+              <CardHeader id="admin-dashboard-users-card-header">
+                <CardTitle id="admin-dashboard-users-card-title">User Management</CardTitle>
+                <CardDescription id="admin-dashboard-users-card-description">
                   Manage riders, drivers, and administrators
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Email</TableHead>
-                        <TableHead>Role</TableHead>
-                        <TableHead>Rating</TableHead>
-                        <TableHead>Rides</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Joined</TableHead>
-                        <TableHead>Actions</TableHead>
+                <div className="overflow-x-auto" id="admin-users-table-container">
+                  <Table id="admin-users-table">
+                    <TableHeader id="admin-users-table-header">
+                      <TableRow id="admin-users-table-header-row">
+                        <TableHead id="admin-users-table-header-balance">BALANCE</TableHead>
+                        <TableHead id="admin-users-table-header-name">Name</TableHead>
+                        <TableHead id="admin-users-table-header-email">Email</TableHead>
+                        <TableHead id="admin-users-table-header-role">Role</TableHead>
+                        <TableHead id="admin-users-table-header-rating">Rating</TableHead>
+                        <TableHead id="admin-users-table-header-rides">Rides</TableHead>
+                        <TableHead id="admin-users-table-header-status">Status</TableHead>
+                        <TableHead id="admin-users-table-header-joined">Joined</TableHead>
+                        <TableHead id="admin-users-table-header-actions">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
-                    <TableBody>
+                    <TableBody id="admin-users-table-body">
                       {users.map((user) => (
-                        <TableRow key={user.id}>
-                          <TableCell className="font-medium">{user.name}</TableCell>
-                          <TableCell>{user.email}</TableCell>
-                          <TableCell>
-                            <Badge className={getUserRoleColor(user.role)}>
+                        <TableRow key={user.id} id={`admin-user-row-${user.id}`}>
+                          <TableCell id={`admin-user-balance-cell-${user.id}`}>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openBalanceModal(user)}
+                              className="flex items-center space-x-1 bg-green-100 hover:bg-green-200 border-green-300"
+                              id={`admin-user-balance-button-${user.id}`}
+                            >
+                              <Wallet className="h-4 w-4 text-green-600" />
+                              <span className="text-green-800 font-semibold">BALANCE</span>
+                            </Button>
+                          </TableCell>
+                          <TableCell className="font-medium" id={`admin-user-name-${user.id}`}>{user.name}</TableCell>
+                          <TableCell id={`admin-user-email-${user.id}`}>{user.email}</TableCell>
+                          <TableCell id={`admin-user-role-${user.id}`}>
+                            <Badge className={getUserRoleColor(user.role)} id={`admin-user-role-badge-${user.id}`}>
                               {user.role}
                             </Badge>
                           </TableCell>
-                          <TableCell>
+                          <TableCell id={`admin-user-rating-${user.id}`}>
                             <div className="flex items-center space-x-1">
                               <Star className="h-4 w-4 text-yellow-400 fill-current" />
                               <span>{user.rating || 5.0}</span>
                             </div>
                           </TableCell>
-                          <TableCell>{user.total_rides || 0}</TableCell>
-                          <TableCell>
-                            <Badge className={user.is_online ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
+                          <TableCell id={`admin-user-rides-${user.id}`}>{user.total_rides || 0}</TableCell>
+                          <TableCell id={`admin-user-status-${user.id}`}>
+                            <Badge className={user.is_online ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'} id={`admin-user-status-badge-${user.id}`}>
                               {user.is_online ? 'Online' : 'Offline'}
                             </Badge>
                           </TableCell>
-                          <TableCell>
+                          <TableCell id={`admin-user-joined-${user.id}`}>
                             {formatDate(user.created_at)}
                           </TableCell>
-                          <TableCell>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => openBalanceModal(user)}
-                              className="flex items-center space-x-1"
-                            >
-                              <Wallet className="h-4 w-4" />
-                              <span>Balance</span>
-                            </Button>
+                          <TableCell id={`admin-user-actions-${user.id}`}>
+                            <span className="text-gray-400 text-sm">-</span>
                           </TableCell>
                         </TableRow>
                       ))}
