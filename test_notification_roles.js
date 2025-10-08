@@ -1,17 +1,20 @@
 #!/usr/bin/env node
 
-// Test actual ride acceptance flow with real API calls
+// Test to verify notifications go to the correct user (rider, not driver)
 const WebSocket = require('ws');
 
-console.log('🚗 Testing Actual Ride Acceptance Flow...\n');
+console.log('🔔 Testing Notification Role Assignment...\n');
 
 // Test configuration
 const baseUrl = 'http://localhost:8001';
 let riderToken = null;
 let driverToken = null;
-let riderId = null; // Will be set from login response
+let riderId = null;
+let driverId = null;
 let riderWs = null;
-let notificationsReceived = [];
+let driverWs = null;
+let riderNotifications = [];
+let driverNotifications = [];
 
 // Step 1: Login as rider
 async function loginRider() {
@@ -30,9 +33,10 @@ async function loginRider() {
         if (response.ok) {
             const data = await response.json();
             riderToken = data.access_token;
-            riderId = data.user.id; // Get the actual rider ID from login response
+            riderId = data.user.id;
             console.log('✅ Rider login successful');
             console.log(`   Rider ID: ${riderId}`);
+            console.log(`   Rider Role: ${data.user.role}`);
             return true;
         } else {
             console.log(`❌ Rider login failed: ${response.status}`);
@@ -61,7 +65,10 @@ async function loginDriver() {
         if (response.ok) {
             const data = await response.json();
             driverToken = data.access_token;
+            driverId = data.user.id;
             console.log('✅ Driver login successful');
+            console.log(`   Driver ID: ${driverId}`);
+            console.log(`   Driver Role: ${data.user.role}`);
             return true;
         } else {
             console.log(`❌ Driver login failed: ${response.status}`);
@@ -73,16 +80,12 @@ async function loginDriver() {
     }
 }
 
-// Step 3: Connect rider WebSocket
-function connectRiderWebSocket() {
-    console.log('3️⃣ Connecting rider WebSocket...');
+// Step 3: Connect both WebSockets
+function connectWebSockets() {
+    console.log('3️⃣ Connecting WebSockets...');
     
-    if (!riderId) {
-        console.log('❌ No rider ID available for WebSocket connection');
-        return Promise.reject('No rider ID');
-    }
-    
-    console.log(`   Connecting with Rider ID: ${riderId}`);
+    // Connect rider WebSocket
+    console.log(`   Connecting Rider WebSocket: ${riderId}`);
     riderWs = new WebSocket(`ws://localhost:8001/ws/${riderId}`);
     
     riderWs.on('open', function open() {
@@ -92,27 +95,41 @@ function connectRiderWebSocket() {
     riderWs.on('message', function message(data) {
         try {
             const notification = JSON.parse(data);
-            notificationsReceived.push(notification);
-            
-            console.log(`📨 Rider received: ${notification.type}`);
-            
+            riderNotifications.push(notification);
+            console.log(`📨 RIDER received: ${notification.type}`);
             if (notification.type === 'ride_accepted') {
-                console.log('🎉 SUCCESS: Rider received ride acceptance notification!');
-                console.log(`   Driver: ${notification.driver_name}`);
-                console.log(`   ETA: ${notification.estimated_arrival}`);
+                console.log(`   ✅ CORRECT: Rider got ride_accepted notification`);
             }
         } catch (error) {
-            console.log(`❌ Error parsing message: ${error.message}`);
+            console.log(`❌ Error parsing rider message: ${error.message}`);
         }
     });
     
-    riderWs.on('error', function error(err) {
-        console.error(`❌ Rider WebSocket error: ${err.message}`);
+    // Connect driver WebSocket
+    console.log(`   Connecting Driver WebSocket: ${driverId}`);
+    driverWs = new WebSocket(`ws://localhost:8001/ws/${driverId}`);
+    
+    driverWs.on('open', function open() {
+        console.log('✅ Driver WebSocket connected');
     });
     
-    return new Promise((resolve) => {
-        riderWs.on('open', resolve);
+    driverWs.on('message', function message(data) {
+        try {
+            const notification = JSON.parse(data);
+            driverNotifications.push(notification);
+            console.log(`📨 DRIVER received: ${notification.type}`);
+            if (notification.type === 'ride_accepted') {
+                console.log(`   ❌ WRONG: Driver should NOT get ride_accepted notification`);
+            }
+        } catch (error) {
+            console.log(`❌ Error parsing driver message: ${error.message}`);
+        }
     });
+    
+    return Promise.all([
+        new Promise(resolve => riderWs.on('open', resolve)),
+        new Promise(resolve => driverWs.on('open', resolve))
+    ]);
 }
 
 // Step 4: Create ride request
@@ -172,7 +189,7 @@ async function acceptRide(requestId) {
         if (response.ok) {
             const data = await response.json();
             console.log(`✅ Ride accepted: ${data.match_id}`);
-            console.log('📤 Notification should be sent to rider...');
+            console.log('📤 Notification should be sent to RIDER only...');
             return data.match_id;
         } else {
             console.log(`❌ Failed to accept ride: ${response.status}`);
@@ -186,7 +203,7 @@ async function acceptRide(requestId) {
 
 // Main test function
 async function main() {
-    console.log('🎯 Starting actual ride acceptance flow test...\n');
+    console.log('🎯 Starting notification role assignment test...\n');
     
     // Step 1: Login as rider
     if (!(await loginRider())) {
@@ -200,10 +217,10 @@ async function main() {
         return;
     }
     
-    // Step 3: Connect rider WebSocket
-    await connectRiderWebSocket();
+    // Step 3: Connect WebSockets
+    await connectWebSockets();
     
-    // Wait a moment for WebSocket to be ready
+    // Wait a moment for WebSockets to be ready
     await new Promise(resolve => setTimeout(resolve, 1000));
     
     // Step 4: Create ride request
@@ -223,26 +240,36 @@ async function main() {
         return;
     }
     
-    // Wait for notification
-    console.log('\n⏳ Waiting for notification...');
+    // Wait for notifications
+    console.log('\n⏳ Waiting for notifications...');
     await new Promise(resolve => setTimeout(resolve, 3000));
     
     // Results
     console.log('\n📊 Test Results:');
-    console.log(`📨 Notifications received: ${notificationsReceived.length}`);
+    console.log(`📨 Rider notifications received: ${riderNotifications.length}`);
+    console.log(`📨 Driver notifications received: ${driverNotifications.length}`);
     
-    if (notificationsReceived.length > 0) {
-        console.log('✅ SUCCESS: Notifications are working!');
-        notificationsReceived.forEach((notif, index) => {
-            console.log(`   ${index + 1}. ${notif.type} - ${notif.driver_name || 'N/A'}`);
-        });
+    // Check if notifications went to the right user
+    const riderGotRideAccepted = riderNotifications.some(n => n.type === 'ride_accepted');
+    const driverGotRideAccepted = driverNotifications.some(n => n.type === 'ride_accepted');
+    
+    console.log('\n🎯 Role Assignment Check:');
+    console.log(`✅ Rider got ride_accepted: ${riderGotRideAccepted ? 'YES' : 'NO'}`);
+    console.log(`❌ Driver got ride_accepted: ${driverGotRideAccepted ? 'YES (WRONG!)' : 'NO (CORRECT)'}`);
+    
+    if (riderGotRideAccepted && !driverGotRideAccepted) {
+        console.log('\n🎉 SUCCESS: Notifications are going to the correct user (RIDER)!');
+    } else if (!riderGotRideAccepted && driverGotRideAccepted) {
+        console.log('\n❌ FAILURE: Notifications are going to the wrong user (DRIVER)!');
+    } else if (!riderGotRideAccepted && !driverGotRideAccepted) {
+        console.log('\n⚠️  ISSUE: No ride_accepted notifications received by anyone');
     } else {
-        console.log('❌ ISSUE: No notifications received');
-        console.log('   This indicates a problem with the notification system');
+        console.log('\n⚠️  ISSUE: Both rider and driver received ride_accepted notifications');
     }
     
     // Cleanup
     if (riderWs) riderWs.close();
+    if (driverWs) driverWs.close();
     console.log('\n🔚 Test completed');
 }
 
