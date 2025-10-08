@@ -18,7 +18,16 @@ export const WebSocketProvider = ({ children }) => {
   const { user, isAuthenticated } = useAuth();
   const [socket, setSocket] = useState(null);
   const [connected, setConnected] = useState(false);
-  const [notifications, setNotifications] = useState([]);
+  const [notifications, setNotifications] = useState(() => {
+    // Load notifications from localStorage on initialization
+    try {
+      const saved = localStorage.getItem('tagix_notifications');
+      return saved ? JSON.parse(saved) : [];
+    } catch (error) {
+      console.error('Error loading notifications from localStorage:', error);
+      return [];
+    }
+  });
   const [nearbyDrivers, setNearbyDrivers] = useState([]);
   const [rideRequests, setRideRequests] = useState([]);
   const reconnectAttempts = useRef(0);
@@ -288,15 +297,39 @@ export const WebSocketProvider = ({ children }) => {
   };
 
   const addNotification = (notification) => {
-    setNotifications(prev => [notification, ...prev.slice(0, 9)]); // Keep last 10 notifications
+    setNotifications(prev => {
+      const newNotifications = [notification, ...prev.slice(0, 9)]; // Keep last 10 notifications
+      // Persist to localStorage
+      try {
+        localStorage.setItem('tagix_notifications', JSON.stringify(newNotifications));
+      } catch (error) {
+        console.error('Error saving notifications to localStorage:', error);
+      }
+      return newNotifications;
+    });
   };
 
   const removeNotification = (id) => {
-    setNotifications(prev => prev.filter(n => n.id !== id));
+    setNotifications(prev => {
+      const newNotifications = prev.filter(n => n.id !== id);
+      // Persist to localStorage
+      try {
+        localStorage.setItem('tagix_notifications', JSON.stringify(newNotifications));
+      } catch (error) {
+        console.error('Error saving notifications to localStorage:', error);
+      }
+      return newNotifications;
+    });
   };
 
   const clearNotifications = () => {
     setNotifications([]);
+    // Clear from localStorage
+    try {
+      localStorage.removeItem('tagix_notifications');
+    } catch (error) {
+      console.error('Error clearing notifications from localStorage:', error);
+    }
   };
 
   const sendMessage = (message) => {
