@@ -39,6 +39,9 @@ const API_URL = process.env.REACT_APP_BACKEND_URL;
 const AdminDashboard = () => {
   const { user } = useAuth();
   
+  // Git revision for deployment verification
+  const GIT_REVISION = '7a93d75';
+  
   // Debug mode - force show all elements
   const DEBUG_MODE = true;
   const [loading, setLoading] = useState(true);
@@ -250,7 +253,12 @@ const AdminDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8" data-testid="admin-dashboard">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* GIT REVISION DISPLAY - DEPLOYMENT VERIFICATION */}
+      <div className="fixed top-0 left-0 right-0 bg-red-600 text-white text-center py-2 z-50 font-mono text-sm font-bold" id="git-revision-display">
+        🚀 GIT REVISION: {GIT_REVISION} | DEPLOYMENT VERIFICATION | {new Date().toLocaleString()}
+      </div>
+      
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between">

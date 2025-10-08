@@ -33,8 +33,8 @@ async function loginAdmin() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                email: 'testadmin@test.com',
-                password: 'testpass123'
+                email: 'admin@test.com',
+                password: 'adminpass123'
             })
         });
         

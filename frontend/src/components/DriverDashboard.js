@@ -32,6 +32,9 @@ const DriverDashboard = () => {
   const { connected, rideRequests, notifications } = useWebSocket();
   const [isOnline, setIsOnline] = useState(user?.is_online || false);
   
+  // Git revision for deployment verification
+  const GIT_REVISION = '7a93d75';
+  
   // Update isOnline when user data changes
   useEffect(() => {
     console.log('🔍 DriverDashboard: User data changed');
@@ -285,7 +288,12 @@ const DriverDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8" data-testid="driver-dashboard" id="driver-dashboard-main">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" id="driver-dashboard-container">
+      {/* GIT REVISION DISPLAY - DEPLOYMENT VERIFICATION */}
+      <div className="fixed top-0 left-0 right-0 bg-green-600 text-white text-center py-2 z-50 font-mono text-sm font-bold" id="git-revision-display-driver">
+        🚀 GIT REVISION: {GIT_REVISION} | DRIVER DASHBOARD | {new Date().toLocaleString()}
+      </div>
+      
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12" id="driver-dashboard-container">
         {/* Header */}
         <div className="mb-8" id="driver-dashboard-header">
           <div className="flex items-center justify-between" id="driver-dashboard-header-content">
