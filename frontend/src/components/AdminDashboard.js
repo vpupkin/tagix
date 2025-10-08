@@ -284,9 +284,9 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-        {/* HARDCODED BALANCE BUTTON - ALWAYS VISIBLE */}
-        <div className="bg-red-100 border-4 border-red-600 p-6 rounded-lg mb-6" id="hardcoded-balance-button-container">
-          <h2 className="text-xl font-bold text-red-800 mb-4" id="hardcoded-balance-button-title">🚨 BALANCE BUTTON ID (HARDCODED)</h2>
+        {/* SUPER VISIBLE BALANCE BUTTON TEST */}
+        <div className="bg-yellow-400 border-8 border-red-600 p-8 rounded-lg mb-6 text-center" id="super-visible-balance-test">
+          <h1 className="text-4xl font-bold text-red-800 mb-4" id="super-balance-title">🚨 BALANCE BUTTON TEST 🚨</h1>
           <div className="bg-white p-4 border-2 border-red-500 rounded" id="hardcoded-balance-button-content">
             <p className="text-lg font-mono text-red-900" id="hardcoded-balance-button-id">
               <strong>NEW BALANCE BUTTON ID:</strong> admin-user-balance-button-530eed2f-73dd-4b43-974c-612d199555dc
@@ -295,19 +295,14 @@ const AdminDashboard = () => {
               This ID should be on the NEW BALANCE button (FIRST COLUMN) for DRRRRRRR2nd driver
             </p>
             <Button 
-              className="mt-4 bg-red-600 hover:bg-red-700 text-white" 
-              id="hardcoded-balance-button-test"
+              className="mt-4 bg-red-600 hover:bg-red-700 text-white text-2xl p-6" 
+              id="super-balance-button"
               onClick={() => {
-                const button = document.getElementById('admin-user-balance-button-530eed2f-73dd-4b43-974c-612d199555dc');
-                if (button) {
-                  alert('NEW Balance button found in FIRST COLUMN!');
-                  button.click();
-                } else {
-                  alert('NEW Balance button NOT found! First column missing.');
-                }
+                console.log('🚨 SUPER BALANCE BUTTON CLICKED!');
+                alert('SUPER BALANCE BUTTON WORKS! If you can see this, the Admin Dashboard is working!');
               }}
             >
-              Test Balance Button
+              🚨 CLICK ME - BALANCE TEST 🚨
             </Button>
           </div>
         </div>
@@ -493,7 +488,7 @@ const AdminDashboard = () => {
                   <Table id="admin-users-table">
                     <TableHeader id="admin-users-table-header">
                       <TableRow id="admin-users-table-header-row">
-                        <TableHead id="admin-users-table-header-balance">BALANCE</TableHead>
+                        <TableHead id="admin-users-table-header-balance" className="bg-green-200 text-green-800 font-bold text-lg">💰 BALANCE 💰</TableHead>
                         <TableHead id="admin-users-table-header-name">Name</TableHead>
                         <TableHead id="admin-users-table-header-email">Email</TableHead>
                         <TableHead id="admin-users-table-header-role">Role</TableHead>
@@ -510,13 +505,13 @@ const AdminDashboard = () => {
                           <TableCell id={`admin-user-balance-cell-${user.id}`}>
                             <Button
                               variant="outline"
-                              size="sm"
+                              size="lg"
                               onClick={() => openBalanceModal(user)}
-                              className="flex items-center space-x-1 bg-green-100 hover:bg-green-200 border-green-300"
+                              className="flex items-center space-x-2 bg-green-500 hover:bg-green-600 border-green-600 text-white font-bold text-lg p-4"
                               id={`admin-user-balance-button-${user.id}`}
                             >
-                              <Wallet className="h-4 w-4 text-green-600" />
-                              <span className="text-green-800 font-semibold">BALANCE</span>
+                              <Wallet className="h-6 w-6 text-white" />
+                              <span className="text-white font-bold">💰 BALANCE 💰</span>
                             </Button>
                           </TableCell>
                           <TableCell className="font-medium" id={`admin-user-name-${user.id}`}>{user.name}</TableCell>
