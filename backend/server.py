@@ -2158,6 +2158,26 @@ async def get_all_user_balances(
         "offset": offset
     }
 
+# === USER BALANCE ENDPOINTS ===
+
+@api_router.get("/user/balance", response_model=Dict[str, Any])
+async def get_my_balance(current_user: User = Depends(get_current_user)):
+    """Get current user's balance"""
+    # Get current balance
+    balance_doc = await db.user_balances.find_one({"user_id": current_user.id})
+    current_balance = balance_doc.get("balance", 0.0) if balance_doc else 0.0
+    
+    # Get recent transactions (last 5)
+    transactions = await db.balance_transactions.find(
+        {"user_id": current_user.id}
+    ).sort("created_at", -1).limit(5).to_list(5)
+    
+    return {
+        "user_id": current_user.id,
+        "current_balance": current_balance,
+        "recent_transactions": convert_objectids_to_strings(transactions)
+    }
+
 @api_router.get("/admin/users", response_model=List[Dict[str, Any]])
 async def get_all_users(current_user: User = Depends(get_current_user)):
     if current_user.role != UserRole.ADMIN:

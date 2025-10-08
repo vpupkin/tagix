@@ -20,7 +20,8 @@ import {
   AlertCircle,
   CheckCircle,
   History,
-  Settings
+  Settings,
+  Wallet
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -49,9 +50,14 @@ const DriverDashboard = () => {
     todayEarnings: 0,
     todayRides: 0
   });
+  const [balance, setBalance] = useState({
+    currentBalance: 0.0,
+    recentTransactions: []
+  });
 
   useEffect(() => {
     fetchDriverData();
+    fetchUserBalance();
   }, []);
 
   useEffect(() => {
@@ -119,6 +125,29 @@ const DriverDashboard = () => {
       console.error('❌ Error fetching driver data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchUserBalance = async () => {
+    try {
+      console.log('🔍 DriverDashboard: fetchUserBalance called');
+      
+      const response = await axios.get(`${API_URL}/api/user/balance`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      const data = response.data;
+      console.log('🔍 Balance data:', data);
+      
+      setBalance({
+        currentBalance: data.current_balance || 0.0,
+        recentTransactions: data.recent_transactions || []
+      });
+    } catch (error) {
+      console.error('❌ Error fetching balance:', error);
+      // Don't show error toast for balance, it's not critical
     }
   };
 
@@ -297,7 +326,7 @@ const DriverDashboard = () => {
           {/* Left Column - Stats and Performance */}
           <div className="lg:col-span-2 space-y-6">
             {/* Today's Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Card className="card-hover bg-gradient-to-br from-emerald-50 to-green-50 border-emerald-200">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
@@ -337,6 +366,21 @@ const DriverDashboard = () => {
                     </div>
                     <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                       <Activity className="h-6 w-6 text-blue-600" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="card-hover bg-gradient-to-br from-green-50 to-emerald-50 border-green-200">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-green-700">Balance</p>
+                      <p className="text-3xl font-bold text-green-900">${balance.currentBalance.toFixed(2)}</p>
+                      <p className="text-sm text-green-600 mt-1">Available funds</p>
+                    </div>
+                    <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                      <Wallet className="h-6 w-6 text-green-600" />
                     </div>
                   </div>
                 </CardContent>

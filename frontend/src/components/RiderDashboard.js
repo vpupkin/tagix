@@ -17,7 +17,8 @@ import {
   Activity,
   ChevronRight,
   Navigation,
-  Zap
+  Zap,
+  Wallet
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -36,10 +37,15 @@ const RiderDashboard = () => {
     averageRating: 5.0,
     favoriteDestination: 'Not available'
   });
+  const [balance, setBalance] = useState({
+    currentBalance: 0.0,
+    recentTransactions: []
+  });
 
   useEffect(() => {
     fetchRecentRides();
     fetchUserStats();
+    fetchUserBalance();
   }, []);
 
   const fetchRecentRides = async () => {
@@ -115,6 +121,29 @@ const RiderDashboard = () => {
       console.error('❌ Error fetching stats:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchUserBalance = async () => {
+    try {
+      console.log('🔍 RiderDashboard: fetchUserBalance called');
+      
+      const response = await axios.get(`${API_URL}/api/user/balance`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      const data = response.data;
+      console.log('🔍 Balance data:', data);
+      
+      setBalance({
+        currentBalance: data.current_balance || 0.0,
+        recentTransactions: data.recent_transactions || []
+      });
+    } catch (error) {
+      console.error('❌ Error fetching balance:', error);
+      // Don't show error toast for balance, it's not critical
     }
   };
 
@@ -252,7 +281,7 @@ const RiderDashboard = () => {
           {/* Left Column - Stats and Quick Actions */}
           <div className="lg:col-span-2 space-y-6">
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
               <Card className="card-hover">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
@@ -309,6 +338,21 @@ const RiderDashboard = () => {
                     </div>
                     <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
                       <MapPin className="h-6 w-6 text-purple-600" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="card-hover">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Balance</p>
+                      <p className="text-2xl font-bold text-gray-900">${balance.currentBalance.toFixed(2)}</p>
+                      <p className="text-xs text-gray-500">Available funds</p>
+                    </div>
+                    <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                      <Wallet className="h-6 w-6 text-green-600" />
                     </div>
                   </div>
                 </CardContent>
