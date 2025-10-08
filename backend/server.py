@@ -1852,11 +1852,14 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str):
 
 # === ADMIN ENDPOINTS ===
 
+class AdminDirectNotificationRequest(BaseModel):
+    user_id: str
+    message: str
+    notification_type: str = "admin_message"
+
 @api_router.post("/admin/notifications/send", response_model=Dict[str, str])
 async def admin_send_notification(
-    user_id: str,
-    message: str,
-    notification_type: str = "admin_message",
+    request: AdminDirectNotificationRequest,
     current_user: User = Depends(get_current_user)
 ):
     """Admin sends notification to specific user"""
@@ -1864,20 +1867,20 @@ async def admin_send_notification(
         raise HTTPException(status_code=403, detail="Admin access required")
     
     # Verify user exists
-    user_doc = await db.users.find_one({"id": user_id})
+    user_doc = await db.users.find_one({"id": request.user_id})
     if not user_doc:
         raise HTTPException(status_code=404, detail="User not found")
     
     # Send notification via WebSocket
     await manager.send_personal_message(
         json.dumps({
-            "type": notification_type,
-            "message": message,
+            "type": request.notification_type,
+            "message": request.message,
             "from_admin": True,
             "admin_name": current_user.name,
             "timestamp": datetime.now(timezone.utc).isoformat()
         }),
-        user_id
+        request.user_id
     )
     
     # Log the admin action
@@ -1886,17 +1889,20 @@ async def admin_send_notification(
             action=AuditAction.ADMIN_SYSTEM_CONFIG_CHANGED,
             user_id=current_user.id,
             entity_type="notification",
-            entity_id=user_id,
-            metadata={"message": message, "notification_type": notification_type}
+            entity_id=request.user_id,
+            metadata={"message": request.message, "notification_type": request.notification_type}
         )
     
-    return {"message": f"Notification sent to user {user_id} successfully"}
+    return {"message": f"Notification sent to user {request.user_id} successfully"}
+
+class AdminNotificationRequest(BaseModel):
+    message: str
+    target: str  # "rider", "driver", or "both"
 
 @api_router.post("/admin/rides/{ride_id}/notify", response_model=Dict[str, str])
 async def admin_notify_ride_participants(
     ride_id: str,
-    message: str,
-    target: str,  # "rider", "driver", or "both"
+    request: AdminNotificationRequest,
     current_user: User = Depends(get_current_user)
 ):
     """Admin sends notification to ride participants"""
@@ -1919,7 +1925,7 @@ async def admin_notify_ride_participants(
     
     notification_data = {
         "type": "admin_ride_message",
-        "message": message,
+        "message": request.message,
         "from_admin": True,
         "admin_name": current_user.name,
         "ride_id": ride_id,
@@ -1929,7 +1935,7 @@ async def admin_notify_ride_participants(
     sent_count = 0
     
     # Send to rider
-    if target in ["rider", "both"] and rider_id:
+    if request.target in ["rider", "both"] and rider_id:
         await manager.send_personal_message(
             json.dumps(notification_data),
             rider_id
@@ -1937,7 +1943,7 @@ async def admin_notify_ride_participants(
         sent_count += 1
     
     # Send to driver
-    if target in ["driver", "both"] and driver_id:
+    if request.target in ["driver", "both"] and driver_id:
         await manager.send_personal_message(
             json.dumps(notification_data),
             driver_id
@@ -1951,7 +1957,7 @@ async def admin_notify_ride_participants(
             user_id=current_user.id,
             entity_type="ride_notification",
             entity_id=ride_id,
-            metadata={"message": message, "target": target, "sent_count": sent_count}
+            metadata={"message": request.message, "target": request.target, "sent_count": sent_count}
         )
     
     return {"message": f"Notification sent to {sent_count} participant(s) successfully"}
