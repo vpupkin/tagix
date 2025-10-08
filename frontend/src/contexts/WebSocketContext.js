@@ -226,19 +226,47 @@ export const WebSocketProvider = ({ children }) => {
           toast.success('Your driver has arrived!', {
             description: 'Please head to the pickup location'
           });
+          addNotification({
+            id: Date.now(),
+            type: 'driver_arrived',
+            title: 'Driver Arrived!',
+            message: 'Your driver has arrived at the pickup location',
+            timestamp: new Date(),
+            data: data
+          });
         }
         break;
 
       case 'ride_started':
-        toast.info('Ride has started', {
-          description: 'Enjoy your journey!'
-        });
+        if (user.role === 'rider') {
+          toast.info('Ride has started', {
+            description: 'Enjoy your journey!'
+          });
+          addNotification({
+            id: Date.now(),
+            type: 'ride_started',
+            title: 'Ride Started!',
+            message: 'Your ride has started! Enjoy your journey.',
+            timestamp: new Date(),
+            data: data
+          });
+        }
         break;
 
       case 'ride_completed':
-        toast.success('Ride completed successfully!', {
-          description: 'Please rate your experience'
-        });
+        if (user.role === 'rider') {
+          toast.success('Ride completed successfully!', {
+            description: 'Please rate your experience'
+          });
+          addNotification({
+            id: Date.now(),
+            type: 'ride_completed',
+            title: 'Ride Completed!',
+            message: 'Your ride has been completed successfully',
+            timestamp: new Date(),
+            data: data
+          });
+        }
         break;
 
       case 'location_update':

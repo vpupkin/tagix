@@ -982,7 +982,7 @@ async def driver_arrived(match_id: str, current_user: User = Depends(get_current
     # Update ride status
     await db.ride_matches.update_one(
         {"id": match_id},
-        {"$set": {"status": RideStatus.DRIVER_ARRIVED, "arrived_at": datetime.now(timezone.utc)}}
+        {"$set": {"status": RideStatus.DRIVER_ARRIVING, "arrived_at": datetime.now(timezone.utc)}}
     )
     
     # Notify rider
