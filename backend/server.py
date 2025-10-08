@@ -1899,6 +1899,13 @@ class AdminNotificationRequest(BaseModel):
     message: str
     target: str  # "rider", "driver", or "both"
 
+class BalanceTransactionRequest(BaseModel):
+    user_id: str
+    amount: float
+    transaction_type: str  # "credit", "debit", "refund"
+    description: str
+    reference_id: Optional[str] = None  # For ride-related transactions
+
 @api_router.post("/admin/rides/{ride_id}/notify", response_model=Dict[str, str])
 async def admin_notify_ride_participants(
     ride_id: str,
@@ -1961,6 +1968,195 @@ async def admin_notify_ride_participants(
         )
     
     return {"message": f"Notification sent to {sent_count} participant(s) successfully"}
+
+# === BALANCE MANAGEMENT ENDPOINTS ===
+
+@api_router.get("/admin/users/{user_id}/balance", response_model=Dict[str, Any])
+async def get_user_balance(
+    user_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Get user's current balance"""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Verify user exists
+    user_doc = await db.users.find_one({"id": user_id})
+    if not user_doc:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Get current balance
+    balance_doc = await db.user_balances.find_one({"user_id": user_id})
+    current_balance = balance_doc.get("balance", 0.0) if balance_doc else 0.0
+    
+    # Get recent transactions
+    transactions = await db.balance_transactions.find(
+        {"user_id": user_id}
+    ).sort("created_at", -1).limit(10).to_list(10)
+    
+    return {
+        "user_id": user_id,
+        "user_name": user_doc.get("name", "Unknown"),
+        "user_email": user_doc.get("email", "Unknown"),
+        "current_balance": current_balance,
+        "recent_transactions": convert_objectids_to_strings(transactions)
+    }
+
+@api_router.post("/admin/users/{user_id}/balance/transaction", response_model=Dict[str, Any])
+async def admin_balance_transaction(
+    user_id: str,
+    request: BalanceTransactionRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """Admin performs balance transaction (credit/debit)"""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Verify user exists
+    user_doc = await db.users.find_one({"id": user_id})
+    if not user_doc:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Validate transaction type
+    if request.transaction_type not in ["credit", "debit", "refund"]:
+        raise HTTPException(status_code=400, detail="Invalid transaction type")
+    
+    # Validate amount
+    if request.amount <= 0:
+        raise HTTPException(status_code=400, detail="Amount must be positive")
+    
+    # Get current balance
+    balance_doc = await db.user_balances.find_one({"user_id": user_id})
+    current_balance = balance_doc.get("balance", 0.0) if balance_doc else 0.0
+    
+    # Calculate new balance
+    if request.transaction_type == "credit":
+        new_balance = current_balance + request.amount
+        amount_change = request.amount
+    elif request.transaction_type == "debit":
+        if current_balance < request.amount:
+            raise HTTPException(status_code=400, detail="Insufficient balance")
+        new_balance = current_balance - request.amount
+        amount_change = -request.amount
+    else:  # refund
+        new_balance = current_balance + request.amount
+        amount_change = request.amount
+    
+    # Create transaction record
+    transaction_id = str(uuid.uuid4())
+    transaction_record = {
+        "id": transaction_id,
+        "user_id": user_id,
+        "amount": request.amount,
+        "amount_change": amount_change,
+        "transaction_type": request.transaction_type,
+        "description": request.description,
+        "reference_id": request.reference_id,
+        "admin_id": current_user.id,
+        "admin_name": current_user.name,
+        "previous_balance": current_balance,
+        "new_balance": new_balance,
+        "created_at": datetime.now(timezone.utc)
+    }
+    
+    # Update or create balance record
+    await db.user_balances.update_one(
+        {"user_id": user_id},
+        {
+            "$set": {
+                "user_id": user_id,
+                "balance": new_balance,
+                "updated_at": datetime.now(timezone.utc)
+            }
+        },
+        upsert=True
+    )
+    
+    # Save transaction
+    await db.balance_transactions.insert_one(transaction_record)
+    
+    # Send notification to user
+    notification_message = f"Balance {request.transaction_type}: ${request.amount:.2f}. New balance: ${new_balance:.2f}. {request.description}"
+    
+    await manager.send_personal_message(
+        json.dumps({
+            "type": "balance_transaction",
+            "transaction_id": transaction_id,
+            "amount": request.amount,
+            "amount_change": amount_change,
+            "transaction_type": request.transaction_type,
+            "description": request.description,
+            "previous_balance": current_balance,
+            "new_balance": new_balance,
+            "admin_name": current_user.name,
+            "message": notification_message,
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }),
+        user_id
+    )
+    
+    # Log the admin action
+    if AUDIT_ENABLED and audit_system:
+        await audit_system.log_action(
+            action=AuditAction.ADMIN_SYSTEM_CONFIG_CHANGED,
+            user_id=current_user.id,
+            entity_type="balance_transaction",
+            entity_id=transaction_id,
+            metadata={
+                "target_user_id": user_id,
+                "amount": request.amount,
+                "transaction_type": request.transaction_type,
+                "description": request.description,
+                "previous_balance": current_balance,
+                "new_balance": new_balance
+            }
+        )
+    
+    return {
+        "message": f"Balance transaction completed successfully",
+        "transaction_id": transaction_id,
+        "user_id": user_id,
+        "amount": request.amount,
+        "transaction_type": request.transaction_type,
+        "previous_balance": current_balance,
+        "new_balance": new_balance
+    }
+
+@api_router.get("/admin/balances", response_model=Dict[str, Any])
+async def get_all_user_balances(
+    limit: int = 50,
+    offset: int = 0,
+    current_user: User = Depends(get_current_user)
+):
+    """Get all user balances for admin"""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Get all balances with user info
+    balances = []
+    balance_cursor = db.user_balances.find().skip(offset).limit(limit)
+    
+    async for balance_doc in balance_cursor:
+        user_doc = await db.users.find_one({"id": balance_doc["user_id"]})
+        if user_doc:
+            balances.append({
+                "user_id": balance_doc["user_id"],
+                "user_name": user_doc.get("name", "Unknown"),
+                "user_email": user_doc.get("email", "Unknown"),
+                "user_role": user_doc.get("role", "Unknown"),
+                "balance": balance_doc.get("balance", 0.0),
+                "updated_at": balance_doc.get("updated_at")
+            })
+    
+    # Get total count
+    total_balances = await db.user_balances.count_documents({})
+    
+    return {
+        "balances": convert_objectids_to_strings(balances),
+        "total": total_balances,
+        "limit": limit,
+        "offset": offset
+    }
 
 @api_router.get("/admin/users", response_model=List[Dict[str, Any]])
 async def get_all_users(current_user: User = Depends(get_current_user)):

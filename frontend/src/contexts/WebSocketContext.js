@@ -349,6 +349,29 @@ export const WebSocketProvider = ({ children }) => {
         });
         break;
 
+      case 'balance_transaction':
+        // Handle balance transaction notifications
+        const isCredit = data.transaction_type === 'credit' || data.transaction_type === 'refund';
+        const isDebit = data.transaction_type === 'debit';
+        
+        const transactionIcon = isCredit ? '💰' : '💸';
+        const transactionColor = isCredit ? 'success' : 'warning';
+        
+        toast[transactionColor](`${transactionIcon} Balance ${data.transaction_type}`, {
+          description: data.message,
+          duration: 12000
+        });
+        
+        addNotification({
+          id: Date.now(),
+          type: 'balance_transaction',
+          title: `Balance ${data.transaction_type.charAt(0).toUpperCase() + data.transaction_type.slice(1)}`,
+          message: data.message,
+          timestamp: new Date(data.timestamp),
+          data: data
+        });
+        break;
+
       case 'connection_established':
         console.log('WebSocket connection established');
         break;

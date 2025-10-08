@@ -26,10 +26,12 @@ import {
   AlertTriangle,
   CheckCircle,
   RefreshCw,
-  MessageSquare
+  MessageSquare,
+  Wallet
 } from 'lucide-react';
 import { toast } from 'sonner';
 import AdminNotificationModal from './AdminNotificationModal';
+import AdminBalanceModal from './AdminBalanceModal';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -57,6 +59,13 @@ const AdminDashboard = () => {
     driverId: null,
     riderName: null,
     driverName: null
+  });
+  const [balanceModal, setBalanceModal] = useState({
+    isOpen: false,
+    userId: null,
+    userName: null,
+    userEmail: null,
+    userRole: null
   });
   const [refreshing, setRefreshing] = useState(false);
 
@@ -154,6 +163,26 @@ const AdminDashboard = () => {
       driverId: null,
       riderName: null,
       driverName: null
+    });
+  };
+
+  const openBalanceModal = (user) => {
+    setBalanceModal({
+      isOpen: true,
+      userId: user.id,
+      userName: user.name,
+      userEmail: user.email,
+      userRole: user.role
+    });
+  };
+
+  const closeBalanceModal = () => {
+    setBalanceModal({
+      isOpen: false,
+      userId: null,
+      userName: null,
+      userEmail: null,
+      userRole: null
     });
   };
 
@@ -430,6 +459,7 @@ const AdminDashboard = () => {
                         <TableHead>Rides</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Joined</TableHead>
+                        <TableHead>Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -456,6 +486,17 @@ const AdminDashboard = () => {
                           </TableCell>
                           <TableCell>
                             {formatDate(user.created_at)}
+                          </TableCell>
+                          <TableCell>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openBalanceModal(user)}
+                              className="flex items-center space-x-1"
+                            >
+                              <Wallet className="h-4 w-4" />
+                              <span>Balance</span>
+                            </Button>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -705,6 +746,16 @@ const AdminDashboard = () => {
         driverId={notificationModal.driverId}
         riderName={notificationModal.riderName}
         driverName={notificationModal.driverName}
+      />
+
+      {/* Admin Balance Modal */}
+      <AdminBalanceModal
+        isOpen={balanceModal.isOpen}
+        onClose={closeBalanceModal}
+        userId={balanceModal.userId}
+        userName={balanceModal.userName}
+        userEmail={balanceModal.userEmail}
+        userRole={balanceModal.userRole}
       />
     </div>
   );
