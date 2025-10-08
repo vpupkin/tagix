@@ -315,6 +315,40 @@ export const WebSocketProvider = ({ children }) => {
         });
         break;
 
+      case 'admin_message':
+        // Handle admin messages to users
+        toast.warning(`Message from Admin`, {
+          description: data.message,
+          duration: 10000
+        });
+        
+        addNotification({
+          id: Date.now(),
+          type: 'admin_message',
+          title: `Admin Message`,
+          message: data.message,
+          timestamp: new Date(data.timestamp),
+          data: data
+        });
+        break;
+
+      case 'admin_ride_message':
+        // Handle admin messages related to specific rides
+        toast.warning(`Admin Message - Ride ${data.ride_id}`, {
+          description: data.message,
+          duration: 10000
+        });
+        
+        addNotification({
+          id: Date.now(),
+          type: 'admin_ride_message',
+          title: `Admin Message - Ride`,
+          message: data.message,
+          timestamp: new Date(data.timestamp),
+          data: data
+        });
+        break;
+
       case 'connection_established':
         console.log('WebSocket connection established');
         break;

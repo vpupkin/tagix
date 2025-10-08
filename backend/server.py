@@ -1852,6 +1852,110 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str):
 
 # === ADMIN ENDPOINTS ===
 
+@api_router.post("/admin/notifications/send", response_model=Dict[str, str])
+async def admin_send_notification(
+    user_id: str,
+    message: str,
+    notification_type: str = "admin_message",
+    current_user: User = Depends(get_current_user)
+):
+    """Admin sends notification to specific user"""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Verify user exists
+    user_doc = await db.users.find_one({"id": user_id})
+    if not user_doc:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Send notification via WebSocket
+    await manager.send_personal_message(
+        json.dumps({
+            "type": notification_type,
+            "message": message,
+            "from_admin": True,
+            "admin_name": current_user.name,
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }),
+        user_id
+    )
+    
+    # Log the admin action
+    if AUDIT_ENABLED and audit_system:
+        await audit_system.log_action(
+            action=AuditAction.ADMIN_SYSTEM_CONFIG_CHANGED,
+            user_id=current_user.id,
+            entity_type="notification",
+            entity_id=user_id,
+            metadata={"message": message, "notification_type": notification_type}
+        )
+    
+    return {"message": f"Notification sent to user {user_id} successfully"}
+
+@api_router.post("/admin/rides/{ride_id}/notify", response_model=Dict[str, str])
+async def admin_notify_ride_participants(
+    ride_id: str,
+    message: str,
+    target: str,  # "rider", "driver", or "both"
+    current_user: User = Depends(get_current_user)
+):
+    """Admin sends notification to ride participants"""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    # Find the ride (could be in ride_requests or ride_matches)
+    ride_doc = await db.ride_requests.find_one({"id": ride_id})
+    if not ride_doc:
+        ride_doc = await db.ride_matches.find_one({"id": ride_id})
+        if not ride_doc:
+            raise HTTPException(status_code=404, detail="Ride not found")
+    
+    # Get participant IDs
+    rider_id = ride_doc.get("rider_id")
+    driver_id = ride_doc.get("driver_id")
+    
+    if not rider_id:
+        raise HTTPException(status_code=400, detail="Ride has no rider")
+    
+    notification_data = {
+        "type": "admin_ride_message",
+        "message": message,
+        "from_admin": True,
+        "admin_name": current_user.name,
+        "ride_id": ride_id,
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    }
+    
+    sent_count = 0
+    
+    # Send to rider
+    if target in ["rider", "both"] and rider_id:
+        await manager.send_personal_message(
+            json.dumps(notification_data),
+            rider_id
+        )
+        sent_count += 1
+    
+    # Send to driver
+    if target in ["driver", "both"] and driver_id:
+        await manager.send_personal_message(
+            json.dumps(notification_data),
+            driver_id
+        )
+        sent_count += 1
+    
+    # Log the admin action
+    if AUDIT_ENABLED and audit_system:
+        await audit_system.log_action(
+            action=AuditAction.ADMIN_SYSTEM_CONFIG_CHANGED,
+            user_id=current_user.id,
+            entity_type="ride_notification",
+            entity_id=ride_id,
+            metadata={"message": message, "target": target, "sent_count": sent_count}
+        )
+    
+    return {"message": f"Notification sent to {sent_count} participant(s) successfully"}
+
 @api_router.get("/admin/users", response_model=List[Dict[str, Any]])
 async def get_all_users(current_user: User = Depends(get_current_user)):
     if current_user.role != UserRole.ADMIN:

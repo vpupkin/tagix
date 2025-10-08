@@ -25,9 +25,11 @@ import {
   Shield,
   AlertTriangle,
   CheckCircle,
-  RefreshCw
+  RefreshCw,
+  MessageSquare
 } from 'lucide-react';
 import { toast } from 'sonner';
+import AdminNotificationModal from './AdminNotificationModal';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -48,6 +50,14 @@ const AdminDashboard = () => {
   const [rides, setRides] = useState([]);
   const [pendingRequests, setPendingRequests] = useState([]);
   const [completedMatches, setCompletedMatches] = useState([]);
+  const [notificationModal, setNotificationModal] = useState({
+    isOpen: false,
+    rideId: null,
+    riderId: null,
+    driverId: null,
+    riderName: null,
+    driverName: null
+  });
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
@@ -123,6 +133,28 @@ const AdminDashboard = () => {
       setLoading(false);
       setRefreshing(false);
     }
+  };
+
+  const openNotificationModal = (ride) => {
+    setNotificationModal({
+      isOpen: true,
+      rideId: ride.id,
+      riderId: ride.rider_id,
+      driverId: ride.driver_id,
+      riderName: ride.rider_name || 'Unknown Rider',
+      driverName: ride.driver_name || 'Unknown Driver'
+    });
+  };
+
+  const closeNotificationModal = () => {
+    setNotificationModal({
+      isOpen: false,
+      rideId: null,
+      riderId: null,
+      driverId: null,
+      riderName: null,
+      driverName: null
+    });
   };
 
   const getStatusColor = (status) => {
@@ -458,6 +490,7 @@ const AdminDashboard = () => {
                         <TableHead>Fare</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Created</TableHead>
+                        <TableHead>Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -485,6 +518,17 @@ const AdminDashboard = () => {
                           </TableCell>
                           <TableCell>
                             {formatDate(ride.created_at)}
+                          </TableCell>
+                          <TableCell>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openNotificationModal(ride)}
+                              className="flex items-center space-x-1"
+                            >
+                              <MessageSquare className="h-4 w-4" />
+                              <span>Notify</span>
+                            </Button>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -517,6 +561,7 @@ const AdminDashboard = () => {
                         <TableHead>Fare</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Completed</TableHead>
+                        <TableHead>Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -545,6 +590,17 @@ const AdminDashboard = () => {
                           </TableCell>
                           <TableCell>
                             {formatDate(ride.completed_at || ride.created_at)}
+                          </TableCell>
+                          <TableCell>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openNotificationModal(ride)}
+                              className="flex items-center space-x-1"
+                            >
+                              <MessageSquare className="h-4 w-4" />
+                              <span>Notify</span>
+                            </Button>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -639,6 +695,17 @@ const AdminDashboard = () => {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Admin Notification Modal */}
+      <AdminNotificationModal
+        isOpen={notificationModal.isOpen}
+        onClose={closeNotificationModal}
+        rideId={notificationModal.rideId}
+        riderId={notificationModal.riderId}
+        driverId={notificationModal.driverId}
+        riderName={notificationModal.riderName}
+        driverName={notificationModal.driverName}
+      />
     </div>
   );
 };
