@@ -1,5 +1,9 @@
 # 🚀 Development Workflow Guide
 
+## ⚠️ CRITICAL: DOCKER DEPLOYMENT ONLY
+
+**ALWAYS use `./deploy.sh` for development - NEVER run services directly!**
+
 ## Overview
 
 This document outlines the complete development workflow for ongoing feature development, bugfixing, and testing in the Docker containerized environment.

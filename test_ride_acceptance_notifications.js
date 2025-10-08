@@ -20,7 +20,7 @@ async function testRideAcceptanceNotification() {
     
     // Step 1: Connect rider WebSocket
     console.log('1️⃣ Connecting rider WebSocket...');
-    riderWs = new WebSocket(`ws://localhost:3000/ws/${riderId}`);
+    riderWs = new WebSocket(`ws://localhost:8001/ws/${riderId}`);
     
     riderWs.on('open', function open() {
         console.log('✅ Rider WebSocket connected');

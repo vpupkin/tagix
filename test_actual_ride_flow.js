@@ -75,7 +75,7 @@ function connectRiderWebSocket() {
     console.log('3️⃣ Connecting rider WebSocket...');
     
     const riderId = 'f736ed08-6ce4-4789-bfb4-4c57e4a74d85'; // Test Rider
-    riderWs = new WebSocket(`ws://localhost:3000/ws/${riderId}`);
+    riderWs = new WebSocket(`ws://localhost:8001/ws/${riderId}`);
     
     riderWs.on('open', function open() {
         console.log('✅ Rider WebSocket connected');
