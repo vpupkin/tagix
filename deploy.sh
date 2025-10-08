@@ -73,6 +73,12 @@ done
 
 print_status "Starting smart deployment process..."
 
+# Set git revision and build time for automatic UI display
+export GIT_REVISION=$(git rev-parse --short HEAD)
+export BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+print_status "Git revision: $GIT_REVISION"
+print_status "Build time: $BUILD_TIME"
+
 # Step 1: Git operations
 if [ "$PUSH_CHANGES" = true ]; then
     print_status "Step 1: Git operations..."

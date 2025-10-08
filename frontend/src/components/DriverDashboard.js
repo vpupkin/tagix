@@ -24,6 +24,7 @@ import {
   Wallet
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { getRevisionInfo } from '../utils/gitRevision';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -32,8 +33,8 @@ const DriverDashboard = () => {
   const { connected, rideRequests, notifications } = useWebSocket();
   const [isOnline, setIsOnline] = useState(user?.is_online || false);
   
-  // Git revision for deployment verification
-  const GIT_REVISION = '7a93d75';
+  // Git revision for deployment verification (automatic)
+  const revisionInfo = getRevisionInfo();
   
   // Update isOnline when user data changes
   useEffect(() => {
@@ -290,7 +291,7 @@ const DriverDashboard = () => {
     <div className="min-h-screen bg-gray-50 py-8" data-testid="driver-dashboard" id="driver-dashboard-main">
       {/* GIT REVISION DISPLAY - DEPLOYMENT VERIFICATION */}
       <div className="fixed top-0 left-0 right-0 bg-green-600 text-white text-center py-2 z-50 font-mono text-sm font-bold" id="git-revision-display-driver">
-        🚀 GIT REVISION: {GIT_REVISION} | DRIVER DASHBOARD | {new Date().toLocaleString()}
+        🚀 GIT REVISION: {revisionInfo.revision} | BUILD: {revisionInfo.buildTime} | DRIVER DASHBOARD
       </div>
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12" id="driver-dashboard-container">

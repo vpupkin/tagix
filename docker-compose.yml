@@ -52,6 +52,9 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        GIT_REVISION: ${GIT_REVISION:-unknown}
+        BUILD_TIME: ${BUILD_TIME:-unknown}
     container_name: tagix-frontend
     restart: unless-stopped
     environment:

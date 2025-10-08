@@ -10,6 +10,12 @@ WORKDIR /app
 COPY package.json yarn.lock ./
 RUN yarn install --frozen-lockfile
 
+# Get git revision and build time for deployment verification
+ARG GIT_REVISION=unknown
+ARG BUILD_TIME
+ENV REACT_APP_GIT_REVISION=$GIT_REVISION
+ENV REACT_APP_BUILD_TIME=$BUILD_TIME
+
 # Create app user
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nextjs -u 1001
