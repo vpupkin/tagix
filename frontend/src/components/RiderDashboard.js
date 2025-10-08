@@ -21,7 +21,6 @@ import {
   Wallet
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { getRevisionInfo } from '../utils/gitRevision';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -30,8 +29,8 @@ const RiderDashboard = () => {
   const { connected, notifications } = useWebSocket();
   const [recentRides, setRecentRides] = useState([]);
   
-  // Git revision for deployment verification (automatic)
-  const revisionInfo = getRevisionInfo();
+  // Git revision for deployment verification (hardcoded for now)
+  const GIT_REVISION = 'ec7bfe5';
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     totalRides: 0,
@@ -252,7 +251,7 @@ const RiderDashboard = () => {
     <div className="min-h-screen bg-gray-50 py-8" data-testid="rider-dashboard" id="rider-dashboard-main">
       {/* GIT REVISION DISPLAY - DEPLOYMENT VERIFICATION */}
       <div className="fixed top-0 left-0 right-0 bg-blue-600 text-white text-center py-2 z-50 font-mono text-sm font-bold" id="git-revision-display-rider">
-        🚀 GIT REVISION: {revisionInfo.revision} | BUILD: {revisionInfo.buildTime} | RIDER DASHBOARD
+        🚀 GIT REVISION: {GIT_REVISION} | RIDER DASHBOARD
       </div>
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12" id="rider-dashboard-container">
