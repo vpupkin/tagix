@@ -10,7 +10,7 @@ import HomePage from './components/HomePage';
 import RiderDashboard from './components/RiderDashboard';
 import DriverDashboard from './components/DriverDashboard';
 import EnhancedDriverDashboard from './components/EnhancedDriverDashboard';
-import EnhancedAdminDashboard from './components/EnhancedAdminDashboard';
+import AdminDashboard from './components/AdminDashboard';
 import RideBooking from './components/RideBooking';
 import RideHistory from './components/RideHistory';
 import PaymentSuccess from './components/PaymentSuccess';
@@ -75,7 +75,7 @@ function MainApp() {
           } />
           
           <Route path="/admin" element={
-            user && user.role === 'admin' ? <EnhancedAdminDashboard /> : <Navigate to="/" />
+            user && user.role === 'admin' ? <AdminDashboard /> : <Navigate to="/" />
           } />
           
           <Route path="/book-ride" element={

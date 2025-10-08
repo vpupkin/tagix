@@ -285,7 +285,7 @@ const AdminDashboard = () => {
 
         {/* SUPER VISIBLE BALANCE BUTTON TEST */}
         <div className="bg-yellow-400 border-8 border-red-600 p-8 rounded-lg mb-6 text-center" id="super-visible-balance-test">
-          <h1 className="text-4xl font-bold text-red-800 mb-4" id="super-balance-title">🚨 BALANCE BUTTON TEST 🚨</h1>
+          <h1 className="text-4xl font-bold text-red-800 mb-4" id="super-balance-title">BALANCE BUTTON TEST</h1>
           <div className="bg-white p-4 border-2 border-red-500 rounded" id="hardcoded-balance-button-content">
             <p className="text-lg font-mono text-red-900" id="hardcoded-balance-button-id">
               <strong>NEW BALANCE BUTTON ID:</strong> admin-user-balance-button-530eed2f-73dd-4b43-974c-612d199555dc
@@ -297,11 +297,11 @@ const AdminDashboard = () => {
               className="mt-4 bg-red-600 hover:bg-red-700 text-white text-2xl p-6" 
               id="super-balance-button"
               onClick={() => {
-                console.log('🚨 SUPER BALANCE BUTTON CLICKED!');
+                console.log('SUPER BALANCE BUTTON CLICKED!');
                 alert('SUPER BALANCE BUTTON WORKS! If you can see this, the Admin Dashboard is working!');
               }}
             >
-              🚨 CLICK ME - BALANCE TEST 🚨
+              CLICK ME - BALANCE TEST
             </Button>
           </div>
         </div>

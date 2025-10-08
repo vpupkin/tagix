@@ -1,4 +1,5 @@
 /* Element ID Display - Makes all IDs VERY visible */
+/* Disable
 [id]::after {
   content: " [" attr(id) "]";
   font-size: 10px;
@@ -17,7 +18,7 @@
   display: inline-block;
   white-space: nowrap;
 }
-
+*/
 /* Make IDs even more visible on hover */
 [id]:hover::after {
   background: rgba(255, 0, 0, 0.95);
