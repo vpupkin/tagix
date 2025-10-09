@@ -144,12 +144,15 @@ const AdminDashboard = () => {
       console.log('🔍 Making API calls...');
       console.log('🔍 Axios default headers:', axios.defaults.headers.common);
       
+      // Add cache-busting parameter to force fresh data
+      const cacheBuster = `?t=${Date.now()}`;
+      
       const [statsResponse, usersResponse, ridesResponse, transactionsResponse, auditResponse] = await Promise.all([
-        axios.get(`${API_URL}/api/admin/stats`),
-        axios.get(`${API_URL}/api/admin/users`),
-        axios.get(`${API_URL}/api/admin/rides`),
-        axios.get(`${API_URL}/api/admin/balances`),
-        axios.get(`${API_URL}/api/audit/logs?limit=10`)
+        axios.get(`${API_URL}/api/admin/stats${cacheBuster}`),
+        axios.get(`${API_URL}/api/admin/users${cacheBuster}`),
+        axios.get(`${API_URL}/api/admin/rides${cacheBuster}`),
+        axios.get(`${API_URL}/api/admin/balances${cacheBuster}`),
+        axios.get(`${API_URL}/api/audit/logs?limit=10&t=${Date.now()}`)
       ]);
 
       console.log('🔍 API responses received:');
@@ -163,6 +166,15 @@ const AdminDashboard = () => {
       setUsers(usersResponse.data);
       setRecentTransactions(transactionsResponse.data?.balances || []);
       setAuditLogs(auditResponse.data || []);
+      
+      // Debug: Log the stats that were set
+      console.log('🔍 Stats set in state:', statsResponse.data);
+      console.log('🔍 Total rides from API:', statsResponse.data.total_rides);
+      
+      // Debug: Log the users data that was set
+      console.log('🔍 Users data from API:', usersResponse.data);
+      console.log('🔍 First user rides:', usersResponse.data[0]?.rides);
+      console.log('🔍 All user ride counts:', usersResponse.data.map(u => `${u.name}: ${u.rides || 'NO_RIDES'}`));
       
       // Handle the structured rides response
       const ridesData = ridesResponse.data;

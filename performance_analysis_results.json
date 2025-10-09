@@ -1,0 +1,136 @@
+{
+  "database_ops": {
+    "user_list": {
+      "endpoint": "/api/admin/users",
+      "method": "GET",
+      "avg_time": 0.005384218692779541,
+      "min_time": 0.0037751197814941406,
+      "max_time": 0.007664203643798828,
+      "median_time": 0.005481600761413574,
+      "p95_time": 0.007664203643798828,
+      "errors": 0,
+      "success_rate": 100.0
+    },
+    "audit_logs": {
+      "endpoint": "/api/audit/logs",
+      "method": "GET",
+      "avg_time": 0.007555949687957764,
+      "min_time": 0.004929065704345703,
+      "max_time": 0.010869503021240234,
+      "median_time": 0.007528781890869141,
+      "p95_time": 0.010869503021240234,
+      "errors": 0,
+      "success_rate": 100.0
+    },
+    "ride_data": {
+      "endpoint": "/api/admin/rides",
+      "method": "GET",
+      "avg_time": 0.007542538642883301,
+      "min_time": 0.0048291683197021484,
+      "max_time": 0.013917684555053711,
+      "median_time": 0.006553530693054199,
+      "p95_time": 0.013917684555053711,
+      "errors": 0,
+      "success_rate": 100.0
+    }
+  },
+  "concurrent": {
+    "concurrent_users": 20,
+    "requests_per_user": 3,
+    "total_requests": 60,
+    "total_time": 0.16603422164916992,
+    "avg_response_time": 0.051384119192759196,
+    "requests_per_second": 361.3712848112717,
+    "min_time": 0.008753776550292969,
+    "max_time": 0.0691385269165039,
+    "p95_time": 0.06602311134338379
+  },
+  "websockets": {
+    "attempted_connections": 20,
+    "successful_connections": 20,
+    "connection_success_rate": 100.0,
+    "test_duration": 10.079902172088623
+  },
+  "architecture": {
+    "database": {
+      "type": "MongoDB 7.0",
+      "connection_pooling": "Default Motor (no explicit pooling configured)",
+      "estimated_connections": "10-20 concurrent connections",
+      "bottleneck": "Single MongoDB instance, no sharding/replication"
+    },
+    "backend": {
+      "framework": "FastAPI with Uvicorn",
+      "async_support": "Full async/await support",
+      "estimated_workers": "1 worker (default)",
+      "estimated_concurrent_requests": "100-500 requests/second",
+      "bottleneck": "Single worker process, no load balancing"
+    },
+    "frontend": {
+      "framework": "React with development server",
+      "estimated_concurrent_users": "50-100 users",
+      "bottleneck": "Development server, not production optimized"
+    },
+    "websockets": {
+      "implementation": "FastAPI WebSocket with in-memory connection manager",
+      "estimated_connections": "100-500 concurrent connections",
+      "bottleneck": "In-memory storage, no Redis clustering"
+    }
+  },
+  "capacity": {
+    "concurrent_users": {
+      "conservative": 50,
+      "realistic": 100,
+      "optimistic": 200
+    },
+    "requests_per_second": {
+      "conservative": 50,
+      "realistic": 100,
+      "optimistic": 200
+    },
+    "rides_per_hour": {
+      "conservative": 30,
+      "realistic": 60,
+      "optimistic": 120
+    },
+    "database_operations": {
+      "reads_per_second": 200,
+      "writes_per_second": 50,
+      "concurrent_connections": 20
+    },
+    "websocket_connections": {
+      "concurrent": 100,
+      "messages_per_second": 500,
+      "bottleneck": "Memory usage"
+    }
+  },
+  "recommendations": {
+    "immediate_improvements": [
+      "Configure MongoDB connection pooling (maxPoolSize=50)",
+      "Add multiple Uvicorn workers (--workers 4)",
+      "Implement Redis for WebSocket connection management",
+      "Add database indexes for frequently queried fields",
+      "Enable MongoDB query optimization and profiling"
+    ],
+    "scaling_improvements": [
+      "Implement horizontal scaling with load balancer",
+      "Add MongoDB replica set for read scaling",
+      "Use Redis cluster for session management",
+      "Implement CDN for static assets",
+      "Add database connection pooling with pymongo"
+    ],
+    "monitoring_improvements": [
+      "Add APM (Application Performance Monitoring)",
+      "Implement health checks and metrics endpoints",
+      "Add database query performance monitoring",
+      "Set up alerting for performance thresholds",
+      "Implement request rate limiting"
+    ],
+    "production_readiness": [
+      "Use production-grade web server (nginx + gunicorn)",
+      "Implement proper logging and error tracking",
+      "Add caching layer (Redis) for frequently accessed data",
+      "Optimize database queries and add proper indexes",
+      "Implement graceful shutdown and restart procedures"
+    ]
+  }
+}

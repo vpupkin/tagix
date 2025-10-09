@@ -2217,6 +2217,19 @@ async def get_all_users(current_user: User = Depends(get_current_user)):
     
     users = await db.users.find({}, {"password": 0}).to_list(None)
     
+    # Add ride counts for each user
+    for user in users:
+        user_id = user["id"]
+        
+        # Count rides as rider (from ride_requests)
+        rider_rides = await db.ride_requests.count_documents({"rider_id": user_id})
+        
+        # Count rides as driver (from ride_matches)
+        driver_rides = await db.ride_matches.count_documents({"driver_id": user_id})
+        
+        # Total rides for this user
+        user["rides"] = rider_rides + driver_rides
+    
     # Convert MongoDB ObjectIds to strings for JSON serialization
     users = convert_objectids_to_strings(users)
     
@@ -2259,7 +2272,10 @@ async def get_platform_stats(current_user: User = Depends(get_current_user)):
     total_users = await db.users.count_documents({})
     total_drivers = await db.users.count_documents({"role": UserRole.DRIVER})
     total_riders = await db.users.count_documents({"role": UserRole.RIDER})
-    total_rides = await db.ride_matches.count_documents({})
+    # Count both pending requests and completed matches for total rides
+    total_pending_requests = await db.ride_requests.count_documents({})
+    total_completed_matches = await db.ride_matches.count_documents({})
+    total_rides = total_pending_requests + total_completed_matches
     completed_rides = await db.ride_matches.count_documents({"status": RideStatus.COMPLETED})
     online_drivers = await db.users.count_documents({"role": UserRole.DRIVER, "is_online": True})
     
