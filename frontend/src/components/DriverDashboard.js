@@ -347,83 +347,126 @@ const DriverDashboard = () => {
           </div>
         </div>
 
-        {/* Available Rides - Now at the top for immediate access */}
-        <div className="mb-8" id="driver-dashboard-available-rides-section">
-          <Card className="card-hover" id="driver-dashboard-available-rides-card">
-            <CardHeader id="driver-dashboard-available-rides-header">
-              <CardTitle className="flex items-center justify-between" id="driver-dashboard-available-rides-title">
-                <span>Available Rides</span>
-                <Badge variant={availableRides.length > 0 ? "default" : "secondary"} id="driver-dashboard-available-rides-count">
-                  {availableRides.length}
-                </Badge>
-              </CardTitle>
-              <CardDescription id="driver-dashboard-available-rides-description">
-                {isOnline ? 'Available ride requests' : 'Go online to see requests'}
-              </CardDescription>
-            </CardHeader>
-            <CardContent id="driver-dashboard-available-rides-content">
-              {isOnline ? (
-                availableRides.length > 0 ? (
-                  <div className="space-y-4" id="driver-dashboard-available-rides-list">
-                    {availableRides.slice(0, 3).map((ride) => (
-                      <div key={ride.id} className="p-4 bg-blue-50 rounded-lg border border-blue-200" id={`driver-dashboard-available-ride-${ride.id}`}>
-                        <div className="flex items-start justify-between mb-3" id={`driver-dashboard-available-ride-header-${ride.id}`}>
-                          <div className="flex-1" id={`driver-dashboard-available-ride-info-${ride.id}`}>
-                            <p className="font-medium text-gray-900 text-sm" id={`driver-dashboard-available-ride-pickup-${ride.id}`}>
-                              {ride.pickup_location?.address || 'Pickup Location'}
-                            </p>
-                            <p className="text-xs text-gray-600 mt-1" id={`driver-dashboard-available-ride-dropoff-${ride.id}`}>
-                              → {ride.dropoff_location?.address || 'Destination'}
-                            </p>
+        {/* Available Rides and Notifications - Side by side at top level */}
+        <div className="mb-8" id="driver-dashboard-top-panels">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6" id="driver-dashboard-top-grid">
+            {/* Available Rides */}
+            <Card className="card-hover" id="driver-dashboard-available-rides-card">
+              <CardHeader id="driver-dashboard-available-rides-header">
+                <CardTitle className="flex items-center justify-between" id="driver-dashboard-available-rides-title">
+                  <span>Available Rides</span>
+                  <Badge variant={availableRides.length > 0 ? "default" : "secondary"} id="driver-dashboard-available-rides-count">
+                    {availableRides.length}
+                  </Badge>
+                </CardTitle>
+                <CardDescription id="driver-dashboard-available-rides-description">
+                  {isOnline ? 'Available ride requests' : 'Go online to see requests'}
+                </CardDescription>
+              </CardHeader>
+              <CardContent id="driver-dashboard-available-rides-content">
+                {isOnline ? (
+                  availableRides.length > 0 ? (
+                    <div className="space-y-4" id="driver-dashboard-available-rides-list">
+                      {availableRides.slice(0, 3).map((ride) => (
+                        <div key={ride.id} className="p-4 bg-blue-50 rounded-lg border border-blue-200" id={`driver-dashboard-available-ride-${ride.id}`}>
+                          <div className="flex items-start justify-between mb-3" id={`driver-dashboard-available-ride-header-${ride.id}`}>
+                            <div className="flex-1" id={`driver-dashboard-available-ride-info-${ride.id}`}>
+                              <p className="font-medium text-gray-900 text-sm" id={`driver-dashboard-available-ride-pickup-${ride.id}`}>
+                                {ride.pickup_location?.address || 'Pickup Location'}
+                              </p>
+                              <p className="text-xs text-gray-600 mt-1" id={`driver-dashboard-available-ride-dropoff-${ride.id}`}>
+                                → {ride.dropoff_location?.address || 'Destination'}
+                              </p>
+                            </div>
+                            <Badge variant="secondary" className="text-xs" id={`driver-dashboard-available-ride-fare-${ride.id}`}>
+                              ${ride.estimated_fare?.toFixed(2) || '0.00'}
+                            </Badge>
                           </div>
-                          <Badge variant="secondary" className="text-xs" id={`driver-dashboard-available-ride-fare-${ride.id}`}>
-                            ${ride.estimated_fare?.toFixed(2) || '0.00'}
-                          </Badge>
+                          <div className="flex items-center justify-between" id={`driver-dashboard-available-ride-footer-${ride.id}`}>
+                            <p className="text-xs text-blue-600" id={`driver-dashboard-available-ride-distance-${ride.id}`}>
+                              {ride.distance_to_pickup?.toFixed(1) || '0.0'} km away
+                            </p>
+                            <Button 
+                              size="sm" 
+                              className="btn-primary text-xs px-3 py-1"
+                              onClick={() => acceptRideRequest(ride.id)}
+                              data-testid={`accept-ride-${ride.id}`}
+                              id={`driver-dashboard-accept-ride-button-${ride.id}`}
+                            >
+                              Accept
+                            </Button>
+                          </div>
                         </div>
-                        <div className="flex items-center justify-between" id={`driver-dashboard-available-ride-footer-${ride.id}`}>
-                          <p className="text-xs text-blue-600" id={`driver-dashboard-available-ride-distance-${ride.id}`}>
-                            {ride.distance_to_pickup?.toFixed(1) || '0.0'} km away
+                      ))}
+                      {availableRides.length > 3 && (
+                        <div className="text-center pt-2" id="driver-dashboard-available-rides-more">
+                          <p className="text-xs text-gray-500" id="driver-dashboard-available-rides-more-text">
+                            +{availableRides.length - 3} more rides available
                           </p>
-                          <Button 
-                            size="sm" 
-                            className="btn-primary text-xs px-3 py-1"
-                            onClick={() => acceptRideRequest(ride.id)}
-                            data-testid={`accept-ride-${ride.id}`}
-                            id={`driver-dashboard-accept-ride-button-${ride.id}`}
-                          >
-                            Accept
-                          </Button>
                         </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8" id="driver-dashboard-no-available-rides">
+                      <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4" id="driver-dashboard-no-rides-icon">
+                        <Car className="h-8 w-8 text-gray-400" />
+                      </div>
+                      <p className="text-gray-500 text-sm" id="driver-dashboard-no-rides-message">No rides available right now</p>
+                      <p className="text-gray-400 text-xs mt-1" id="driver-dashboard-no-rides-submessage">Check back in a few minutes</p>
+                    </div>
+                  )
+                ) : (
+                  <div className="text-center py-8" id="driver-dashboard-offline-message">
+                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4" id="driver-dashboard-offline-icon">
+                      <AlertCircle className="h-8 w-8 text-gray-400" />
+                    </div>
+                    <p className="text-gray-500 text-sm" id="driver-dashboard-offline-text">Go online to see available rides</p>
+                    <p className="text-gray-400 text-xs mt-1" id="driver-dashboard-offline-subtext">Toggle the switch above to start earning</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Notifications */}
+            <Card className="card-hover" id="driver-dashboard-notifications-card">
+              <CardHeader id="driver-dashboard-notifications-header">
+                <CardTitle className="flex items-center justify-between" id="driver-dashboard-notifications-title">
+                  <span>Notifications</span>
+                  <Badge variant="secondary" id="driver-dashboard-notifications-count">{notifications.length}</Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent id="driver-dashboard-notifications-content">
+                {notifications.length > 0 ? (
+                  <div className="space-y-3" id="driver-dashboard-notifications-list">
+                    {notifications.slice(0, 3).map((notification) => (
+                      <div key={notification.id} className="p-3 bg-gray-50 rounded-lg" id={`driver-dashboard-notification-${notification.id}`}>
+                        <p className="font-medium text-sm text-gray-900" id={`driver-dashboard-notification-title-${notification.id}`}>{notification.title}</p>
+                        <p className="text-xs text-gray-600 mt-1" id={`driver-dashboard-notification-message-${notification.id}`}>{notification.message}</p>
+                        <p className="text-xs text-gray-400 mt-2" id={`driver-dashboard-notification-time-${notification.id}`}>
+                          {new Date(notification.timestamp).toLocaleTimeString()}
+                        </p>
                       </div>
                     ))}
-                    {availableRides.length > 3 && (
-                      <div className="text-center pt-2" id="driver-dashboard-available-rides-more">
-                        <p className="text-xs text-gray-500" id="driver-dashboard-available-rides-more-text">
-                          +{availableRides.length - 3} more rides available
+                    {notifications.length > 3 && (
+                      <div className="text-center pt-2" id="driver-dashboard-notifications-more">
+                        <p className="text-xs text-gray-500" id="driver-dashboard-notifications-more-text">
+                          +{notifications.length - 3} more notifications
                         </p>
                       </div>
                     )}
                   </div>
                 ) : (
-                  <div className="text-center py-8" id="driver-dashboard-no-available-rides">
-                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4" id="driver-dashboard-no-rides-icon">
-                      <Car className="h-8 w-8 text-gray-400" />
+                  <div className="text-center py-8" id="driver-dashboard-no-notifications">
+                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4" id="driver-dashboard-no-notifications-icon">
+                      <Activity className="h-8 w-8 text-gray-400" />
                     </div>
-                    <p className="text-gray-500 text-sm" id="driver-dashboard-no-rides-message">No rides available right now</p>
-                    <p className="text-gray-400 text-xs mt-1" id="driver-dashboard-no-rides-submessage">Check back in a few minutes</p>
+                    <p className="text-gray-500 text-sm" id="driver-dashboard-no-notifications-message">No notifications yet</p>
+                    <p className="text-gray-400 text-xs mt-1" id="driver-dashboard-no-notifications-submessage">You'll see updates here</p>
                   </div>
-                )
-              ) : (
-                <div className="text-center py-8" id="driver-dashboard-offline-message">
-                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4" id="driver-dashboard-offline-icon">
-                    <AlertCircle className="h-8 w-8 text-gray-400" />
-                  </div>
-                  <p className="text-gray-500 text-sm" id="driver-dashboard-offline-text">Go online to see available rides</p>
-                  <p className="text-gray-400 text-xs mt-1" id="driver-dashboard-offline-subtext">Toggle the switch above to start earning</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8" id="driver-dashboard-grid">
@@ -606,7 +649,7 @@ const DriverDashboard = () => {
             </Card>
           </div>
 
-          {/* Right Column - Vehicle Information and Notifications */}
+          {/* Right Column - Vehicle Information and Tips */}
           <div className="space-y-6" id="driver-dashboard-right-column">
             {/* Vehicle Information */}
             {driverProfile && (
@@ -641,35 +684,6 @@ const DriverDashboard = () => {
                 </CardContent>
               </Card>
             )}
-
-            {/* Notifications */}
-            <Card className="card-hover" id="driver-dashboard-notifications-card">
-              <CardHeader id="driver-dashboard-notifications-header">
-                <CardTitle className="flex items-center justify-between" id="driver-dashboard-notifications-title">
-                  <span>Notifications</span>
-                  <Badge variant="secondary" id="driver-dashboard-notifications-count">{notifications.length}</Badge>
-                </CardTitle>
-              </CardHeader>
-              <CardContent id="driver-dashboard-notifications-content">
-                {notifications.length > 0 ? (
-                  <div className="space-y-3" id="driver-dashboard-notifications-list">
-                    {notifications.slice(0, 3).map((notification) => (
-                      <div key={notification.id} className="p-3 bg-gray-50 rounded-lg" id={`driver-dashboard-notification-${notification.id}`}>
-                        <p className="font-medium text-sm text-gray-900" id={`driver-dashboard-notification-title-${notification.id}`}>{notification.title}</p>
-                        <p className="text-xs text-gray-600 mt-1" id={`driver-dashboard-notification-message-${notification.id}`}>{notification.message}</p>
-                        <p className="text-xs text-gray-400 mt-2" id={`driver-dashboard-notification-time-${notification.id}`}>
-                          {new Date(notification.timestamp).toLocaleTimeString()}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-4" id="driver-dashboard-no-notifications">
-                    <p className="text-gray-500 text-sm" id="driver-dashboard-no-notifications-message">No new notifications</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
 
             {/* Driver Tips */}
             <Card className="card-hover bg-gradient-to-br from-amber-50 to-orange-50 border-amber-200" id="driver-dashboard-tips-card">
