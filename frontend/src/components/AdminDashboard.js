@@ -719,7 +719,7 @@ const AdminDashboard = () => {
                               <span>{user.rating || 5.0}</span>
                             </div>
                           </TableCell>
-                          <TableCell id={`admin-user-rides-${user.id}`}>{user.total_rides || 0}</TableCell>
+                          <TableCell id={`admin-user-rides-${user.id}`}>{user.rides || 0}</TableCell>
                           <TableCell id={`admin-user-status-${user.id}`}>
                             <Badge className={user.is_online ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'} id={`admin-user-status-badge-${user.id}`}>
                               {user.is_online ? 'Online' : 'Offline'}
