@@ -301,35 +301,37 @@ const RiderDashboard = () => {
           </div>
         </div>
 
-        {/* Quick Actions - Now at the top for immediate access */}
+        {/* Quick Actions - Now at the top for immediate access, matching stats cards design */}
         <div className="mb-8" id="rider-dashboard-quick-actions-section">
-          <Card className="card-hover" id="rider-dashboard-quick-actions-card">
-            <CardHeader id="rider-dashboard-quick-actions-header">
-              <CardTitle className="flex items-center space-x-2" id="rider-dashboard-quick-actions-title">
-                <Zap className="h-5 w-5 text-indigo-600" />
-                <span>Quick Actions</span>
-              </CardTitle>
-              <CardDescription id="rider-dashboard-quick-actions-description">
-                Get things done with just one click
-              </CardDescription>
-            </CardHeader>
-            <CardContent id="rider-dashboard-quick-actions-content">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4" id="rider-dashboard-quick-actions-grid">
-                {quickActions.map((action, index) => (
-                  <Link key={index} to={action.action} data-testid={action.testId} id={`rider-dashboard-quick-action-${index}`}>
-                    <div className="group cursor-pointer p-4 rounded-xl border border-gray-200 hover:border-indigo-200 hover:shadow-md transition-all duration-200" id={`rider-dashboard-quick-action-card-${index}`}>
-                      <div className={`w-12 h-12 bg-gradient-to-r ${action.color} rounded-lg flex items-center justify-center text-white mb-3 group-hover:scale-105 transition-transform duration-200`} id={`rider-dashboard-quick-action-icon-${index}`}>
+          <div className="mb-4" id="rider-dashboard-quick-actions-header">
+            <h2 className="text-xl font-bold text-gray-900 flex items-center space-x-2" id="rider-dashboard-quick-actions-title">
+              <Zap className="h-6 w-6 text-indigo-600" />
+              <span>Quick Actions</span>
+            </h2>
+            <p className="text-gray-600 mt-1" id="rider-dashboard-quick-actions-description">
+              Get things done with just one click
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4" id="rider-dashboard-quick-actions-grid">
+            {quickActions.map((action, index) => (
+              <Link key={index} to={action.action} data-testid={action.testId} id={`rider-dashboard-quick-action-${index}`}>
+                <Card className="card-hover group cursor-pointer h-full" id={`rider-dashboard-quick-action-card-${index}`}>
+                  <CardContent className="p-6" id={`rider-dashboard-quick-action-content-${index}`}>
+                    <div className="flex items-center justify-between" id={`rider-dashboard-quick-action-layout-${index}`}>
+                      <div id={`rider-dashboard-quick-action-info-${index}`}>
+                        <p className="text-sm font-medium text-gray-600" id={`rider-dashboard-quick-action-label-${index}`}>{action.title}</p>
+                        <p className="text-lg font-bold text-gray-900 mt-1" id={`rider-dashboard-quick-action-value-${index}`}>{action.description}</p>
+                        <ChevronRight className="h-4 w-4 text-gray-400 mt-2 group-hover:text-indigo-600 transition-colors duration-200" id={`rider-dashboard-quick-action-arrow-${index}`} />
+                      </div>
+                      <div className={`w-12 h-12 bg-gradient-to-r ${action.color} rounded-lg flex items-center justify-center text-white group-hover:scale-105 transition-transform duration-200`} id={`rider-dashboard-quick-action-icon-${index}`}>
                         {action.icon}
                       </div>
-                      <h3 className="font-semibold text-gray-900 mb-1" id={`rider-dashboard-quick-action-title-${index}`}>{action.title}</h3>
-                      <p className="text-sm text-gray-600" id={`rider-dashboard-quick-action-description-${index}`}>{action.description}</p>
-                      <ChevronRight className="h-4 w-4 text-gray-400 mt-2 group-hover:text-indigo-600 transition-colors duration-200" id={`rider-dashboard-quick-action-arrow-${index}`} />
                     </div>
-                  </Link>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8" id="rider-dashboard-grid">
