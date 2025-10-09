@@ -310,39 +310,33 @@ const DriverDashboard = () => {
       </div>
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12" id="driver-dashboard-container">
-        {/* Header */}
-        <div className="mb-8" id="driver-dashboard-header">
-          <div className="flex items-center justify-between" id="driver-dashboard-header-content">
-            <div id="driver-dashboard-welcome">
-              <h1 className="text-3xl font-bold text-gray-900" id="driver-dashboard-title">
-                Hello, {user.name}! 🚗
-              </h1>
-              <p className="text-gray-600 mt-1" id="driver-dashboard-subtitle">
-                {isOnline ? 'Ready to earn today?' : 'Go online to start earning'}
-              </p>
-            </div>
-            <div className="flex items-center space-x-4" id="driver-dashboard-header-actions">
-              <div className={`flex items-center space-x-2 px-3 py-1 rounded-full text-sm ${
+        {/* Minimal Status Bar */}
+        <div className="mb-4" id="driver-dashboard-status-bar">
+          <div className="flex items-center justify-between" id="driver-dashboard-status-content">
+            <div className="flex items-center space-x-4" id="driver-dashboard-status-left">
+              <span className="text-sm text-gray-600" id="driver-dashboard-driver-name">{user.name}</span>
+              <div className={`flex items-center space-x-2 px-2 py-1 rounded-full text-xs ${
                 connected ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
               }`} id="driver-dashboard-connection-status">
-                <div className={`w-2 h-2 rounded-full ${
+                <div className={`w-1.5 h-1.5 rounded-full ${
                   connected ? 'bg-green-400' : 'bg-red-400'
                 }`} id="driver-dashboard-connection-indicator" />
                 <span id="driver-dashboard-connection-text">{connected ? 'Connected' : 'Disconnected'}</span>
               </div>
-              <div className="flex items-center space-x-3" id="driver-dashboard-online-controls">
-                <span className={`text-sm font-medium ${
-                  isOnline ? 'text-emerald-700' : 'text-gray-600'
-                }`} id="driver-dashboard-online-status-text">
-                  {isOnline ? 'Online' : 'Offline'}
-                </span>
-                <Switch
-                  checked={isOnline}
-                  onCheckedChange={toggleOnlineStatus}
-                  data-testid="online-toggle"
-                  id="driver-dashboard-online-toggle"
-                />
-              </div>
+            </div>
+            <div className="flex items-center space-x-2" id="driver-dashboard-online-controls">
+              <span className={`text-xs font-medium ${
+                isOnline ? 'text-emerald-700' : 'text-gray-600'
+              }`} id="driver-dashboard-online-status-text">
+                {isOnline ? 'Online' : 'Offline'}
+              </span>
+              <Switch
+                checked={isOnline}
+                onCheckedChange={toggleOnlineStatus}
+                data-testid="online-toggle"
+                id="driver-dashboard-online-toggle"
+                className="scale-75"
+              />
             </div>
           </div>
         </div>
