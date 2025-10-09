@@ -39,9 +39,11 @@ export const AuthProvider = ({ children }) => {
           setUser(response.data);
         } catch (error) {
           console.error('Auth check failed:', error);
-          // Remove invalid token
+          // Remove invalid token and redirect to login
           localStorage.removeItem('mobility_token');
           setToken(null);
+          setUser(null);
+          toast.error('Session expired. Please log in again.');
         }
       }
       setLoading(false);
@@ -49,6 +51,29 @@ export const AuthProvider = ({ children }) => {
 
     initAuth();
   }, [token]);
+
+  // Add axios response interceptor to handle 401 errors globally
+  useEffect(() => {
+    const interceptor = axios.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        if (error.response?.status === 401) {
+          console.log('🔒 401 Unauthorized - Token expired, logging out');
+          localStorage.removeItem('mobility_token');
+          setToken(null);
+          setUser(null);
+          toast.error('Session expired. Please log in again.');
+          // Redirect to login page
+          window.location.href = '/';
+        }
+        return Promise.reject(error);
+      }
+    );
+
+    return () => {
+      axios.interceptors.response.eject(interceptor);
+    };
+  }, []);
 
   const login = async (email, password) => {
     try {
