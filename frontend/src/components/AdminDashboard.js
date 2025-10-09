@@ -3,6 +3,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   Table,
   TableBody,
@@ -27,7 +29,11 @@ import {
   CheckCircle,
   RefreshCw,
   MessageSquare,
-  Wallet
+  Wallet,
+  Download,
+  Eye,
+  Search,
+  Filter
 } from 'lucide-react';
 import { toast } from 'sonner';
 import AdminNotificationModal from './AdminNotificationModal';
@@ -75,19 +81,46 @@ const AdminDashboard = () => {
     userRole: null
   });
   const [refreshing, setRefreshing] = useState(false);
+  const [recentTransactions, setRecentTransactions] = useState([]);
+  const [auditLogs, setAuditLogs] = useState([]);
+  const [userSearchTerm, setUserSearchTerm] = useState('');
+  const [userRoleFilter, setUserRoleFilter] = useState('all');
+  const [userStatusFilter, setUserStatusFilter] = useState('all');
+  
+  // Audit Trail filters
+  const [auditSearchTerm, setAuditSearchTerm] = useState('');
+  const [auditActionFilter, setAuditActionFilter] = useState('all');
+  const [auditSeverityFilter, setAuditSeverityFilter] = useState('all');
+  const [auditEntityFilter, setAuditEntityFilter] = useState('all');
 
   useEffect(() => {
     console.log('🔍 AdminDashboard: useEffect triggered');
     console.log('🔍 User from useAuth:', user);
     console.log('🔍 Loading state:', loading);
     
-    if (user && !loading) {
-      console.log('🔍 User is authenticated, fetching dashboard data...');
-      fetchDashboardData();
-    } else {
-      console.log('⚠️ User not authenticated or still loading');
-    }
+    // Add a small delay to ensure auth context is fully loaded
+    const timer = setTimeout(() => {
+      if (user && user.id) {
+        console.log('🔍 User is authenticated, fetching dashboard data...');
+        fetchDashboardData();
+      } else {
+        console.log('⚠️ User not authenticated or still loading');
+      }
+    }, 100);
+
+    return () => clearTimeout(timer);
   }, [user, loading]);
+
+  // Refresh user data periodically to get updated online status
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (user && user.id) {
+        fetchDashboardData();
+      }
+    }, 30000); // Refresh every 30 seconds
+
+    return () => clearInterval(interval);
+  }, [user]);
 
   const fetchDashboardData = async () => {
     try {
@@ -111,19 +144,25 @@ const AdminDashboard = () => {
       console.log('🔍 Making API calls...');
       console.log('🔍 Axios default headers:', axios.defaults.headers.common);
       
-      const [statsResponse, usersResponse, ridesResponse] = await Promise.all([
+      const [statsResponse, usersResponse, ridesResponse, transactionsResponse, auditResponse] = await Promise.all([
         axios.get(`${API_URL}/api/admin/stats`),
         axios.get(`${API_URL}/api/admin/users`),
-        axios.get(`${API_URL}/api/admin/rides`)
+        axios.get(`${API_URL}/api/admin/rides`),
+        axios.get(`${API_URL}/api/admin/balances`),
+        axios.get(`${API_URL}/api/audit/logs?limit=10`)
       ]);
 
       console.log('🔍 API responses received:');
       console.log('Stats:', statsResponse.data);
       console.log('Users:', usersResponse.data);
       console.log('Rides:', ridesResponse.data);
+      console.log('Transactions:', transactionsResponse.data);
+      console.log('Audit logs:', auditResponse.data);
 
       setStats(statsResponse.data);
       setUsers(usersResponse.data);
+      setRecentTransactions(transactionsResponse.data?.balances || []);
+      setAuditLogs(auditResponse.data || []);
       
       // Handle the structured rides response
       const ridesData = ridesResponse.data;
@@ -190,6 +229,100 @@ const AdminDashboard = () => {
       userName: null,
       userEmail: null,
       userRole: null
+    });
+  };
+
+  const downloadAuditLogs = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/api/audit/logs?limit=1000`);
+      const logs = response.data;
+      
+      // Create CSV content
+      const csvContent = [
+        ['Timestamp', 'Action', 'Entity Type', 'User ID', 'Severity', 'Description', 'Metadata'],
+        ...logs.map(log => [
+          new Date(log.timestamp).toISOString(),
+          log.action,
+          log.entity_type,
+          log.user_id,
+          log.severity || 'info',
+          log.description || '',
+          JSON.stringify(log.metadata || {})
+        ])
+      ].map(row => row.map(field => `"${field}"`).join(',')).join('\n');
+      
+      // Download file
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `audit_logs_${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      
+      toast.success('Audit logs downloaded successfully');
+    } catch (error) {
+      console.error('Error downloading audit logs:', error);
+      toast.error('Failed to download audit logs');
+    }
+  };
+
+  const showAuditDetails = (log) => {
+    const details = {
+      id: log.id,
+      timestamp: new Date(log.timestamp).toLocaleString(),
+      action: log.action,
+      entity_type: log.entity_type,
+      user_id: log.user_id,
+      severity: log.severity,
+      description: log.description,
+      metadata: JSON.stringify(log.metadata || {}, null, 2)
+    };
+    
+    alert(`Audit Log Details:\n\n${Object.entries(details).map(([key, value]) => `${key}: ${value}`).join('\n')}`);
+  };
+
+  const getFilteredUsers = () => {
+    return users.filter(user => {
+      // Search filter
+      const matchesSearch = !userSearchTerm || 
+        user.name.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
+        user.email.toLowerCase().includes(userSearchTerm.toLowerCase());
+      
+      // Role filter
+      const matchesRole = userRoleFilter === 'all' || user.role === userRoleFilter;
+      
+      // Status filter
+      const matchesStatus = userStatusFilter === 'all' || 
+        (userStatusFilter === 'online' && user.is_online) ||
+        (userStatusFilter === 'offline' && !user.is_online);
+      
+      return matchesSearch && matchesRole && matchesStatus;
+    });
+  };
+
+  const getFilteredAuditLogs = () => {
+    return auditLogs.filter(log => {
+      // Search filter - enhanced to include metadata
+      const matchesSearch = !auditSearchTerm || 
+        log.action.toLowerCase().includes(auditSearchTerm.toLowerCase()) ||
+        log.entity_type.toLowerCase().includes(auditSearchTerm.toLowerCase()) ||
+        (log.description && log.description.toLowerCase().includes(auditSearchTerm.toLowerCase())) ||
+        (log.metadata && JSON.stringify(log.metadata).toLowerCase().includes(auditSearchTerm.toLowerCase())) ||
+        (log.user_id && log.user_id.toLowerCase().includes(auditSearchTerm.toLowerCase()));
+      
+      // Action filter
+      const matchesAction = auditActionFilter === 'all' || log.action === auditActionFilter;
+      
+      // Severity filter
+      const matchesSeverity = auditSeverityFilter === 'all' || log.severity === auditSeverityFilter;
+      
+      // Entity type filter
+      const matchesEntity = auditEntityFilter === 'all' || log.entity_type === auditEntityFilter;
+      
+      return matchesSearch && matchesAction && matchesSeverity && matchesEntity;
     });
   };
 
@@ -283,28 +416,6 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-        {/* SUPER VISIBLE BALANCE BUTTON TEST */}
-        <div className="bg-yellow-400 border-8 border-red-600 p-8 rounded-lg mb-6 text-center" id="super-visible-balance-test">
-          <h1 className="text-4xl font-bold text-red-800 mb-4" id="super-balance-title">BALANCE BUTTON TEST</h1>
-          <div className="bg-white p-4 border-2 border-red-500 rounded" id="hardcoded-balance-button-content">
-            <p className="text-lg font-mono text-red-900" id="hardcoded-balance-button-id">
-              <strong>NEW BALANCE BUTTON ID:</strong> admin-user-balance-button-530eed2f-73dd-4b43-974c-612d199555dc
-            </p>
-            <p className="text-sm text-red-700 mt-2" id="hardcoded-balance-button-note">
-              This ID should be on the NEW BALANCE button (FIRST COLUMN) for DRRRRRRR2nd driver
-            </p>
-            <Button 
-              className="mt-4 bg-red-600 hover:bg-red-700 text-white text-2xl p-6" 
-              id="super-balance-button"
-              onClick={() => {
-                console.log('SUPER BALANCE BUTTON CLICKED!');
-                alert('SUPER BALANCE BUTTON WORKS! If you can see this, the Admin Dashboard is working!');
-              }}
-            >
-              CLICK ME - BALANCE TEST
-            </Button>
-          </div>
-        </div>
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8" id="admin-dashboard-stats-grid">
@@ -379,10 +490,11 @@ const AdminDashboard = () => {
 
         {/* Tabs for Different Views */}
         <Tabs defaultValue="overview" className="space-y-6" id="admin-dashboard-tabs">
-          <TabsList className="grid w-full grid-cols-4" id="admin-dashboard-tabs-list">
+          <TabsList className="grid w-full grid-cols-5" id="admin-dashboard-tabs-list">
             <TabsTrigger value="overview" id="admin-dashboard-tab-overview">Overview</TabsTrigger>
             <TabsTrigger value="users" id="admin-dashboard-tab-users">User Management</TabsTrigger>
             <TabsTrigger value="rides" id="admin-dashboard-tab-rides">Ride Monitoring</TabsTrigger>
+            <TabsTrigger value="audit" id="admin-dashboard-tab-audit">Audit Trail</TabsTrigger>
             <TabsTrigger value="analytics" id="admin-dashboard-tab-analytics">Analytics</TabsTrigger>
           </TabsList>
 
@@ -402,23 +514,41 @@ const AdminDashboard = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {rides.slice(0, 5).map((ride) => (
-                      <div key={ride.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    {/* Combine rides, transactions, and audit logs for recent activity */}
+                    {[
+                      ...rides.slice(0, 3).map(ride => ({ ...ride, type: 'ride' })),
+                      ...recentTransactions.slice(0, 2).map(transaction => ({ ...transaction, type: 'transaction' })),
+                      ...auditLogs.slice(0, 2).map(log => ({ ...log, type: 'audit' }))
+                    ]
+                    .sort((a, b) => new Date(b.created_at || b.timestamp) - new Date(a.created_at || a.timestamp))
+                    .slice(0, 5)
+                    .map((item, index) => (
+                      <div key={`${item.type}-${item.id || index}`} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                         <div className="flex items-center space-x-3">
                           <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center">
-                            <Car className="h-4 w-4 text-indigo-600" />
+                            {item.type === 'ride' && <Car className="h-4 w-4 text-indigo-600" />}
+                            {item.type === 'transaction' && <Wallet className="h-4 w-4 text-green-600" />}
+                            {item.type === 'audit' && <Shield className="h-4 w-4 text-blue-600" />}
                           </div>
                           <div>
                             <p className="text-sm font-medium text-gray-900">
-                              Ride #{ride.id.slice(-8)}
+                              {item.type === 'ride' && `Ride #${item.id.slice(-8)}`}
+                              {item.type === 'transaction' && `Balance ${item.transaction_type} - $${item.amount}`}
+                              {item.type === 'audit' && `${item.action} - ${item.entity_type}`}
                             </p>
                             <p className="text-xs text-gray-600">
-                              {formatDate(ride.created_at)}
+                              {formatDate(item.created_at || item.timestamp)}
                             </p>
                           </div>
                         </div>
-                        <Badge className={getStatusColor(ride.status)}>
-                          {ride.status}
+                        <Badge className={
+                          item.type === 'ride' ? getStatusColor(item.status) :
+                          item.type === 'transaction' ? (item.transaction_type === 'credit' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800') :
+                          'bg-blue-100 text-blue-800'
+                        }>
+                          {item.type === 'ride' && item.status}
+                          {item.type === 'transaction' && item.transaction_type}
+                          {item.type === 'audit' && item.severity || 'info'}
                         </Badge>
                       </div>
                     ))}
@@ -479,10 +609,61 @@ const AdminDashboard = () => {
               <CardHeader id="admin-dashboard-users-card-header">
                 <CardTitle id="admin-dashboard-users-card-title">User Management</CardTitle>
                 <CardDescription id="admin-dashboard-users-card-description">
-                  Manage riders, drivers, and administrators
+                  Manage riders, drivers, and administrators ({getFilteredUsers().length} of {users.length} users)
                 </CardDescription>
               </CardHeader>
               <CardContent>
+                {/* Search and Filter Controls */}
+                <div className="flex flex-col sm:flex-row gap-4 mb-6" id="admin-users-filters">
+                  <div className="flex-1" id="admin-users-search-container">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <Input
+                        placeholder="Search users by name or email..."
+                        value={userSearchTerm}
+                        onChange={(e) => setUserSearchTerm(e.target.value)}
+                        className="pl-10"
+                        id="admin-users-search-input"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex gap-2" id="admin-users-filter-controls">
+                    <Select value={userRoleFilter} onValueChange={setUserRoleFilter}>
+                      <SelectTrigger className="w-32" id="admin-users-role-filter">
+                        <Filter className="h-4 w-4 mr-2" />
+                        <SelectValue placeholder="Role" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Roles</SelectItem>
+                        <SelectItem value="admin">Admin</SelectItem>
+                        <SelectItem value="driver">Driver</SelectItem>
+                        <SelectItem value="rider">Rider</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Select value={userStatusFilter} onValueChange={setUserStatusFilter}>
+                      <SelectTrigger className="w-32" id="admin-users-status-filter">
+                        <SelectValue placeholder="Status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Status</SelectItem>
+                        <SelectItem value="online">Online</SelectItem>
+                        <SelectItem value="offline">Offline</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setUserSearchTerm('');
+                        setUserRoleFilter('all');
+                        setUserStatusFilter('all');
+                      }}
+                      id="admin-users-clear-filters"
+                    >
+                      Clear
+                    </Button>
+                  </div>
+                </div>
                 <div className="overflow-x-auto" id="admin-users-table-container">
                   <Table id="admin-users-table">
                     <TableHeader id="admin-users-table-header">
@@ -499,7 +680,7 @@ const AdminDashboard = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody id="admin-users-table-body">
-                      {users.map((user) => (
+                      {getFilteredUsers().map((user) => (
                         <TableRow key={user.id} id={`admin-user-row-${user.id}`}>
                           <TableCell id={`admin-user-balance-cell-${user.id}`}>
                             <Button
@@ -773,6 +954,178 @@ const AdminDashboard = () => {
                 </CardContent>
               </Card>
             </div>
+          </TabsContent>
+
+          {/* Audit Trail Tab */}
+          <TabsContent value="audit" className="space-y-6">
+            <Card className="card-hover">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center space-x-2">
+                      <Shield className="h-5 w-5 text-blue-600" />
+                      <span>Comprehensive Audit Trail</span>
+                    </CardTitle>
+                    <CardDescription>
+                      Complete immutable record of all platform activities ({getFilteredAuditLogs().length} of {auditLogs.length} logs)
+                    </CardDescription>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => fetchDashboardData()}
+                      disabled={refreshing}
+                      id="admin-audit-refresh-button"
+                    >
+                      <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+                      <span className="ml-2">Refresh</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => downloadAuditLogs()}
+                      id="admin-audit-download-button"
+                    >
+                      <Download className="h-4 w-4" />
+                      <span className="ml-2">Download</span>
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {/* Search and Filter Controls */}
+                <div className="flex flex-col sm:flex-row gap-4 mb-6" id="admin-audit-filters">
+                  <div className="flex-1" id="admin-audit-search-container">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <Input
+                        placeholder="Search by action, entity, user ID, or metadata..."
+                        value={auditSearchTerm}
+                        onChange={(e) => setAuditSearchTerm(e.target.value)}
+                        className="pl-10"
+                        id="admin-audit-search-input"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex gap-2" id="admin-audit-filter-controls">
+                    <Select value={auditActionFilter} onValueChange={setAuditActionFilter}>
+                      <SelectTrigger className="w-32" id="admin-audit-action-filter">
+                        <Filter className="h-4 w-4 mr-2" />
+                        <SelectValue placeholder="Action" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Actions</SelectItem>
+                        <SelectItem value="user_login">User Login</SelectItem>
+                        <SelectItem value="user_logout">User Logout</SelectItem>
+                        <SelectItem value="user_created">User Created</SelectItem>
+                        <SelectItem value="admin_system_config_changed">Balance Transaction</SelectItem>
+                        <SelectItem value="admin_ride_modified">Admin Ride Modified</SelectItem>
+                        <SelectItem value="admin_user_modified">Admin User Modified</SelectItem>
+                        <SelectItem value="admin_payment_modified">Admin Payment Modified</SelectItem>
+                        <SelectItem value="ride_query">Ride Query</SelectItem>
+                        <SelectItem value="ride_requested">Ride Requested</SelectItem>
+                        <SelectItem value="payment_query">Payment Query</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Select value={auditSeverityFilter} onValueChange={setAuditSeverityFilter}>
+                      <SelectTrigger className="w-32" id="admin-audit-severity-filter">
+                        <SelectValue placeholder="Severity" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Severity</SelectItem>
+                        <SelectItem value="info">Info</SelectItem>
+                        <SelectItem value="low">Low</SelectItem>
+                        <SelectItem value="medium">Medium</SelectItem>
+                        <SelectItem value="high">High</SelectItem>
+                        <SelectItem value="critical">Critical</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Select value={auditEntityFilter} onValueChange={setAuditEntityFilter}>
+                      <SelectTrigger className="w-32" id="admin-audit-entity-filter">
+                        <SelectValue placeholder="Entity" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Entities</SelectItem>
+                        <SelectItem value="user">User</SelectItem>
+                        <SelectItem value="user_query">User Query</SelectItem>
+                        <SelectItem value="ride">Ride</SelectItem>
+                        <SelectItem value="ride_query">Ride Query</SelectItem>
+                        <SelectItem value="ride_requests">Ride Requests</SelectItem>
+                        <SelectItem value="ride_request">Ride Request</SelectItem>
+                        <SelectItem value="balance_transaction">Balance Transaction</SelectItem>
+                        <SelectItem value="payment_query">Payment Query</SelectItem>
+                        <SelectItem value="payment_history">Payment History</SelectItem>
+                        <SelectItem value="admin_ride_query">Admin Ride Query</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setAuditSearchTerm('');
+                        setAuditActionFilter('all');
+                        setAuditSeverityFilter('all');
+                        setAuditEntityFilter('all');
+                      }}
+                      id="admin-audit-clear-filters"
+                    >
+                      Clear
+                    </Button>
+                  </div>
+                </div>
+                
+                <div className="space-y-4">
+                  {getFilteredAuditLogs().length === 0 ? (
+                    <div className="text-center py-8 text-gray-500" id="admin-audit-empty">
+                      {auditLogs.length === 0 ? 'No audit logs found' : 'No audit logs match your filters'}
+                    </div>
+                  ) : (
+                    <div className="space-y-3" id="admin-audit-logs-list">
+                      {getFilteredAuditLogs().map((log) => (
+                        <div key={log.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border">
+                          <div className="flex items-center space-x-4">
+                            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                              <Shield className="h-5 w-5 text-blue-600" />
+                            </div>
+                            <div>
+                              <p className="font-medium text-gray-900">
+                                {log.action} - {log.entity_type}
+                              </p>
+                              <p className="text-sm text-gray-600">
+                                {log.description || 'No description available'}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                {formatDate(log.timestamp)} • User: {log.user_id?.slice(-8) || 'Unknown'}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Badge className={
+                              log.severity === 'high' ? 'bg-red-100 text-red-800' :
+                              log.severity === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-green-100 text-green-800'
+                            }>
+                              {log.severity || 'info'}
+                            </Badge>
+                            {log.metadata && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => showAuditDetails(log)}
+                                id={`admin-audit-details-${log.id}`}
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>

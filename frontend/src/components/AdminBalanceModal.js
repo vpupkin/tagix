@@ -50,7 +50,7 @@ const AdminBalanceModal = ({
         `${API_URL}/api/admin/users/${userId}/balance`,
         {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
+            'Authorization': `Bearer ${localStorage.getItem('mobility_token')}`
           }
         }
       );
@@ -89,14 +89,14 @@ const AdminBalanceModal = ({
         },
         {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Authorization': `Bearer ${localStorage.getItem('mobility_token')}`,
             'Content-Type': 'application/json'
           }
         }
       );
 
       toast.success(response.data.message);
-      setTransactionForm({ amount: '', transaction_type: 'credit', description: '' });
+      setTransactionForm({ amount: '', transaction_type: transactionForm.transaction_type, description: '' });
       fetchUserBalance(); // Refresh balance and transactions
     } catch (error) {
       console.error('Error processing transaction:', error);
@@ -153,8 +153,16 @@ const AdminBalanceModal = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" id="admin-balance-modal-overlay">
-      <Card className="w-full max-w-4xl mx-4 max-h-[90vh] overflow-y-auto" id="admin-balance-modal-container">
+    <div 
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4" 
+      id="admin-balance-modal-overlay"
+      style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999 }}
+    >
+      <Card 
+        className="w-full max-w-4xl max-h-[90vh] bg-white shadow-2xl" 
+        id="admin-balance-modal-container"
+        style={{ position: 'relative', zIndex: 10000 }}
+      >
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2" id="admin-balance-modal-header">
           <div className="flex items-center space-x-2" id="admin-balance-modal-header-info">
             <Wallet className="h-5 w-5 text-green-600" id="admin-balance-modal-header-icon" />
@@ -171,7 +179,7 @@ const AdminBalanceModal = ({
           </Button>
         </CardHeader>
         
-        <CardContent className="space-y-6" id="admin-balance-modal-content">
+        <CardContent className="space-y-6 overflow-y-auto max-h-[calc(90vh-120px)]" id="admin-balance-modal-content">
           {/* User Info */}
           <div className="bg-gray-50 p-4 rounded-lg" id="admin-balance-modal-user-info">
             <h3 className="font-semibold text-lg" id="admin-balance-modal-user-name">{userName}</h3>
@@ -223,15 +231,20 @@ const AdminBalanceModal = ({
               </div>
 
               <div className="space-y-2" id="admin-balance-modal-type-field">
-                <Label htmlFor="transaction_type" id="admin-balance-modal-type-label">Type</Label>
+                <Label htmlFor="transaction_type" id="admin-balance-modal-type-label">
+                  Type (Current: {transactionForm.transaction_type.toUpperCase()})
+                </Label>
                 <Select 
                   value={transactionForm.transaction_type} 
-                  onValueChange={(value) => setTransactionForm(prev => ({ ...prev, transaction_type: value }))}
+                  onValueChange={(value) => {
+                    console.log('Transaction type changed to:', value);
+                    setTransactionForm(prev => ({ ...prev, transaction_type: value }));
+                  }}
                 >
                   <SelectTrigger id="admin-balance-modal-type-select-trigger">
                     <SelectValue placeholder="Select type" />
                   </SelectTrigger>
-                  <SelectContent id="admin-balance-modal-type-select-content">
+                  <SelectContent id="admin-balance-modal-type-select-content" className="z-[10001]">
                     <SelectItem value="credit" id="admin-balance-modal-type-credit">Credit (Add Money)</SelectItem>
                     <SelectItem value="debit" id="admin-balance-modal-type-debit">Debit (Remove Money)</SelectItem>
                     <SelectItem value="refund" id="admin-balance-modal-type-refund">Refund</SelectItem>

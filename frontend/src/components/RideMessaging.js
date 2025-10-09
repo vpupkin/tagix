@@ -29,7 +29,7 @@ const RideMessaging = ({ matchId, isVisible = true }) => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${localStorage.getItem('mobility_token')}`
         },
         body: JSON.stringify({
           message: message.trim(),

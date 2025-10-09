@@ -46,7 +46,7 @@ const AdminNotificationModal = ({
         },
         {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+            'Authorization': `Bearer ${localStorage.getItem('mobility_token')}`,
             'Content-Type': 'application/json'
           }
         }
@@ -72,8 +72,14 @@ const AdminNotificationModal = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <Card className="w-full max-w-md mx-4">
+    <div 
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4"
+      style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999 }}
+    >
+      <Card 
+        className="w-full max-w-md bg-white shadow-2xl"
+        style={{ position: 'relative', zIndex: 10000 }}
+      >
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <div className="flex items-center space-x-2">
             <MessageSquare className="h-5 w-5 text-blue-600" />

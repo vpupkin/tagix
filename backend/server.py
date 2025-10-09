@@ -516,6 +516,12 @@ async def login(user_credentials: UserLogin, request: Request):
     
     user = User(**{k: v for k, v in user_doc.items() if k != "password"})
     
+    # Update user online status to true on login
+    await db.users.update_one(
+        {"id": user.id},
+        {"$set": {"is_online": True}}
+    )
+    
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
         data={"sub": user.id, "role": user.role}, expires_delta=access_token_expires
@@ -547,6 +553,32 @@ async def login(user_credentials: UserLogin, request: Request):
             "role": user.role
         }
     }
+
+@api_router.post("/auth/logout", response_model=Dict[str, str])
+async def logout(current_user: User = Depends(get_current_user)):
+    """Logout user and set online status to false"""
+    
+    # Update user online status to false on logout
+    await db.users.update_one(
+        {"id": current_user.id},
+        {"$set": {"is_online": False}}
+    )
+    
+    # Log logout action
+    if AUDIT_ENABLED and audit_system:
+        await audit_system.log_action(
+            action=AuditAction.USER_LOGOUT,
+            user_id=current_user.id,
+            entity_type="user",
+            entity_id=current_user.id,
+            metadata={
+                "email": current_user.email,
+                "role": current_user.role
+            },
+            severity="low"
+        )
+    
+    return {"message": "Successfully logged out"}
 
 @api_router.get("/auth/me", response_model=User)
 async def get_current_user_info(current_user: User = Depends(get_current_user)):

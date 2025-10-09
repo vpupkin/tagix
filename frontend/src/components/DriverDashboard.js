@@ -63,6 +63,21 @@ const DriverDashboard = () => {
     fetchUserBalance();
   }, []);
 
+  // Listen for balance updates from WebSocket
+  useEffect(() => {
+    const handleBalanceUpdate = (event) => {
+      console.log('🔄 Balance update received:', event.detail);
+      // Refresh balance data
+      fetchUserBalance();
+    };
+
+    window.addEventListener('balanceUpdated', handleBalanceUpdate);
+    
+    return () => {
+      window.removeEventListener('balanceUpdated', handleBalanceUpdate);
+    };
+  }, []);
+
   useEffect(() => {
     console.log('🔍 DriverDashboard: useEffect for isOnline triggered');
     console.log('🔍 isOnline:', isOnline);
@@ -137,7 +152,7 @@ const DriverDashboard = () => {
       
       const response = await axios.get(`${API_URL}/api/user/balance`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${localStorage.getItem('mobility_token')}`
         }
       });
       

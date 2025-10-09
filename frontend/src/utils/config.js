@@ -20,7 +20,7 @@ const getEnvironmentConfig = () => {
     return {
       environment: 'development',
       apiUrl: 'http://localhost:8001',
-      websocketUrl: `ws://${currentHostname}:${currentPort}`, // Via React dev server proxy
+      websocketUrl: `ws://${currentHostname}:8001`, // Direct to backend
       isDevelopment: true,
       isProduction: false
     };

@@ -370,6 +370,15 @@ export const WebSocketProvider = ({ children }) => {
           timestamp: new Date(data.timestamp),
           data: data
         });
+
+        // Trigger balance refresh event for dashboard components
+        window.dispatchEvent(new CustomEvent('balanceUpdated', {
+          detail: {
+            newBalance: data.new_balance,
+            transactionType: data.transaction_type,
+            amount: data.amount
+          }
+        }));
         break;
 
       case 'connection_established':
