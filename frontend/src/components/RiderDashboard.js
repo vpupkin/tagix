@@ -291,12 +291,6 @@ const RiderDashboard = () => {
                 }`} id="rider-dashboard-connection-indicator" />
                 <span id="rider-dashboard-connection-text">{connected ? 'Online' : 'Offline'}</span>
               </div>
-              <Link to="/book-ride" id="rider-dashboard-book-ride-link">
-                <Button className="btn-primary" data-testid="quick-book-ride" id="rider-dashboard-book-ride-button">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Book Ride
-                </Button>
-              </Link>
             </div>
           </div>
         </div>
