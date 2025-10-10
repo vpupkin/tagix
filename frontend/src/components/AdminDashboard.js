@@ -687,9 +687,24 @@ const AdminDashboard = () => {
     // For notification entries, extract message from metadata
     if (log.entity_type === 'notification' && log.metadata) {
       const message = log.metadata.message || log.metadata.notification_message;
+      const conversationThread = log.metadata.conversation_thread;
+      const isReply = log.metadata.is_reply;
+      
       if (message) {
+        let description = message;
+        
+        // Add conversation context
+        if (conversationThread) {
+          const threadShort = conversationThread.substring(0, 8);
+          if (isReply) {
+            description = `[REPLY] ${message}`;
+          } else {
+            description = `[THREAD:${threadShort}] ${message}`;
+          }
+        }
+        
         // Truncate if too long (max 100 characters for table display)
-        return message.length > 100 ? message.substring(0, 100) + '...' : message;
+        return description.length > 100 ? description.substring(0, 100) + '...' : description;
       }
     }
     
