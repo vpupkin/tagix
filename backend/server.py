@@ -374,6 +374,9 @@ class ConnectionManager:
         await websocket.accept()
         self.active_connections[user_id] = websocket
         logger.info(f"User {user_id} connected to WebSocket")
+        
+        # Send any pending notifications when user comes online
+        await self.deliver_pending_notifications(user_id)
 
     def disconnect(self, user_id: str):
         if user_id in self.active_connections:
@@ -382,9 +385,104 @@ class ConnectionManager:
             del self.user_locations[user_id]
         logger.info(f"User {user_id} disconnected from WebSocket")
 
-    async def send_personal_message(self, message: str, user_id: str):
+    async def send_personal_message(self, message: str, user_id: str, notification_type: str = "general", 
+                                  sender_id: str = None, sender_name: str = None, metadata: dict = None):
+        """Send message to user, store in database if offline"""
+        message_data = json.loads(message) if isinstance(message, str) else message
+        
+        # Add metadata
+        if metadata:
+            message_data.update(metadata)
+        
+        # Create notification record
+        notification_id = str(uuid.uuid4())
+        notification_record = {
+            "id": notification_id,
+            "user_id": user_id,
+            "type": notification_type,
+            "message": message_data.get("message", ""),
+            "data": message_data,
+            "sender_id": sender_id,
+            "sender_name": sender_name,
+            "delivered": False,
+            "delivery_attempts": 0,
+            "created_at": datetime.now(timezone.utc),
+            "delivered_at": None
+        }
+        
+        # Try to send via WebSocket if user is online
         if user_id in self.active_connections:
-            await self.active_connections[user_id].send_text(message)
+            try:
+                await self.active_connections[user_id].send_text(json.dumps(message_data))
+                notification_record["delivered"] = True
+                notification_record["delivered_at"] = datetime.now(timezone.utc)
+                logger.info(f"Notification delivered to online user {user_id}")
+            except Exception as e:
+                logger.error(f"Failed to deliver notification to user {user_id}: {str(e)}")
+                notification_record["delivery_attempts"] = 1
+        
+        # Store notification in database (always store for audit trail)
+        await db.notifications.insert_one(notification_record)
+        
+        # Log notification attempt in audit system
+        if AUDIT_ENABLED and audit_system:
+            await audit_system.log_action(
+                action=AuditAction.ADMIN_SYSTEM_CONFIG_CHANGED,
+                user_id=sender_id or "system",
+                entity_type="notification",
+                entity_id=notification_id,
+                target_user_id=user_id,
+                metadata={
+                    "notification_type": notification_type,
+                    "delivered": notification_record["delivered"],
+                    "message": message_data.get("message", ""),
+                    "sender_name": sender_name
+                }
+            )
+        
+        return notification_record
+
+    async def deliver_pending_notifications(self, user_id: str):
+        """Deliver pending notifications when user comes online"""
+        try:
+            # Get pending notifications for this user
+            pending_notifications = await db.notifications.find({
+                "user_id": user_id,
+                "delivered": False
+            }).sort("created_at", 1).to_list(50)  # Limit to 50 most recent
+            
+            if pending_notifications:
+                logger.info(f"Delivering {len(pending_notifications)} pending notifications to user {user_id}")
+                
+                for notification in pending_notifications:
+                    try:
+                        # Send the notification
+                        await self.active_connections[user_id].send_text(json.dumps(notification["data"]))
+                        
+                        # Mark as delivered
+                        await db.notifications.update_one(
+                            {"id": notification["id"]},
+                            {
+                                "$set": {
+                                    "delivered": True,
+                                    "delivered_at": datetime.now(timezone.utc)
+                                }
+                            }
+                        )
+                        
+                        logger.info(f"Delivered pending notification {notification['id']} to user {user_id}")
+                        
+                    except Exception as e:
+                        logger.error(f"Failed to deliver pending notification {notification['id']}: {str(e)}")
+                        
+                        # Increment delivery attempts
+                        await db.notifications.update_one(
+                            {"id": notification["id"]},
+                            {"$inc": {"delivery_attempts": 1}}
+                        )
+                        
+        except Exception as e:
+            logger.error(f"Error delivering pending notifications to user {user_id}: {str(e)}")
 
     async def broadcast_nearby(self, message: str, location: Location, radius_km: float = 5.0):
         """Broadcast message to users within radius"""
@@ -655,7 +753,10 @@ async def create_ride_request(request_data: RideRequest, request: Request, curre
                 "estimated_fare": request_data.estimated_fare,
                 "distance_km": distance_km
             }),
-            match["driver_id"]
+            match["driver_id"],
+            notification_type="ride_request",
+            sender_id=current_user.id,
+            sender_name=current_user.name
         )
     
     return {
@@ -740,7 +841,10 @@ async def accept_ride_request(request_id: str, current_user: User = Depends(get_
             "driver_rating": current_user.rating,
             "estimated_arrival": "5 minutes"
         }),
-        request_obj.rider_id
+        request_obj.rider_id,
+        notification_type="ride_accepted",
+        sender_id=current_user.id,
+        sender_name=current_user.name
     )
     
     return {
@@ -995,7 +1099,10 @@ async def start_ride(match_id: str, current_user: User = Depends(get_current_use
             "driver_name": current_user.name,
             "message": "Your ride has started! Enjoy your journey."
         }),
-        match_doc["rider_id"]
+        match_doc["rider_id"],
+        notification_type="ride_started",
+        sender_id=current_user.id,
+        sender_name=current_user.name
     )
     
     return {"message": "Ride started successfully"}
@@ -1029,7 +1136,10 @@ async def driver_arrived(match_id: str, current_user: User = Depends(get_current
             "vehicle_info": getattr(current_user, 'vehicle_info', 'Standard vehicle'),
             "message": "Your driver has arrived at the pickup location"
         }),
-        match_doc["rider_id"]
+        match_doc["rider_id"],
+        notification_type="driver_arrived",
+        sender_id=current_user.id,
+        sender_name=current_user.name
     )
     
     return {"message": "Arrival notification sent successfully"}
@@ -1914,7 +2024,10 @@ async def admin_send_notification(
             "admin_name": current_user.name,
             "timestamp": datetime.now(timezone.utc).isoformat()
         }),
-        request.user_id
+        request.user_id,
+        notification_type=request.notification_type,
+        sender_id=current_user.id,
+        sender_name=current_user.name
     )
     
     # Log the admin action
@@ -2126,7 +2239,10 @@ async def admin_balance_transaction(
             "message": notification_message,
             "timestamp": datetime.now(timezone.utc).isoformat()
         }),
-        user_id
+        user_id,
+        notification_type="balance_transaction",
+        sender_id=current_user.id,
+        sender_name=current_user.name
     )
     
     # Log the admin action
@@ -2494,6 +2610,113 @@ async def admin_send_validation_email(
     except Exception as e:
         logging.error(f"Error sending validation email for user {user_id}: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to send validation email")
+
+# === NOTIFICATION MANAGEMENT ENDPOINTS ===
+
+@api_router.get("/notifications", response_model=List[Dict[str, Any]])
+async def get_user_notifications(
+    limit: int = 50,
+    offset: int = 0,
+    current_user: User = Depends(get_current_user)
+):
+    """Get user's notification history"""
+    try:
+        notifications = await db.notifications.find(
+            {"user_id": current_user.id}
+        ).sort("created_at", -1).skip(offset).limit(limit).to_list(limit)
+        
+        # Convert ObjectId to string for JSON serialization
+        for notification in notifications:
+            notification["_id"] = str(notification["_id"])
+        
+        return notifications
+        
+    except Exception as e:
+        logging.error(f"Error fetching notifications for user {current_user.id}: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to fetch notifications")
+
+@api_router.get("/admin/notifications", response_model=Dict[str, Any])
+async def get_all_notifications(
+    limit: int = 100,
+    offset: int = 0,
+    user_id: Optional[str] = None,
+    notification_type: Optional[str] = None,
+    delivered: Optional[bool] = None,
+    current_user: User = Depends(get_current_user)
+):
+    """Get all notifications (Admin only)"""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    try:
+        # Build filter
+        filter_query = {}
+        if user_id:
+            filter_query["user_id"] = user_id
+        if notification_type:
+            filter_query["type"] = notification_type
+        if delivered is not None:
+            filter_query["delivered"] = delivered
+        
+        # Get notifications
+        notifications = await db.notifications.find(filter_query).sort("created_at", -1).skip(offset).limit(limit).to_list(limit)
+        total_count = await db.notifications.count_documents(filter_query)
+        
+        # Convert ObjectId to string for JSON serialization
+        for notification in notifications:
+            notification["_id"] = str(notification["_id"])
+        
+        return {
+            "notifications": notifications,
+            "total": total_count,
+            "limit": limit,
+            "offset": offset
+        }
+        
+    except Exception as e:
+        logging.error(f"Error fetching notifications: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to fetch notifications")
+
+@api_router.patch("/notifications/{notification_id}/mark-read", response_model=Dict[str, str])
+async def mark_notification_read(
+    notification_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Mark notification as read"""
+    try:
+        result = await db.notifications.update_one(
+            {"id": notification_id, "user_id": current_user.id},
+            {"$set": {"read": True, "read_at": datetime.now(timezone.utc)}}
+        )
+        
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Notification not found")
+        
+        return {"message": "Notification marked as read"}
+        
+    except Exception as e:
+        logging.error(f"Error marking notification as read: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to mark notification as read")
+
+@api_router.delete("/notifications/{notification_id}", response_model=Dict[str, str])
+async def delete_notification(
+    notification_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Delete notification"""
+    try:
+        result = await db.notifications.delete_one(
+            {"id": notification_id, "user_id": current_user.id}
+        )
+        
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Notification not found")
+        
+        return {"message": "Notification deleted"}
+        
+    except Exception as e:
+        logging.error(f"Error deleting notification: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to delete notification")
 
 @api_router.post("/admin/users/{user_id}/suspend", response_model=Dict[str, str])
 async def admin_suspend_user(
