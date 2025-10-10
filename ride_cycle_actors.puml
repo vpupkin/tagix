@@ -1,0 +1,121 @@
+@startuml Ride Cycle Actors & Components
+
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam actor {
+  BackgroundColor #FFE0B2
+  BorderColor #FF9800
+}
+skinparam participant {
+  BackgroundColor #E8F5E8
+  BorderColor #4CAF50
+}
+skinparam database {
+  BackgroundColor #E3F2FD
+  BorderColor #2196F3
+}
+
+title **Ride Cycle - All Actors & Components**
+
+== **Primary Actors** ==
+
+actor "Rider" as R
+actor "Driver" as D
+actor "Admin" as A
+
+== **Frontend Components** ==
+
+participant "Rider Frontend" as RF
+participant "AuthModal" as AM
+participant "RideBooking" as RB
+participant "RidesPage" as RP
+participant "PaymentSuccess" as PS
+
+participant "Driver Frontend" as DF
+participant "DriverDashboard" as DD
+participant "EnhancedDriverDashboard" as EDD
+
+participant "Admin Frontend" as AF
+participant "AdminDashboard" as AD
+
+== **Backend Services** ==
+
+participant "Backend API" as API
+participant "WebSocket Manager" as WS
+participant "Audit System" as AUDIT
+participant "Location Service" as LOC
+
+== **External Services** ==
+
+participant "Stripe Payment" as STRIPE
+participant "Google Maps API" as GMAPS
+participant "Geolocation API" as GEO
+
+== **Data Storage** ==
+
+database "MongoDB" as DB {
+  [users]
+  [ride_requests]
+  [ride_matches]
+  [ride_messages]
+  [payments]
+  [payment_transactions]
+  [audit_logs]
+}
+
+== **Key Relationships** ==
+
+R --> RF : Uses
+D --> DF : Uses
+A --> AF : Uses
+
+RF --> AM : Contains
+RF --> RB : Contains
+RF --> RP : Contains
+RF --> PS : Contains
+
+DF --> DD : Contains
+DF --> EDD : Contains
+
+AF --> AD : Contains
+
+RF --> API : HTTP requests
+DF --> API : HTTP requests
+AF --> API : HTTP requests
+
+API --> WS : WebSocket messages
+API --> AUDIT : Audit logging
+API --> LOC : Location calculations
+
+API --> DB : Database operations
+WS --> DB : Location updates
+
+RB --> GMAPS : Map integration
+RB --> GEO : Location detection
+
+API --> STRIPE : Payment processing
+
+== **Data Flow Summary** ==
+
+note over R, DB: **Rider Flow:**
+note over R, DB: 1. Register/Login via AuthModal
+note over R, DB: 2. Book ride via RideBooking
+note over R, DB: 3. Track ride via RidesPage
+note over R, DB: 4. Pay via Stripe integration
+note over R, DB: 5. Rate driver
+
+note over D, DB: **Driver Flow:**
+note over D, DB: 1. Login via AuthModal
+note over D, DB: 2. Receive requests via DriverDashboard
+note over D, DB: 3. Accept/Manage rides
+note over D, DB: 4. Update location & status
+note over D, DB: 5. Complete rides & receive payments
+
+note over A, DB: **Admin Flow:**
+note over A, DB: 1. Login via AuthModal
+note over A, DB: 2. Monitor system via AdminDashboard
+note over A, DB: 3. View audit trails
+note over A, DB: 4. Manage users & rides
+note over A, DB: 5. Send notifications
+
+@enduml

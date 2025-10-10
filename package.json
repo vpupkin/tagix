@@ -17,6 +17,7 @@
     "analyze": "python3 cursor_agent_deploy.py --mode analyze"
   },
   "dependencies": {
+    "axios": "^1.12.2",
     "ws": "^8.18.3"
   }
 }

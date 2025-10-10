@@ -1,0 +1,141 @@
+@startuml Rider Flow States Diagram
+
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam state {
+  BackgroundColor #E8F4FD
+  BorderColor #1E88E5
+  FontColor #000000
+}
+skinparam note {
+  BackgroundColor #FFF3E0
+  BorderColor #FF9800
+}
+
+title **Rider Journey - States & Transitions**
+
+[*] --> Registration : User opens app
+
+state Registration {
+  [*] --> FillForm : Open AuthModal
+  FillForm --> SubmitForm : Complete registration
+  SubmitForm --> [*] : Success
+}
+
+Registration --> Dashboard : Login successful
+
+state Dashboard {
+  [*] --> ViewRides : Check ride history
+  [*] --> BookRide : Start new ride
+}
+
+Dashboard --> RideBooking : Click "Book Ride"
+
+state RideBooking {
+  [*] --> SelectPickup : Step 1: Pickup location
+  SelectPickup --> SelectDropoff : Step 2: Dropoff location
+  SelectDropoff --> ConfigureRide : Step 3: Vehicle type, passengers
+  ConfigureRide --> SubmitRequest : Step 4: Review & submit
+  SubmitRequest --> [*] : Request submitted
+}
+
+RideBooking --> RideRequested : Redirect to rides page
+
+state RideRequested {
+  [*] --> WaitingForDriver : Status: PENDING
+  WaitingForDriver --> DriverAccepted : Driver accepts ride
+  WaitingForDriver --> NoDriversFound : No drivers available
+  NoDriversFound --> RideBooking : Try again
+}
+
+state DriverAccepted {
+  [*] --> DriverEnRoute : Status: ACCEPTED
+  DriverEnRoute --> DriverArrived : Driver arrives at pickup
+  DriverArrived --> RideStarted : Driver starts ride
+}
+
+state RideStarted {
+  [*] --> RideInProgress : Status: IN_PROGRESS
+  RideInProgress --> RideCompleted : Driver completes ride
+}
+
+state RideCompleted {
+  [*] --> PaymentRequired : Status: COMPLETED
+  PaymentRequired --> PaymentProcessing : Click "Pay Now"
+  PaymentProcessing --> PaymentSuccess : Payment successful
+  PaymentProcessing --> PaymentFailed : Payment failed
+  PaymentFailed --> PaymentRequired : Retry payment
+}
+
+state PaymentSuccess {
+  [*] --> RateDriver : Payment confirmed
+  RateDriver --> RideFinished : Rating submitted
+}
+
+state RideFinished {
+  [*] --> ViewReceipt : View ride summary
+  ViewReceipt --> Dashboard : Return to dashboard
+}
+
+RideFinished --> Dashboard : Complete journey
+
+note right of Registration
+  **Registration Process:**
+  - Fill personal details
+  - Select role as "rider"
+  - Email verification
+  - Account creation
+end note
+
+note right of RideBooking
+  **Booking Steps:**
+  1. Pickup location (map/address)
+  2. Dropoff location (map/address)
+  3. Vehicle type selection
+  4. Passenger count
+  5. Special requirements
+  6. Fare calculation
+  7. Submit request
+end note
+
+note right of RideRequested
+  **Driver Matching:**
+  - Find nearby drivers
+  - Send notifications
+  - Wait for acceptance
+  - Handle no matches
+end note
+
+note right of DriverAccepted
+  **Driver Actions:**
+  - Accept ride request
+  - Navigate to pickup
+  - Mark as arrived
+  - Start ride
+end note
+
+note right of RideStarted
+  **Real-time Tracking:**
+  - Driver location updates
+  - ETA calculations
+  - Route monitoring
+  - Communication options
+end note
+
+note right of RideCompleted
+  **Payment Flow:**
+  - Fare calculation
+  - Payment method selection
+  - Stripe integration
+  - Receipt generation
+end note
+
+note right of PaymentSuccess
+  **Post-Ride:**
+  - Driver rating (1-5 stars)
+  - Optional feedback
+  - Ride history update
+  - Receipt access
+end note
+
+@enduml

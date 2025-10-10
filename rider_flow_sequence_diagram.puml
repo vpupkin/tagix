@@ -1,0 +1,173 @@
+@startuml Rider Complete Flow Sequence Diagram
+
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam sequenceArrowThickness 2
+skinparam roundcorner 20
+skinparam maxmessagesize 60
+
+title **Complete Rider Flow - From Registration to Ride Completion**
+
+actor "Rider" as R
+participant "Frontend" as F
+participant "AuthModal" as A
+participant "RideBooking" as RB
+participant "RidesPage" as RP
+participant "Backend API" as B
+participant "WebSocket Manager" as WS
+participant "Database" as DB
+participant "Driver" as D
+participant "Payment System" as P
+
+== **1. User Registration & Authentication** ==
+
+R -> A: Open login dialog
+A -> A: Show registration form
+R -> A: Fill registration details\n(name, email, phone, role=rider)
+A -> B: POST /api/auth/register
+B -> DB: Create user record
+DB -> B: User created
+B -> A: Registration success
+A -> F: Close modal, redirect to dashboard
+
+== **2. Ride Booking Process** ==
+
+R -> RB: Navigate to ride booking
+RB -> RB: Get user location via geolocation
+RB -> RB: Show map with current location
+
+note over RB: **Step 1: Location Selection**
+R -> RB: Select pickup location\n(via map click or address search)
+RB -> RB: Update pickup marker
+R -> RB: Select dropoff location\n(via map click or address search)
+RB -> RB: Update dropoff marker
+RB -> RB: Calculate distance & estimated fare
+
+note over RB: **Step 2: Ride Configuration**
+R -> RB: Select vehicle type\n(economy, comfort, premium)
+R -> RB: Set passenger count
+R -> RB: Add special requirements (optional)
+RB -> RB: Recalculate fare based on selections
+
+note over RB: **Step 3: Submit Ride Request**
+R -> RB: Click "Book Ride"
+RB -> B: POST /api/rides/request\n{ride_data}
+B -> DB: Create ride_request record
+DB -> B: Request created with ID
+B -> B: Calculate distance & fare
+B -> B: find_nearby_drivers(request)
+
+loop For each nearby driver (top 5)
+    B -> DB: Query drivers within radius
+    DB -> B: Return driver data
+    B -> WS: send_personal_message\n(ride_request_data, driver_id)
+    WS -> D: WebSocket notification\n"New ride request available"
+end
+
+B -> RB: Return {request_id, matches_found}
+RB -> R: Show "Ride request submitted!\nLooking for drivers..."
+RB -> RP: Redirect to rides page after 3s
+
+== **3. Driver Matching & Acceptance** ==
+
+D -> D: Review ride request details
+D -> B: POST /api/rides/{request_id}/accept
+B -> DB: Update ride_request status = "accepted"
+B -> DB: Create ride_match record
+DB -> B: Match created
+B -> WS: send_personal_message\n(ride_accepted, rider_id)
+WS -> R: WebSocket notification\n"Driver John accepted your ride!\nETA: 5 minutes"
+
+== **4. Driver Arrival & Pickup** ==
+
+D -> B: POST /api/rides/{match_id}/arrived
+B -> DB: Update ride_match status = "driver_arriving"
+B -> WS: send_personal_message\n(driver_arrived, rider_id)
+WS -> R: WebSocket notification\n"Driver has arrived at pickup location"
+
+R -> RP: View driver details & location
+R -> RP: Contact driver if needed
+
+== **5. Ride Start** ==
+
+D -> B: POST /api/rides/{match_id}/start
+B -> DB: Update ride_match status = "in_progress"
+B -> DB: Set started_at timestamp
+B -> WS: send_personal_message\n(ride_started, rider_id)
+WS -> R: WebSocket notification\n"Your ride has started!\nEnjoy your journey"
+
+== **6. Ride in Progress** ==
+
+note over R, D: **Real-time Updates During Ride**
+D -> B: Update location (periodic)
+B -> WS: Broadcast location updates
+WS -> R: Show driver location on map
+R -> RP: Track ride progress
+R -> RP: View estimated arrival time
+
+== **7. Ride Completion** ==
+
+D -> B: POST /api/rides/{match_id}/complete
+B -> DB: Update ride_match status = "completed"
+B -> DB: Set completed_at timestamp
+B -> DB: Create payment record\n{amount, platform_fee, driver_earnings}
+B -> WS: send_personal_message\n(ride_completed, rider_id)
+WS -> R: WebSocket notification\n"Ride completed! Please rate your driver"
+
+== **8. Payment Processing** ==
+
+R -> RP: View ride summary & fare
+R -> P: Click "Pay Now"
+P -> B: POST /api/payments/create-session
+B -> P: Create Stripe checkout session
+B -> P: Return checkout_url
+P -> R: Redirect to Stripe payment page
+R -> P: Complete payment
+P -> B: Webhook notification (payment success)
+B -> DB: Update payment status = "completed"
+B -> DB: Update driver earnings
+B -> DB: Update platform revenue
+B -> WS: send_personal_message\n(payment_completed, rider_id)
+WS -> R: WebSocket notification\n"Payment successful! Ⓣ25.50 charged"
+
+== **9. Rating & Feedback** ==
+
+R -> RP: Rate driver (1-5 stars)
+R -> RP: Add optional feedback
+RP -> B: POST /api/rides/{match_id}/rate
+B -> DB: Update driver rating
+B -> DB: Store rider feedback
+B -> WS: send_personal_message\n(rating_received, driver_id)
+WS -> D: WebSocket notification\n"Rider rated you 5 stars!"
+
+== **10. Ride History & Receipt** ==
+
+R -> RP: View completed ride in history
+RP -> B: GET /api/rides/unified
+B -> DB: Query rider's ride history
+DB -> B: Return ride data
+B -> RP: Return ride history
+RP -> R: Display ride details, receipt, and rating
+
+== **Alternative Flows** ==
+
+note over R, D: **Cancellation Scenarios**
+alt Ride Cancelled by Rider
+    R -> B: POST /api/rides/{request_id}/cancel
+    B -> DB: Update status = "cancelled"
+    B -> WS: Notify driver of cancellation
+else Ride Cancelled by Driver
+    D -> B: POST /api/rides/{request_id}/decline
+    B -> DB: Update status = "cancelled"
+    B -> WS: Notify rider, find new driver
+end
+
+note over R, D: **Payment Failure**
+alt Payment Failed
+    P -> B: Webhook notification (payment failed)
+    B -> DB: Update payment status = "failed"
+    B -> WS: Notify rider of payment failure
+    R -> P: Retry payment or use different method
+end
+
+@enduml

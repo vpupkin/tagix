@@ -1,0 +1,93 @@
+@startuml Simplified Ride Cycle - Core Actors
+
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam sequenceArrowThickness 2
+skinparam roundcorner 20
+skinparam maxmessagesize 60
+
+title **Simplified Ride Cycle - Core Actors & Main Flow**
+
+actor "Rider" as R
+participant "Rider App" as RA
+participant "Backend API" as API
+participant "WebSocket" as WS
+participant "Database" as DB
+actor "Driver" as D
+participant "Driver App" as DA
+participant "Payment System" as PAY
+
+== **1. Ride Request** ==
+
+R -> RA: Book ride (pickup, dropoff, vehicle type)
+RA -> API: POST /api/rides/request
+API -> DB: Create ride_request
+API -> API: Find nearby drivers (100km radius)
+API -> WS: Notify top 5 drivers
+WS -> DA: "New ride request"
+API -> RA: Return request_id
+
+== **2. Driver Acceptance** ==
+
+D -> DA: Accept ride
+DA -> API: POST /api/rides/{id}/accept
+API -> DB: Create ride_match, update status
+API -> WS: Notify rider
+WS -> RA: "Driver accepted your ride"
+
+== **3. Driver Arrival** ==
+
+D -> DA: Mark as arrived
+DA -> API: POST /api/rides/{id}/arrived
+API -> DB: Update status = "driver_arriving"
+API -> WS: Notify rider
+WS -> RA: "Driver has arrived"
+
+== **4. Ride Start** ==
+
+D -> DA: Start ride
+DA -> API: POST /api/rides/{id}/start
+API -> DB: Update status = "in_progress"
+API -> WS: Notify rider
+WS -> RA: "Ride started"
+
+== **5. Ride in Progress** ==
+
+loop Real-time updates
+    D -> DA: Update location
+    DA -> API: WebSocket location_update
+    API -> WS: Broadcast location
+    WS -> RA: Show driver location
+end
+
+== **6. Ride Completion** ==
+
+D -> DA: Complete ride
+DA -> API: POST /api/rides/{id}/complete
+API -> DB: Update status = "completed"
+API -> DB: Create payment record
+API -> WS: Notify rider
+WS -> RA: "Ride completed, please pay"
+
+== **7. Payment** ==
+
+R -> RA: Pay ride
+RA -> API: POST /api/payments/create-session
+API -> PAY: Create Stripe session
+PAY -> API: Return checkout URL
+API -> RA: Redirect to payment
+R -> PAY: Complete payment
+PAY -> API: Webhook (success)
+API -> DB: Update payment status
+API -> WS: Notify rider
+WS -> RA: "Payment successful"
+
+== **8. Rating** ==
+
+R -> RA: Rate driver (1-5 stars)
+RA -> API: POST /api/rides/{id}/rate
+API -> DB: Update driver rating
+API -> WS: Notify driver
+WS -> DA: "Rider rated you"
+
+@enduml

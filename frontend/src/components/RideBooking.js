@@ -149,6 +149,8 @@ const SimpleAddressInput = ({ onPlaceSelect, placeholder, value, testId }) => {
         },
         name: inputValue,
         place_id: `manual_${Date.now()}`,
+        // Add address property for compatibility with handleBookRide
+        address: inputValue,
         // Add location object for backend compatibility
         location: {
           latitude: latitude,

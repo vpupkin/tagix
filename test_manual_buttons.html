@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual Ride Booking Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .input-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button.success {
+            background-color: #28a745;
+        }
+        button.danger {
+            background-color: #dc3545;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .result.success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .result.error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .coordinate-inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .manual-entry-hint {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Manual Ride Booking Test</h1>
+    <p>This test simulates the manual ride booking functionality without Google Maps API.</p>
+
+    <div class="test-container">
+        <h2>Test 1: Simple Address Input</h2>
+        <div class="manual-entry-hint">
+            <strong>Manual Entry Mode</strong> - Test environment without Google Maps<br>
+            <strong>Option 1:</strong> Enter coordinates: <code>48.6670336, 9.7910784</code><br>
+            <strong>Option 2:</strong> Enter address: <code>Stuttgart, Germany</code><br>
+            <strong>Option 3:</strong> Use default test location (Stuttgart)
+        </div>
+        
+        <div class="input-group">
+            <label for="pickup-input">Pickup Location:</label>
+            <input type="text" id="pickup-input" placeholder="Enter pickup location or coordinates">
+            <div id="pickup-buttons" style="margin-top: 10px;"></div>
+        </div>
+        
+        <div class="input-group">
+            <label for="dropoff-input">Dropoff Location:</label>
+            <input type="text" id="dropoff-input" placeholder="Enter dropoff location or coordinates">
+            <div id="dropoff-buttons" style="margin-top: 10px;"></div>
+        </div>
+        
+        <button onclick="testRideBooking()">Test Ride Booking</button>
+        <button onclick="clearAll()" class="danger">Clear All</button>
+        
+        <div id="result" class="result" style="display: none;"></div>
+    </div>
+
+    <div class="test-container">
+        <h2>Test 2: Coordinate Parsing</h2>
+        <div class="input-group">
+            <label for="coord-input">Test Coordinate Input:</label>
+            <input type="text" id="coord-input" placeholder="Enter coordinates in various formats">
+            <button onclick="testCoordinateParsing()">Test Parsing</button>
+        </div>
+        <div id="coord-result" class="result" style="display: none;"></div>
+    </div>
+
+    <script>
+        // Simulate the parseCoordinates function from the frontend
+        function parseCoordinates(input) {
+            const coordPatterns = [
+                /^(-?\d+\.?\d*),\s*(-?\d+\.?\d*)$/, // "48.6670336, 9.7910784"
+                /^(-?\d+\.?\d*)\s+(-?\d+\.?\d*)$/, // "48.6670336 9.7910784"
+                /lat[:\s]*(-?\d+\.?\d*)[,\s]*lng[:\s]*(-?\d+\.?\d*)/i, // "lat: 48.6670336, lng: 9.7910784"
+            ];
+
+            for (const pattern of coordPatterns) {
+                const match = input.match(pattern);
+                if (match) {
+                    const latitude = parseFloat(match[1]);
+                    const longitude = parseFloat(match[2]);
+                    if (!isNaN(latitude) && !isNaN(longitude) && 
+                        latitude >= -90 && latitude <= 90 && 
+                        longitude >= -180 && longitude <= 180) {
+                        return { latitude, longitude };
+                    }
+                }
+            }
+            return null;
+        }
+
+        // Simulate the handleSubmit function from SimpleAddressInput
+        function handleSubmit(inputValue, isCoordinateMode = false, lat = '', lng = '') {
+            if (!inputValue.trim()) {
+                return null;
+            }
+
+            let latitude, longitude;
+            
+            // Try to parse coordinates from input
+            const coords = parseCoordinates(inputValue);
+            if (coords) {
+                latitude = coords.latitude;
+                longitude = coords.longitude;
+            } else if (isCoordinateMode && lat && lng) {
+                // Use manually entered coordinates
+                latitude = parseFloat(lat);
+                longitude = parseFloat(lng);
+            } else {
+                // Use default test coordinates (Stuttgart, Germany)
+                latitude = 48.7758;
+                longitude = 9.1829;
+            }
+
+            // Create a place object for manual entry
+            const placeData = {
+                formatted_address: inputValue,
+                geometry: {
+                    location: {
+                        lat: () => latitude,
+                        lng: () => longitude
+                    }
+                },
+                name: inputValue,
+                place_id: `manual_${Date.now()}`,
+                // Add address property for compatibility with handleBookRide
+                address: inputValue,
+                // Add location object for backend compatibility
+                location: {
+                    latitude: latitude,
+                    longitude: longitude,
+                    address: inputValue
+                }
+            };
+            
+            return placeData;
+        }
+
+        // Test coordinate parsing
+        function testCoordinateParsing() {
+            const input = document.getElementById('coord-input').value;
+            const result = parseCoordinates(input);
+            
+            const resultDiv = document.getElementById('coord-result');
+            if (result) {
+                resultDiv.className = 'result success';
+                resultDiv.textContent = `✅ Parsed successfully!\nLatitude: ${result.latitude}\nLongitude: ${result.longitude}`;
+            } else {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ Could not parse coordinates from: "${input}"`;
+            }
+            resultDiv.style.display = 'block';
+        }
+
+        // Test ride booking
+        function testRideBooking() {
+            const pickupInput = document.getElementById('pickup-input').value;
+            const dropoffInput = document.getElementById('dropoff-input').value;
+            
+            if (!pickupInput || !dropoffInput) {
+                showResult('❌ Please enter both pickup and dropoff locations', 'error');
+                return;
+            }
+
+            const pickupLocation = handleSubmit(pickupInput);
+            const dropoffLocation = handleSubmit(dropoffInput);
+            
+            if (!pickupLocation || !dropoffLocation) {
+                showResult('❌ Failed to process locations', 'error');
+                return;
+            }
+
+            // Simulate the ride data structure
+            const rideData = {
+                pickup_location: {
+                    latitude: pickupLocation.location.latitude,
+                    longitude: pickupLocation.location.longitude,
+                    address: pickupLocation.address
+                },
+                dropoff_location: {
+                    latitude: dropoffLocation.location.latitude,
+                    longitude: dropoffLocation.location.longitude,
+                    address: dropoffLocation.address
+                },
+                vehicle_type: "economy",
+                passenger_count: 1
+            };
+
+            showResult(`✅ Ride booking data created successfully!\n\n` +
+                     `Pickup: ${rideData.pickup_location.address}\n` +
+                     `Coordinates: ${rideData.pickup_location.latitude}, ${rideData.pickup_location.longitude}\n\n` +
+                     `Dropoff: ${rideData.dropoff_location.address}\n` +
+                     `Coordinates: ${rideData.dropoff_location.latitude}, ${rideData.dropoff_location.longitude}\n\n` +
+                     `Vehicle Type: ${rideData.vehicle_type}\n` +
+                     `Passenger Count: ${rideData.passenger_count}`, 'success');
+        }
+
+        function showResult(message, type) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.className = `result ${type}`;
+            resultDiv.textContent = message;
+            resultDiv.style.display = 'block';
+        }
+
+        function clearAll() {
+            document.getElementById('pickup-input').value = '';
+            document.getElementById('dropoff-input').value = '';
+            document.getElementById('coord-input').value = '';
+            document.getElementById('result').style.display = 'none';
+            document.getElementById('coord-result').style.display = 'none';
+        }
+
+        // Add event listeners to show buttons when input length >= 3
+        function setupInputListeners() {
+            const inputs = ['pickup-input', 'dropoff-input'];
+            
+            inputs.forEach(inputId => {
+                const input = document.getElementById(inputId);
+                const buttonContainer = document.getElementById(inputId.replace('-input', '-buttons'));
+                
+                input.addEventListener('input', function() {
+                    if (this.value.length >= 3) {
+                        buttonContainer.innerHTML = `
+                            <button onclick="useLocation('${inputId}')" class="success">Use This Location</button>
+                            <button onclick="showCoordinateInput('${inputId}')">Enter Coordinates</button>
+                        `;
+                    } else {
+                        buttonContainer.innerHTML = '';
+                    }
+                });
+            });
+        }
+
+        function useLocation(inputId) {
+            const input = document.getElementById(inputId);
+            const result = handleSubmit(input.value);
+            
+            if (result) {
+                showResult(`✅ Location processed successfully!\n` +
+                         `Address: ${result.address}\n` +
+                         `Coordinates: ${result.location.latitude}, ${result.location.longitude}`, 'success');
+            } else {
+                showResult('❌ Failed to process location', 'error');
+            }
+        }
+
+        function showCoordinateInput(inputId) {
+            const buttonContainer = document.getElementById(inputId.replace('-input', '-buttons'));
+            buttonContainer.innerHTML = `
+                <div class="coordinate-inputs">
+                    <input type="number" step="any" placeholder="Latitude" id="${inputId}-lat">
+                    <input type="number" step="any" placeholder="Longitude" id="${inputId}-lng">
+                </div>
+                <button onclick="useCoordinates('${inputId}')" class="success">Use Coordinates</button>
+                <button onclick="resetInput('${inputId}')" class="danger">Cancel</button>
+            `;
+        }
+
+        function useCoordinates(inputId) {
+            const latInput = document.getElementById(`${inputId}-lat`);
+            const lngInput = document.getElementById(`${inputId}-lng`);
+            
+            if (!latInput.value || !lngInput.value) {
+                showResult('❌ Please enter both latitude and longitude', 'error');
+                return;
+            }
+            
+            const lat = parseFloat(latInput.value);
+            const lng = parseFloat(lngInput.value);
+            
+            if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+                showResult('❌ Invalid coordinates. Latitude must be -90 to 90, Longitude must be -180 to 180', 'error');
+                return;
+            }
+            
+            const result = handleSubmit(`${lat}, ${lng}`, true, lat, lng);
+            
+            if (result) {
+                showResult(`✅ Coordinates processed successfully!\n` +
+                         `Address: ${result.address}\n` +
+                         `Coordinates: ${result.location.latitude}, ${result.location.longitude}`, 'success');
+            } else {
+                showResult('❌ Failed to process coordinates', 'error');
+            }
+        }
+
+        function resetInput(inputId) {
+            const buttonContainer = document.getElementById(inputId.replace('-input', '-buttons'));
+            const input = document.getElementById(inputId);
+            
+            if (input.value.length >= 3) {
+                buttonContainer.innerHTML = `
+                    <button onclick="useLocation('${inputId}')" class="success">Use This Location</button>
+                    <button onclick="showCoordinateInput('${inputId}')">Enter Coordinates</button>
+                `;
+            } else {
+                buttonContainer.innerHTML = '';
+            }
+        }
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function() {
+            setupInputListeners();
+        });
+    </script>
+</body>
+</html>
