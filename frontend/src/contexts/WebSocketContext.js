@@ -486,6 +486,29 @@ export const WebSocketProvider = ({ children }) => {
     }
   };
 
+  const clearAllNotifications = async () => {
+    if (!user || !isAuthenticated) return;
+    
+    try {
+      const token = localStorage.getItem('mobility_token');
+      if (!token) return;
+      
+      const response = await axios.delete(`${getApiUrl()}/api/notifications/clear-all`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      // Clear local notifications
+      clearNotifications();
+      
+      console.log('All notifications cleared:', response.data);
+      return response.data;
+      
+    } catch (error) {
+      console.error('Error clearing all notifications:', error);
+      throw error;
+    }
+  };
+
   const sendMessage = (message) => {
     if (socket && connected) {
       socket.send(JSON.stringify(message));
@@ -573,6 +596,7 @@ export const WebSocketProvider = ({ children }) => {
     addNotification,
     removeNotification,
     clearNotifications,
+    clearAllNotifications,
     fetchNotifications,
     reconnect: connectWebSocket
   };

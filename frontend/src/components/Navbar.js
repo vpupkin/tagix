@@ -28,7 +28,7 @@ import {
 
 const Navbar = ({ onAuthClick }) => {
   const { user, logout } = useAuth();
-  const { connected, notifications } = useWebSocket();
+  const { connected, notifications, clearAllNotifications } = useWebSocket();
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -40,6 +40,17 @@ const Navbar = ({ onAuthClick }) => {
   };
 
   const unreadCount = notifications.filter(n => !n.read).length;
+
+  const handleClearAllNotifications = async () => {
+    try {
+      await clearAllNotifications();
+      // You could add a toast notification here if you want
+      console.log('All notifications cleared successfully');
+    } catch (error) {
+      console.error('Failed to clear notifications:', error);
+      // You could add an error toast here if you want
+    }
+  };
 
   const NavLink = ({ to, children, onClick }) => {
     const isActive = location.pathname === to;
@@ -159,8 +170,22 @@ const Navbar = ({ onAuthClick }) => {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-80">
                     <div className="p-3 border-b">
-                      <h3 className="font-semibold">Notifications</h3>
-                      <p className="text-sm text-gray-500">{unreadCount} unread</p>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h3 className="font-semibold">Notifications</h3>
+                          <p className="text-sm text-gray-500">{unreadCount} unread</p>
+                        </div>
+                        {notifications.length > 0 && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleClearAllNotifications}
+                            className="text-xs text-gray-500 hover:text-red-600"
+                          >
+                            Clear All
+                          </Button>
+                        )}
+                      </div>
                     </div>
                     <div className="max-h-96 overflow-y-auto">
                       {notifications.length > 0 ? (

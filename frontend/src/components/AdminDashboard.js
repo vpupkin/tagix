@@ -55,7 +55,7 @@ const API_URL = process.env.REACT_APP_BACKEND_URL;
 
 const AdminDashboard = () => {
   const { user } = useAuth();
-  const { notifications, fetchNotifications } = useWebSocket();
+  const { notifications, fetchNotifications, clearAllNotifications } = useWebSocket();
   
   // Git revision for deployment verification
   const revisionInfo = getRevisionInfo();
@@ -63,6 +63,15 @@ const AdminDashboard = () => {
   // Debug mode - force show all elements
   const DEBUG_MODE = true;
   const [loading, setLoading] = useState(true);
+
+  const handleClearAllNotifications = async () => {
+    try {
+      await clearAllNotifications();
+      console.log('All admin notifications cleared successfully');
+    } catch (error) {
+      console.error('Failed to clear admin notifications:', error);
+    }
+  };
   const [stats, setStats] = useState({
     total_users: 0,
     total_drivers: 0,
@@ -995,15 +1004,27 @@ const AdminDashboard = () => {
           <TabsContent value="notifications" className="space-y-6" id="admin-dashboard-notifications-tab-content">
             <Card className="card-hover">
               <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <MessageSquare className="h-5 w-5 text-blue-600" />
-                  <span>Recent Notifications</span>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <MessageSquare className="h-5 w-5 text-blue-600" />
+                    <span>Recent Notifications</span>
+                    {notifications.length > 0 && (
+                      <Badge variant="secondary" className="ml-2">
+                        {notifications.length}
+                      </Badge>
+                    )}
+                  </div>
                   {notifications.length > 0 && (
-                    <Badge variant="secondary" className="ml-2">
-                      {notifications.length}
-                    </Badge>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleClearAllNotifications}
+                      className="text-xs"
+                    >
+                      Clear All
+                    </Button>
                   )}
-                </CardTitle>
+                </div>
                 <CardDescription>
                   Real-time notifications and messages from users
                 </CardDescription>
