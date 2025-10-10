@@ -1372,10 +1372,10 @@ async def update_driver_preferences(
     if current_user.role != UserRole.DRIVER:
         raise HTTPException(status_code=403, detail="Only drivers can update preferences")
     
-    # Validate radius (between 5km and 50km)
+    # Validate radius (between 5km and 100km)
     radius_km = preferences.get("radius_km", 25)
-    if not isinstance(radius_km, (int, float)) or radius_km < 5 or radius_km > 50:
-        raise HTTPException(status_code=400, detail="Radius must be between 5 and 50 kilometers")
+    if not isinstance(radius_km, (int, float)) or radius_km < 5 or radius_km > 100:
+        raise HTTPException(status_code=400, detail="Radius must be between 5 and 100 kilometers")
     
     # Update driver preferences
     result = await db.users.update_one(

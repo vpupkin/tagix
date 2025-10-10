@@ -282,14 +282,14 @@ const DriverLocationManager = ({ onLocationUpdate, onPreferencesUpdate }) => {
             <Slider
               value={[preferences.radius_km]}
               onValueChange={handleRadiusChange}
-              max={50}
+              max={100}
               min={5}
               step={5}
               className="w-full"
             />
             <div className="flex justify-between text-xs text-gray-500">
               <span>5 km</span>
-              <span>50 km</span>
+              <span>100 km</span>
             </div>
           </div>
           <p className="text-xs text-gray-600">
