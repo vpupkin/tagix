@@ -681,6 +681,36 @@ const DriverDashboard = () => {
               </Card>
             )}
 
+            {/* Recent Notifications */}
+            <Card className="card-hover" id="driver-dashboard-notifications-card">
+              <CardHeader id="driver-dashboard-notifications-header">
+                <CardTitle className="flex items-center justify-between" id="driver-dashboard-notifications-title">
+                  <span>Recent Notifications</span>
+                  <Badge variant="secondary" id="driver-dashboard-notifications-count">{notifications.length}</Badge>
+                </CardTitle>
+              </CardHeader>
+              <CardContent id="driver-dashboard-notifications-content">
+                {notifications.length > 0 ? (
+                  <div className="space-y-3" id="driver-dashboard-notifications-list">
+                    {notifications.slice(0, 5).map((notification) => (
+                      <NotificationWithReply
+                        key={notification.id}
+                        notification={notification}
+                        onReplySent={(replyData) => {
+                          console.log('Reply sent:', replyData);
+                          toast.success('Reply sent successfully!');
+                        }}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-4" id="driver-dashboard-no-notifications">
+                    <p className="text-gray-500 text-sm" id="driver-dashboard-no-notifications-message">No new notifications</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
             {/* Driver Tips */}
             <Card className="card-hover bg-gradient-to-br from-amber-50 to-orange-50 border-amber-200" id="driver-dashboard-tips-card">
               <CardHeader id="driver-dashboard-tips-header">
