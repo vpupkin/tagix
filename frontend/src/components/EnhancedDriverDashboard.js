@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useWebSocket } from '../contexts/WebSocketContext';
 import axios from 'axios';
 import { toast } from 'sonner';
 import { 
@@ -18,11 +19,13 @@ import {
   Navigation2
 } from 'lucide-react';
 import DriverLocationManager from './DriverLocationManager';
+import NotificationWithReply from './NotificationWithReply';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
 const EnhancedDriverDashboard = () => {
   const { user, token } = useAuth();
+  const { notifications } = useWebSocket();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   
@@ -651,6 +654,38 @@ const EnhancedDriverDashboard = () => {
                   ))}
                 </tbody>
               </table>
+            </div>
+          )}
+        </div>
+
+        {/* Recent Notifications */}
+        <div className="mt-8 bg-white rounded-lg shadow p-6">
+          <h3 className="text-lg font-semibold mb-4 flex items-center justify-between">
+            <span className="flex items-center">
+              <Clock className="h-5 w-5 mr-2 text-blue-600" />
+              Recent Notifications
+            </span>
+            <span className="bg-blue-100 text-blue-800 text-sm font-medium px-2.5 py-0.5 rounded-full">
+              {notifications.length}
+            </span>
+          </h3>
+          {notifications.length > 0 ? (
+            <div className="space-y-3">
+              {notifications.slice(0, 5).map((notification) => (
+                <NotificationWithReply
+                  key={notification.id}
+                  notification={notification}
+                  onReplySent={(replyData) => {
+                    console.log('Reply sent:', replyData);
+                    toast.success('Reply sent successfully!');
+                  }}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <Clock className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-600">No new notifications</p>
             </div>
           )}
         </div>
