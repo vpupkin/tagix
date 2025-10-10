@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { getRevisionInfo } from '../utils/gitRevision';
+import NotificationWithReply from './NotificationWithReply';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -432,19 +433,20 @@ const DriverDashboard = () => {
               <CardContent id="driver-dashboard-notifications-content">
                 {notifications.length > 0 ? (
                   <div className="space-y-3" id="driver-dashboard-notifications-list">
-                    {notifications.slice(0, 3).map((notification) => (
-                      <div key={notification.id} className="p-3 bg-gray-50 rounded-lg" id={`driver-dashboard-notification-${notification.id}`}>
-                        <p className="font-medium text-sm text-gray-900" id={`driver-dashboard-notification-title-${notification.id}`}>{notification.title}</p>
-                        <p className="text-xs text-gray-600 mt-1" id={`driver-dashboard-notification-message-${notification.id}`}>{notification.message}</p>
-                        <p className="text-xs text-gray-400 mt-2" id={`driver-dashboard-notification-time-${notification.id}`}>
-                          {new Date(notification.timestamp).toLocaleTimeString()}
-                        </p>
-                      </div>
+                    {notifications.slice(0, 5).map((notification) => (
+                      <NotificationWithReply
+                        key={notification.id}
+                        notification={notification}
+                        onReplySent={(replyData) => {
+                          console.log('Reply sent:', replyData);
+                          toast.success('Reply sent successfully!');
+                        }}
+                      />
                     ))}
-                    {notifications.length > 3 && (
+                    {notifications.length > 5 && (
                       <div className="text-center pt-2" id="driver-dashboard-notifications-more">
                         <p className="text-xs text-gray-500" id="driver-dashboard-notifications-more-text">
-                          +{notifications.length - 3} more notifications
+                          +{notifications.length - 5} more notifications
                         </p>
                       </div>
                     )}

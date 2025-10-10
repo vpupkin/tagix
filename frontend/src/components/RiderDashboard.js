@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { getRevisionInfo } from '../utils/gitRevision';
+import NotificationWithReply from './NotificationWithReply';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -485,13 +486,14 @@ const RiderDashboard = () => {
                 {notifications.length > 0 ? (
                   <div className="space-y-3" id="rider-dashboard-notifications-list">
                     {notifications.slice(0, 5).map((notification) => (
-                      <div key={notification.id} className="p-3 bg-gray-50 rounded-lg" id={`rider-dashboard-notification-${notification.id}`}>
-                        <p className="font-medium text-sm text-gray-900" id={`rider-dashboard-notification-title-${notification.id}`}>{notification.title}</p>
-                        <p className="text-xs text-gray-600 mt-1" id={`rider-dashboard-notification-message-${notification.id}`}>{notification.message}</p>
-                        <p className="text-xs text-gray-400 mt-2" id={`rider-dashboard-notification-time-${notification.id}`}>
-                          {new Date(notification.timestamp).toLocaleTimeString()}
-                        </p>
-                      </div>
+                      <NotificationWithReply
+                        key={notification.id}
+                        notification={notification}
+                        onReplySent={(replyData) => {
+                          console.log('Reply sent:', replyData);
+                          toast.success('Reply sent successfully!');
+                        }}
+                      />
                     ))}
                   </div>
                 ) : (
