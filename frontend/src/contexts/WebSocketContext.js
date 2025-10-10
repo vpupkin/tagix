@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
+import React, { createContext, useContext, useEffect, useState, useRef, useCallback } from 'react';
 import { useAuth } from './AuthContext';
 import { toast } from 'sonner';
 import io from 'socket.io-client';
@@ -44,7 +44,7 @@ export const WebSocketProvider = ({ children }) => {
   const maxReconnectAttempts = 3; // Reduced from 5 to 3
   const reconnectTimeoutRef = useRef(null);
 
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async () => {
     if (!user || !isAuthenticated) return;
     
     try {
@@ -87,7 +87,7 @@ export const WebSocketProvider = ({ children }) => {
     } catch (error) {
       console.error('Error fetching notifications:', error);
     }
-  };
+  }, [user, isAuthenticated]);
 
   // Connect to WebSocket when user is authenticated
   useEffect(() => {
