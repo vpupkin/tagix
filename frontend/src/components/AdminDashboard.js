@@ -676,6 +676,29 @@ const AdminDashboard = () => {
     }).format(amount);
   };
 
+  const getAuditDescription = (log) => {
+    // For notification entries, extract message from metadata
+    if (log.entity_type === 'notification' && log.metadata) {
+      const message = log.metadata.message || log.metadata.notification_message;
+      if (message) {
+        // Truncate if too long (max 100 characters for table display)
+        return message.length > 100 ? message.substring(0, 100) + '...' : message;
+      }
+    }
+    
+    // For other entries, use description or create a default based on action
+    if (log.description) {
+      return log.description;
+    }
+    
+    // Generate description based on action and entity type
+    if (log.action && log.entity_type) {
+      return `${log.action.replace(/_/g, ' ')} - ${log.entity_type}`;
+    }
+    
+    return 'No description available';
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -1557,8 +1580,8 @@ const AdminDashboard = () => {
                               </Badge>
                             </TableCell>
                             <TableCell className="max-w-xs">
-                              <p className="text-sm truncate" title={log.description || 'No description available'}>
-                                {log.description || 'No description available'}
+                              <p className="text-sm truncate" title={getAuditDescription(log)}>
+                                {getAuditDescription(log)}
                               </p>
                             </TableCell>
                             <TableCell>
