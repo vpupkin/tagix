@@ -2234,7 +2234,7 @@ async def admin_balance_transaction(
     await db.balance_transactions.insert_one(transaction_record)
     
     # Send notification to user
-    notification_message = f"Balance {request.transaction_type}: ${request.amount:.2f}. New balance: ${new_balance:.2f}. {request.description}"
+    notification_message = f"Balance {request.transaction_type}: Ŧ{request.amount:.2f}. New balance: Ŧ{new_balance:.2f}. {request.description}"
     
     await manager.send_personal_message(
         json.dumps({

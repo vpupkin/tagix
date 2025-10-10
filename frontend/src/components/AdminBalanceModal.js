@@ -114,10 +114,7 @@ const AdminBalanceModal = ({
   };
 
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount);
+    return `Ŧ${amount.toFixed(2)}`;
   };
 
   const formatDate = (dateString) => {

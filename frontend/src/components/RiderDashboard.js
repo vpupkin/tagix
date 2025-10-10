@@ -341,7 +341,7 @@ const RiderDashboard = () => {
                   <div className="flex items-center justify-between" id="rider-dashboard-total-spent-layout">
                     <div id="rider-dashboard-total-spent-info">
                       <p className="text-sm font-medium text-gray-600" id="rider-dashboard-total-spent-label">Total Spent</p>
-                      <p className="text-2xl font-bold text-gray-900" id="rider-dashboard-total-spent-value">${stats.totalSpent.toFixed(2)}</p>
+                      <p className="text-2xl font-bold text-gray-900" id="rider-dashboard-total-spent-value">Ŧ{stats.totalSpent.toFixed(2)}</p>
                       <p className="text-xs text-gray-500" id="rider-dashboard-total-spent-details">From completed rides only</p>
                     </div>
                     <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center" id="rider-dashboard-total-spent-icon">
@@ -387,7 +387,7 @@ const RiderDashboard = () => {
                   <div className="flex items-center justify-between" id="rider-dashboard-balance-layout">
                     <div id="rider-dashboard-balance-info">
                       <p className="text-sm font-medium text-gray-600" id="rider-dashboard-balance-label">Balance</p>
-                      <p className="text-2xl font-bold text-gray-900" id="rider-dashboard-balance-value">${balance.currentBalance.toFixed(2)}</p>
+                      <p className="text-2xl font-bold text-gray-900" id="rider-dashboard-balance-value">Ŧ{balance.currentBalance.toFixed(2)}</p>
                       <p className="text-xs text-gray-500" id="rider-dashboard-balance-details">Available funds</p>
                     </div>
                     <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center" id="rider-dashboard-balance-icon">
@@ -451,7 +451,7 @@ const RiderDashboard = () => {
                             {(ride.status || 'pending').replace('_', ' ')}
                           </Badge>
                           <p className="text-sm font-medium text-gray-900 mt-1" id={`rider-dashboard-ride-fare-${ride.id}`}>
-                            ${(ride.estimated_fare || ride.fare || 0).toFixed(2)}
+                            Ŧ{(ride.estimated_fare || ride.fare || 0).toFixed(2)}
                           </p>
                         </div>
                       </div>
