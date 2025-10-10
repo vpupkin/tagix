@@ -407,7 +407,9 @@ class ConnectionManager:
             "delivered": False,
             "delivery_attempts": 0,
             "created_at": datetime.now(timezone.utc),
-            "delivered_at": None
+            "delivered_at": None,
+            "conversation_thread": notification_id,  # Start new conversation thread
+            "is_reply": False
         }
         
         # Try to send via WebSocket if user is online
@@ -2717,6 +2719,182 @@ async def delete_notification(
     except Exception as e:
         logging.error(f"Error deleting notification: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to delete notification")
+
+# === MESSAGING SYSTEM ENDPOINTS ===
+
+class ReplyRequest(BaseModel):
+    message: str
+    original_notification_id: str
+
+@api_router.post("/notifications/reply", response_model=Dict[str, Any])
+async def reply_to_notification(
+    request: ReplyRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """Reply to a notification message"""
+    try:
+        # Find the original notification
+        original_notification = await db.notifications.find_one({
+            "id": request.original_notification_id
+        })
+        
+        if not original_notification:
+            raise HTTPException(status_code=404, detail="Original notification not found")
+        
+        # Create reply notification
+        reply_id = str(uuid.uuid4())
+        reply_notification = {
+            "id": reply_id,
+            "user_id": original_notification["sender_id"],  # Reply goes to original sender
+            "type": "reply",
+            "message": request.message,
+            "data": {
+                "type": "reply",
+                "message": request.message,
+                "original_notification_id": request.original_notification_id,
+                "original_message": original_notification["message"],
+                "conversation_thread": original_notification.get("conversation_thread", original_notification["id"]),
+                "timestamp": datetime.now(timezone.utc).isoformat()
+            },
+            "sender_id": current_user.id,
+            "sender_name": current_user.name,
+            "delivered": False,
+            "delivery_attempts": 0,
+            "created_at": datetime.now(timezone.utc),
+            "delivered_at": None,
+            "conversation_thread": original_notification.get("conversation_thread", original_notification["id"]),
+            "is_reply": True,
+            "original_notification_id": request.original_notification_id
+        }
+        
+        # Store reply notification
+        await db.notifications.insert_one(reply_notification)
+        
+        # Send reply via WebSocket
+        await manager.send_personal_message(
+            json.dumps({
+                "type": "reply",
+                "message": request.message,
+                "original_notification_id": request.original_notification_id,
+                "original_message": original_notification["message"],
+                "conversation_thread": reply_notification["conversation_thread"],
+                "sender_name": current_user.name,
+                "timestamp": datetime.now(timezone.utc).isoformat()
+            }),
+            original_notification["sender_id"],
+            notification_type="reply",
+            sender_id=current_user.id,
+            sender_name=current_user.name,
+            metadata={
+                "conversation_thread": reply_notification["conversation_thread"],
+                "is_reply": True,
+                "original_notification_id": request.original_notification_id
+            }
+        )
+        
+        # Log the reply in audit system
+        if AUDIT_ENABLED and audit_system:
+            await audit_system.log_action(
+                action=AuditAction.ADMIN_SYSTEM_CONFIG_CHANGED,
+                user_id=current_user.id,
+                entity_type="notification",
+                entity_id=reply_id,
+                target_user_id=original_notification["sender_id"],
+                metadata={
+                    "notification_type": "reply",
+                    "delivered": reply_notification["delivered"],
+                    "message": request.message,
+                    "sender_name": current_user.name,
+                    "conversation_thread": reply_notification["conversation_thread"],
+                    "original_notification_id": request.original_notification_id
+                }
+            )
+        
+        return {
+            "message": "Reply sent successfully",
+            "reply_id": reply_id,
+            "conversation_thread": reply_notification["conversation_thread"]
+        }
+        
+    except Exception as e:
+        logging.error(f"Error sending reply: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to send reply")
+
+@api_router.get("/notifications/conversation/{thread_id}", response_model=List[Dict[str, Any]])
+async def get_conversation_thread(
+    thread_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Get all messages in a conversation thread"""
+    try:
+        # Get all notifications in this conversation thread
+        notifications = await db.notifications.find({
+            "conversation_thread": thread_id
+        }).sort("created_at", 1).to_list(100)  # Limit to 100 messages
+        
+        # Convert ObjectId to string for JSON serialization
+        for notification in notifications:
+            notification["_id"] = str(notification["_id"])
+        
+        return notifications
+        
+    except Exception as e:
+        logging.error(f"Error fetching conversation thread: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to fetch conversation thread")
+
+@api_router.get("/admin/conversations", response_model=Dict[str, Any])
+async def get_all_conversations(
+    limit: int = 50,
+    offset: int = 0,
+    current_user: User = Depends(get_current_user)
+):
+    """Get all conversation threads (Admin only)"""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    try:
+        # Get all notifications that are part of conversations
+        notifications = await db.notifications.find({
+            "conversation_thread": {"$exists": True}
+        }).sort("created_at", -1).skip(offset).limit(limit).to_list(limit)
+        
+        # Group by conversation thread
+        conversations = {}
+        for notification in notifications:
+            thread_id = notification["conversation_thread"]
+            if thread_id not in conversations:
+                conversations[thread_id] = {
+                    "thread_id": thread_id,
+                    "participants": set(),
+                    "messages": [],
+                    "last_message_at": notification["created_at"],
+                    "message_count": 0
+                }
+            
+            conversations[thread_id]["messages"].append(notification)
+            conversations[thread_id]["participants"].add(notification["user_id"])
+            conversations[thread_id]["participants"].add(notification["sender_id"])
+            conversations[thread_id]["message_count"] += 1
+        
+        # Convert to list and sort by last message
+        conversation_list = list(conversations.values())
+        conversation_list.sort(key=lambda x: x["last_message_at"], reverse=True)
+        
+        # Convert sets to lists for JSON serialization
+        for conv in conversation_list:
+            conv["participants"] = list(conv["participants"])
+            conv["_id"] = str(conv["thread_id"])  # For React key
+        
+        return {
+            "conversations": conversation_list,
+            "total": len(conversation_list),
+            "limit": limit,
+            "offset": offset
+        }
+        
+    except Exception as e:
+        logging.error(f"Error fetching conversations: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to fetch conversations")
 
 @api_router.post("/admin/users/{user_id}/suspend", response_model=Dict[str, str])
 async def admin_suspend_user(

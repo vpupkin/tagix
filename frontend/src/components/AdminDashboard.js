@@ -105,6 +105,11 @@ const AdminDashboard = () => {
   const [userRoleFilter, setUserRoleFilter] = useState('all');
   const [userStatusFilter, setUserStatusFilter] = useState('all');
   
+  // Conversations state
+  const [conversations, setConversations] = useState([]);
+  const [selectedConversation, setSelectedConversation] = useState(null);
+  const [conversationMessages, setConversationMessages] = useState([]);
+  
   // Audit Trail filters
   const [auditSearchTerm, setAuditSearchTerm] = useState('');
   const [auditActionFilter, setAuditActionFilter] = useState('all');
@@ -182,12 +187,13 @@ const AdminDashboard = () => {
       // Add cache-busting parameter to force fresh data
       const cacheBuster = `?t=${Date.now()}`;
       
-      const [statsResponse, usersResponse, ridesResponse, transactionsResponse, auditResponse] = await Promise.all([
+      const [statsResponse, usersResponse, ridesResponse, transactionsResponse, auditResponse, conversationsResponse] = await Promise.all([
         axios.get(`${API_URL}/api/admin/stats${cacheBuster}`),
         axios.get(`${API_URL}/api/admin/users${cacheBuster}`),
         axios.get(`${API_URL}/api/admin/rides${cacheBuster}`),
         axios.get(`${API_URL}/api/admin/balances${cacheBuster}`),
-        axios.get(`${API_URL}/api/audit/logs?limit=10&t=${Date.now()}`)
+        axios.get(`${API_URL}/api/audit/logs?limit=10&t=${Date.now()}`),
+        axios.get(`${API_URL}/api/admin/conversations${cacheBuster}`)
       ]);
 
       console.log('🔍 API responses received:');
@@ -201,6 +207,7 @@ const AdminDashboard = () => {
       setUsers(usersResponse.data);
       setRecentTransactions(transactionsResponse.data?.balances || []);
       setAuditLogs(auditResponse.data || []);
+      setConversations(conversationsResponse.data?.conversations || []);
       
       // Debug: Log the stats that were set
       console.log('🔍 Stats set in state:', statsResponse.data);
@@ -699,6 +706,37 @@ const AdminDashboard = () => {
     return 'No description available';
   };
 
+  const fetchConversations = async () => {
+    try {
+      const token = localStorage.getItem('mobility_token');
+      const response = await axios.get(`${API_URL}/api/admin/conversations`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (response.data && response.data.conversations) {
+        setConversations(response.data.conversations);
+      }
+    } catch (error) {
+      console.error('Error fetching conversations:', error);
+      toast.error('Failed to fetch conversations');
+    }
+  };
+
+  const viewConversation = async (threadId) => {
+    try {
+      const token = localStorage.getItem('mobility_token');
+      const response = await axios.get(`${API_URL}/api/notifications/conversation/${threadId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      setConversationMessages(response.data);
+      setSelectedConversation(threadId);
+    } catch (error) {
+      console.error('Error fetching conversation messages:', error);
+      toast.error('Failed to fetch conversation messages');
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -816,11 +854,12 @@ const AdminDashboard = () => {
 
         {/* Tabs for Different Views */}
         <Tabs defaultValue="overview" className="space-y-6" id="admin-dashboard-tabs">
-          <TabsList className="grid w-full grid-cols-5" id="admin-dashboard-tabs-list">
+          <TabsList className="grid w-full grid-cols-6" id="admin-dashboard-tabs-list">
             <TabsTrigger value="overview" id="admin-dashboard-tab-overview">Overview</TabsTrigger>
             <TabsTrigger value="users" id="admin-dashboard-tab-users">User Management</TabsTrigger>
             <TabsTrigger value="rides" id="admin-dashboard-tab-rides">Ride Monitoring</TabsTrigger>
             <TabsTrigger value="audit" id="admin-dashboard-tab-audit">Audit Trail</TabsTrigger>
+            <TabsTrigger value="conversations" id="admin-dashboard-tab-conversations">Conversations</TabsTrigger>
             <TabsTrigger value="analytics" id="admin-dashboard-tab-analytics">Analytics</TabsTrigger>
           </TabsList>
 
@@ -1285,6 +1324,109 @@ const AdminDashboard = () => {
                       )}
                     </TableBody>
                   </Table>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Conversations Tab */}
+          <TabsContent value="conversations" className="space-y-6">
+            <Card className="card-hover">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center space-x-2">
+                      <MessageSquare className="h-5 w-5 text-green-600" />
+                      <span>Message Conversations</span>
+                    </CardTitle>
+                    <CardDescription>
+                      View and manage all messaging conversations between users and admins
+                    </CardDescription>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => fetchConversations()}
+                      disabled={refreshing}
+                      id="admin-conversations-refresh-button"
+                    >
+                      <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+                      <span className="ml-2">Refresh</span>
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {conversations.length === 0 ? (
+                    <div className="text-center py-8 text-gray-500">
+                      <MessageSquare className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                      <p>No conversations found</p>
+                      <p className="text-sm">Conversations will appear here when users reply to admin messages</p>
+                    </div>
+                  ) : (
+                    conversations.map((conversation) => (
+                      <Card key={conversation.thread_id} className="border-l-4 border-l-green-500">
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center space-x-3">
+                              <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                                <MessageSquare className="h-4 w-4 text-green-600" />
+                              </div>
+                              <div>
+                                <h4 className="font-medium text-gray-900">
+                                  Conversation Thread
+                                </h4>
+                                <p className="text-sm text-gray-500">
+                                  {conversation.participants.length} participants • {conversation.message_count} messages
+                                </p>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-sm text-gray-500">
+                                {new Date(conversation.last_message_at).toLocaleString()}
+                              </p>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => viewConversation(conversation.thread_id)}
+                                id={`admin-conversation-view-${conversation.thread_id}`}
+                              >
+                                <Eye className="h-4 w-4 mr-2" />
+                                View Messages
+                              </Button>
+                            </div>
+                          </div>
+                          
+                          {/* Show last few messages preview */}
+                          <div className="space-y-2 max-h-32 overflow-y-auto">
+                            {conversation.messages.slice(-3).map((message) => (
+                              <div key={message.id} className="flex items-start space-x-2 text-sm">
+                                <div className={`w-2 h-2 rounded-full mt-2 ${
+                                  message.is_reply ? 'bg-blue-500' : 'bg-green-500'
+                                }`}></div>
+                                <div className="flex-1">
+                                  <div className="flex items-center space-x-2">
+                                    <span className="font-medium text-gray-700">
+                                      {message.sender_name || 'System'}
+                                    </span>
+                                    <span className="text-gray-400">•</span>
+                                    <span className="text-gray-500">
+                                      {new Date(message.created_at).toLocaleTimeString()}
+                                    </span>
+                                  </div>
+                                  <p className="text-gray-600 truncate">
+                                    {message.message}
+                                  </p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))
+                  )}
                 </div>
               </CardContent>
             </Card>
