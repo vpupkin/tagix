@@ -18,6 +18,29 @@ code {
 
 
 
+/* Mobile-specific dialog improvements */
+@media (max-width: 640px) {
+  [data-radix-dialog-content] {
+    margin: 1rem !important;
+    max-height: calc(100vh - 2rem) !important;
+    width: calc(100vw - 2rem) !important;
+    max-width: calc(100vw - 2rem) !important;
+  }
+  
+  /* Ensure inputs are touch-friendly on mobile */
+  input[type="email"], 
+  input[type="password"], 
+  input[type="text"], 
+  input[type="tel"] {
+    font-size: 16px !important; /* Prevents zoom on iOS */
+  }
+  
+  /* Improve button touch targets */
+  button {
+    min-height: 44px !important; /* iOS recommended touch target */
+  }
+}
+
 @layer base {
   :root {
         --background: 0 0% 100%;
