@@ -552,12 +552,16 @@ export const WebSocketProvider = ({ children }) => {
       const token = localStorage.getItem('mobility_token');
       if (!token) return;
       
+      console.log('🔔 WebSocketContext: Fetching notifications for user:', user.id, user.role);
+      
       const response = await axios.get(`${getApiUrl()}/api/notifications`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
       // The API returns an array directly, not an object with notifications property
       const fetchedNotifications = Array.isArray(response.data) ? response.data : response.data.notifications || [];
+      
+      console.log('🔔 WebSocketContext: Fetched notifications:', fetchedNotifications.length);
       
       // Merge with existing notifications, avoiding duplicates
       setNotifications(prevNotifications => {
@@ -567,6 +571,9 @@ export const WebSocketProvider = ({ children }) => {
         // Combine and sort by timestamp
         const allNotifications = [...prevNotifications, ...newNotifications]
           .sort((a, b) => new Date(b.timestamp || b.created_at) - new Date(a.timestamp || a.created_at));
+        
+        console.log('🔔 WebSocketContext: Total notifications after merge:', allNotifications.length);
+        console.log('🔔 WebSocketContext: Unread count:', allNotifications.filter(n => !n.read || !n.delivered).length);
         
         // Save to localStorage
         try {

@@ -39,7 +39,18 @@ const Navbar = ({ onAuthClick }) => {
     setMobileMenuOpen(false);
   };
 
-  const unreadCount = notifications.filter(n => !n.read).length;
+  const unreadCount = notifications.filter(n => !n.read || !n.delivered).length;
+  
+  // Debug logging for notification bell
+  console.log('🔔 Navbar: Total notifications:', notifications.length);
+  console.log('🔔 Navbar: Unread count:', unreadCount);
+  console.log('🔔 Navbar: Notification details:', notifications.map(n => ({
+    id: n.id,
+    type: n.type,
+    read: n.read,
+    delivered: n.delivered,
+    title: n.title
+  })));
 
   const handleClearAllNotifications = async () => {
     try {
