@@ -3,6 +3,7 @@ import { useAuth } from './AuthContext';
 import { toast } from 'sonner';
 import io from 'socket.io-client';
 import { getWebSocketUrl, getApiUrl } from '../utils/config';
+import axios from 'axios';
 
 const WebSocketContext = createContext();
 
@@ -47,6 +48,8 @@ export const WebSocketProvider = ({ children }) => {
   useEffect(() => {
     if (isAuthenticated && user) {
       connectWebSocket();
+      // Fetch existing notifications from the server
+      fetchNotifications();
     } else {
       disconnectWebSocket();
     }
@@ -343,6 +346,27 @@ export const WebSocketProvider = ({ children }) => {
         });
         break;
 
+      case 'reply_received':
+        // Handle reply notifications for admins
+        if (user.role === 'admin') {
+          toast.info(`Reply from ${data.sender_name}`, {
+            description: data.message,
+            duration: 10000
+          });
+          
+          addNotification({
+            id: Date.now(),
+            type: 'reply_received',
+            title: `Reply from ${data.sender_name}`,
+            message: data.message,
+            timestamp: new Date(data.timestamp),
+            sender_id: data.sender_id,
+            sender_name: data.sender_name,
+            data: data
+          });
+        }
+        break;
+
       case 'admin_ride_message':
         // Handle admin messages related to specific rides
         toast.warning(`Admin Message - Ride ${data.ride_id}`, {
@@ -394,6 +418,27 @@ export const WebSocketProvider = ({ children }) => {
             amount: data.amount
           }
         }));
+        break;
+
+      case 'reply_received':
+        // Handle reply notifications for admins
+        if (user.role === 'admin') {
+          toast.info(`Reply from ${data.sender_name}`, {
+            description: data.message,
+            duration: 10000
+          });
+          
+          addNotification({
+            id: Date.now(),
+            type: 'reply_received',
+            title: `Reply from ${data.sender_name}`,
+            message: data.message,
+            timestamp: new Date(data.timestamp),
+            sender_id: data.sender_id,
+            sender_name: data.sender_name,
+            data: data
+          });
+        }
         break;
 
       case 'connection_established':
@@ -477,6 +522,44 @@ export const WebSocketProvider = ({ children }) => {
     });
   };
 
+  const fetchNotifications = async () => {
+    if (!user || !isAuthenticated) return;
+    
+    try {
+      const token = localStorage.getItem('mobility_token');
+      if (!token) return;
+      
+      const response = await axios.get(`${getApiUrl()}/api/notifications`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      // The API returns an array directly, not an object with notifications property
+      const fetchedNotifications = Array.isArray(response.data) ? response.data : response.data.notifications || [];
+      
+      // Merge with existing notifications, avoiding duplicates
+      setNotifications(prevNotifications => {
+        const existingIds = new Set(prevNotifications.map(n => n.id));
+        const newNotifications = fetchedNotifications.filter(n => !existingIds.has(n.id));
+        
+        // Combine and sort by timestamp
+        const allNotifications = [...prevNotifications, ...newNotifications]
+          .sort((a, b) => new Date(b.timestamp || b.created_at) - new Date(a.timestamp || a.created_at));
+        
+        // Save to localStorage
+        try {
+          localStorage.setItem('tagix_notifications', JSON.stringify(allNotifications));
+        } catch (error) {
+          console.error('Error saving notifications to localStorage:', error);
+        }
+        
+        return allNotifications;
+      });
+      
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    }
+  };
+
   const value = {
     socket,
     connected,
@@ -490,6 +573,7 @@ export const WebSocketProvider = ({ children }) => {
     addNotification,
     removeNotification,
     clearNotifications,
+    fetchNotifications,
     reconnect: connectWebSocket
   };
 

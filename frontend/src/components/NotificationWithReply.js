@@ -23,15 +23,23 @@ const NotificationWithReply = ({ notification, onReplySent }) => {
     setSendingReply(true);
     try {
       const token = localStorage.getItem('mobility_token');
+      
+      // Debug: Log the notification data
+      console.log('Notification data:', notification);
+      
+      const replyData = {
+        message: replyMessage.trim(),
+        original_notification_id: String(notification.id), // Convert to string
+        original_sender_id: notification.sender_id || 'admin', // Fallback to 'admin'
+        original_sender_name: notification.sender_name || 'Admin', // Fallback to 'Admin'
+        original_type: notification.type || 'admin_message' // Fallback to 'admin_message'
+      };
+      
+      console.log('Sending reply data:', replyData);
+      
       const response = await axios.post(
         `${API_URL}/api/notifications/reply`,
-        {
-          message: replyMessage.trim(),
-          original_notification_id: notification.id,
-          original_sender_id: notification.sender_id,
-          original_sender_name: notification.sender_name,
-          original_type: notification.type
-        },
+        replyData,
         {
           headers: {
             'Authorization': `Bearer ${token}`,

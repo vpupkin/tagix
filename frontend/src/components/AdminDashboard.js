@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useWebSocket } from '../contexts/WebSocketContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -54,6 +55,7 @@ const API_URL = process.env.REACT_APP_BACKEND_URL;
 
 const AdminDashboard = () => {
   const { user } = useAuth();
+  const { notifications, fetchNotifications } = useWebSocket();
   
   // Git revision for deployment verification
   const revisionInfo = getRevisionInfo();
@@ -143,6 +145,11 @@ const AdminDashboard = () => {
       if (user && user.id) {
         console.log('🔍 User is authenticated, fetching dashboard data...');
         fetchDashboardData();
+        // Fetch notifications for the admin
+        if (fetchNotifications) {
+          console.log('🔔 AdminDashboard: Fetching notifications...');
+          fetchNotifications();
+        }
       } else {
         console.log('⚠️ User not authenticated or still loading');
       }
@@ -869,8 +876,9 @@ const AdminDashboard = () => {
 
         {/* Tabs for Different Views */}
         <Tabs defaultValue="overview" className="space-y-6" id="admin-dashboard-tabs">
-          <TabsList className="grid w-full grid-cols-6" id="admin-dashboard-tabs-list">
+          <TabsList className="grid w-full grid-cols-7" id="admin-dashboard-tabs-list">
             <TabsTrigger value="overview" id="admin-dashboard-tab-overview">Overview</TabsTrigger>
+            <TabsTrigger value="notifications" id="admin-dashboard-tab-notifications">Notifications</TabsTrigger>
             <TabsTrigger value="users" id="admin-dashboard-tab-users">User Management</TabsTrigger>
             <TabsTrigger value="rides" id="admin-dashboard-tab-rides">Ride Monitoring</TabsTrigger>
             <TabsTrigger value="audit" id="admin-dashboard-tab-audit">Audit Trail</TabsTrigger>
@@ -981,6 +989,81 @@ const AdminDashboard = () => {
                 </CardContent>
               </Card>
             </div>
+          </TabsContent>
+
+          {/* Notifications Tab */}
+          <TabsContent value="notifications" className="space-y-6" id="admin-dashboard-notifications-tab-content">
+            <Card className="card-hover">
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <MessageSquare className="h-5 w-5 text-blue-600" />
+                  <span>Recent Notifications</span>
+                  {notifications.length > 0 && (
+                    <Badge variant="secondary" className="ml-2">
+                      {notifications.length}
+                    </Badge>
+                  )}
+                </CardTitle>
+                <CardDescription>
+                  Real-time notifications and messages from users
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {console.log('🔔 AdminDashboard: Rendering notifications, count:', notifications.length)}
+                {notifications.length > 0 ? (
+                  <div className="space-y-3" id="admin-dashboard-notifications-list">
+                    {notifications.slice(0, 10).map((notification) => (
+                      <div key={notification.id} className="p-4 border rounded-lg bg-gray-50">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-2 mb-1">
+                              <Badge variant={
+                                notification.type === 'reply_received' ? 'default' :
+                                notification.type === 'admin_message' ? 'secondary' :
+                                notification.type === 'balance_transaction' ? 'outline' : 'default'
+                              }>
+                                {notification.type === 'reply_received' ? 'Reply' :
+                                 notification.type === 'admin_message' ? 'Admin' :
+                                 notification.type === 'balance_transaction' ? 'Balance' : notification.type}
+                              </Badge>
+                              <span className="text-sm font-medium text-gray-900">
+                                {notification.title}
+                              </span>
+                            </div>
+                            <p className="text-sm text-gray-600 mb-2">
+                              {notification.message}
+                            </p>
+                            <div className="flex items-center space-x-4 text-xs text-gray-500">
+                              <span>
+                                {notification.timestamp ? new Date(notification.timestamp).toLocaleString() : 'Just now'}
+                              </span>
+                              {notification.sender_name && (
+                                <span>From: {notification.sender_name}</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    {notifications.length > 10 && (
+                      <div className="text-center pt-2">
+                        <p className="text-xs text-gray-500">
+                          +{notifications.length - 10} more notifications
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <MessageSquare className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-500">No notifications yet</p>
+                    <p className="text-sm text-gray-400 mt-1">
+                      Notifications from users will appear here
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* Users Tab */}

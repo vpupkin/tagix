@@ -2749,7 +2749,7 @@ async def reply_to_notification(
         
         reply_notification = {
             "id": reply_id,
-            "user_id": request.original_sender_id,  # Reply goes to original sender
+            "user_id": current_user.id,  # Reply notification goes to the sender (for their own records)
             "type": "reply",
             "message": request.message,
             "data": {
@@ -2775,8 +2775,36 @@ async def reply_to_notification(
         # Store reply notification in database
         await db.notifications.insert_one(reply_notification)
         
-        # TODO: Send reply via WebSocket when WebSocket manager is implemented
-        # For now, just store the reply in the database
+        # Create a notification for the admin to show in their notification bell
+        admin_notification_id = str(uuid.uuid4())
+        admin_notification = {
+            "id": admin_notification_id,
+            "user_id": request.original_sender_id,  # Admin who will receive the notification
+            "type": "reply_received",
+            "message": f"Reply from {current_user.name}: {request.message}",
+            "data": {
+                "type": "reply_received",
+                "message": f"Reply from {current_user.name}: {request.message}",
+                "reply_message": request.message,
+                "original_notification_id": request.original_notification_id,
+                "conversation_thread": conversation_thread,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "sender_name": current_user.name,
+                "sender_id": current_user.id
+            },
+            "sender_id": current_user.id,
+            "sender_name": current_user.name,
+            "delivered": False,
+            "delivery_attempts": 0,
+            "created_at": datetime.now(timezone.utc),
+            "delivered_at": None,
+            "conversation_thread": conversation_thread,
+            "is_reply": False,
+            "original_notification_id": request.original_notification_id
+        }
+        
+        # Store admin notification in database
+        await db.notifications.insert_one(admin_notification)
         
         # Log the reply for audit purposes
         if audit_system:
