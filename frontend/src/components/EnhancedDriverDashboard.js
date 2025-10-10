@@ -222,10 +222,10 @@ const EnhancedDriverDashboard = () => {
 
   const fetchBalance = async () => {
     try {
-      const response = await axios.get(`${API_URL}/api/users/${user.id}/balance`, {
+      const response = await axios.get(`${API_URL}/api/user/balance`, {
         headers: getAuthHeaders()
       });
-      setBalance(response.data.balance || 0);
+      setBalance(response.data.current_balance || 0);
     } catch (error) {
       console.error('Error fetching balance:', error);
     }

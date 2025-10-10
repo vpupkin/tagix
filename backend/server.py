@@ -2058,6 +2058,12 @@ class BalanceTransactionRequest(BaseModel):
     description: str
     reference_id: Optional[str] = None  # For ride-related transactions
 
+class AdminBalanceTransactionRequest(BaseModel):
+    amount: float
+    transaction_type: str  # "credit", "debit", "refund"
+    description: str
+    reference_id: Optional[str] = None  # For ride-related transactions
+
 @api_router.post("/admin/rides/{ride_id}/notify", response_model=Dict[str, str])
 async def admin_notify_ride_participants(
     ride_id: str,
@@ -2157,7 +2163,7 @@ async def get_user_balance(
 @api_router.post("/admin/users/{user_id}/balance/transaction", response_model=Dict[str, Any])
 async def admin_balance_transaction(
     user_id: str,
-    request: BalanceTransactionRequest,
+    request: AdminBalanceTransactionRequest,
     current_user: User = Depends(get_current_user)
 ):
     """Admin performs balance transaction (credit/debit)"""
