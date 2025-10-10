@@ -30,8 +30,8 @@ const NotificationWithReply = ({ notification, onReplySent }) => {
       const replyData = {
         message: replyMessage.trim(),
         original_notification_id: String(notification.id), // Convert to string
-        original_sender_id: notification.sender_id || 'admin', // Fallback to 'admin'
-        original_sender_name: notification.sender_name || 'Admin', // Fallback to 'Admin'
+        original_sender_id: notification.sender_id || '5c7c188b-012e-4d22-9db2-ae5a089f0cb8', // Use actual admin ID as fallback
+        original_sender_name: notification.sender_name || 'Test Admin', // Fallback to 'Test Admin'
         original_type: notification.type || 'admin_message' // Fallback to 'admin_message'
       };
       
