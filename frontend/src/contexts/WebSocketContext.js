@@ -22,7 +22,16 @@ export const WebSocketProvider = ({ children }) => {
     // Load notifications from localStorage on initialization
     try {
       const saved = localStorage.getItem('tagix_notifications');
-      return saved ? JSON.parse(saved) : [];
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        // Migrate old notifications to include sender fields if missing
+        return parsed.map(notification => ({
+          ...notification,
+          sender_id: notification.sender_id || (notification.type === 'admin_message' ? 'admin' : null),
+          sender_name: notification.sender_name || (notification.type === 'admin_message' ? 'Admin' : null)
+        }));
+      }
+      return [];
     } catch (error) {
       console.error('Error loading notifications from localStorage:', error);
       return [];
@@ -328,6 +337,8 @@ export const WebSocketProvider = ({ children }) => {
           title: `Admin Message`,
           message: data.message,
           timestamp: new Date(data.timestamp),
+          sender_id: data.sender_id || 'admin',
+          sender_name: data.sender_name || 'Admin',
           data: data
         });
         break;
@@ -345,6 +356,8 @@ export const WebSocketProvider = ({ children }) => {
           title: `Admin Message - Ride`,
           message: data.message,
           timestamp: new Date(data.timestamp),
+          sender_id: data.sender_id || 'admin',
+          sender_name: data.sender_name || 'Admin',
           data: data
         });
         break;
@@ -368,6 +381,8 @@ export const WebSocketProvider = ({ children }) => {
           title: `Balance ${data.transaction_type.charAt(0).toUpperCase() + data.transaction_type.slice(1)}`,
           message: data.message,
           timestamp: new Date(data.timestamp),
+          sender_id: data.sender_id || 'admin',
+          sender_name: data.sender_name || 'Admin',
           data: data
         });
 
