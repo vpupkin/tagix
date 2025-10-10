@@ -44,6 +44,51 @@ export const WebSocketProvider = ({ children }) => {
   const maxReconnectAttempts = 3; // Reduced from 5 to 3
   const reconnectTimeoutRef = useRef(null);
 
+  const fetchNotifications = async () => {
+    if (!user || !isAuthenticated) return;
+    
+    try {
+      const token = localStorage.getItem('mobility_token');
+      if (!token) return;
+      
+      console.log('🔔 WebSocketContext: Fetching notifications for user:', user.id, user.role);
+      
+      const response = await axios.get(`${getApiUrl()}/api/notifications`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      // The API returns an array directly, not an object with notifications property
+      const fetchedNotifications = Array.isArray(response.data) ? response.data : response.data.notifications || [];
+      
+      console.log('🔔 WebSocketContext: Fetched notifications:', fetchedNotifications.length);
+      
+      // Merge with existing notifications, avoiding duplicates
+      setNotifications(prevNotifications => {
+        const existingIds = new Set(prevNotifications.map(n => n.id));
+        const newNotifications = fetchedNotifications.filter(n => !existingIds.has(n.id));
+        
+        // Combine and sort by timestamp
+        const allNotifications = [...prevNotifications, ...newNotifications]
+          .sort((a, b) => new Date(b.timestamp || b.created_at) - new Date(a.timestamp || a.created_at));
+        
+        console.log('🔔 WebSocketContext: Total notifications after merge:', allNotifications.length);
+        console.log('🔔 WebSocketContext: Unread count:', allNotifications.filter(n => !n.read || !n.delivered).length);
+        
+        // Save to localStorage
+        try {
+          localStorage.setItem('tagix_notifications', JSON.stringify(allNotifications));
+        } catch (error) {
+          console.error('Error saving notifications to localStorage:', error);
+        }
+        
+        return allNotifications;
+      });
+      
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    }
+  };
+
   // Connect to WebSocket when user is authenticated
   useEffect(() => {
     if (isAuthenticated && user) {
@@ -57,7 +102,7 @@ export const WebSocketProvider = ({ children }) => {
     return () => {
       disconnectWebSocket();
     };
-  }, [isAuthenticated, user]);
+  }, [isAuthenticated, user, fetchNotifications]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -543,51 +588,6 @@ export const WebSocketProvider = ({ children }) => {
     sendMessage({
       type: 'proximity_unsubscribe'
     });
-  };
-
-  const fetchNotifications = async () => {
-    if (!user || !isAuthenticated) return;
-    
-    try {
-      const token = localStorage.getItem('mobility_token');
-      if (!token) return;
-      
-      console.log('🔔 WebSocketContext: Fetching notifications for user:', user.id, user.role);
-      
-      const response = await axios.get(`${getApiUrl()}/api/notifications`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      
-      // The API returns an array directly, not an object with notifications property
-      const fetchedNotifications = Array.isArray(response.data) ? response.data : response.data.notifications || [];
-      
-      console.log('🔔 WebSocketContext: Fetched notifications:', fetchedNotifications.length);
-      
-      // Merge with existing notifications, avoiding duplicates
-      setNotifications(prevNotifications => {
-        const existingIds = new Set(prevNotifications.map(n => n.id));
-        const newNotifications = fetchedNotifications.filter(n => !existingIds.has(n.id));
-        
-        // Combine and sort by timestamp
-        const allNotifications = [...prevNotifications, ...newNotifications]
-          .sort((a, b) => new Date(b.timestamp || b.created_at) - new Date(a.timestamp || a.created_at));
-        
-        console.log('🔔 WebSocketContext: Total notifications after merge:', allNotifications.length);
-        console.log('🔔 WebSocketContext: Unread count:', allNotifications.filter(n => !n.read || !n.delivered).length);
-        
-        // Save to localStorage
-        try {
-          localStorage.setItem('tagix_notifications', JSON.stringify(allNotifications));
-        } catch (error) {
-          console.error('Error saving notifications to localStorage:', error);
-        }
-        
-        return allNotifications;
-      });
-      
-    } catch (error) {
-      console.error('Error fetching notifications:', error);
-    }
   };
 
   const value = {
