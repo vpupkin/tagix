@@ -2747,33 +2747,9 @@ async def reply_to_notification(
         reply_id = str(uuid.uuid4())
         conversation_thread = str(uuid.uuid4())  # Create a new conversation thread
         
-        reply_notification = {
-            "id": reply_id,
-            "user_id": current_user.id,  # Reply notification goes to the sender (for their own records)
-            "type": "reply",
-            "message": request.message,
-            "data": {
-                "type": "reply",
-                "message": request.message,
-                "original_notification_id": request.original_notification_id,
-                "original_sender_name": request.original_sender_name,
-                "original_type": request.original_type,
-                "conversation_thread": conversation_thread,
-                "timestamp": datetime.now(timezone.utc).isoformat()
-            },
-            "sender_id": current_user.id,
-            "sender_name": current_user.name,
-            "delivered": False,
-            "delivery_attempts": 0,
-            "created_at": datetime.now(timezone.utc),
-            "delivered_at": None,
-            "conversation_thread": conversation_thread,
-            "is_reply": True,
-            "original_notification_id": request.original_notification_id
-        }
-        
-        # Store reply notification in database
-        await db.notifications.insert_one(reply_notification)
+        # Note: We don't create a reply notification for the sender
+        # The sender's reply is already stored in the conversation thread
+        # Only the recipient (admin) should receive a reply_received notification
         
         # Create a notification for the admin to show in their notification bell
         admin_notification_id = str(uuid.uuid4())
@@ -2812,7 +2788,7 @@ async def reply_to_notification(
                 action="notification_reply",
                 user_id=current_user.id,
                 entity_type="notification",
-                entity_id=reply_id,
+                entity_id=admin_notification_id,  # Use admin notification ID
                 metadata={
                     "reply_message": request.message,
                     "original_notification_id": request.original_notification_id,
@@ -2824,7 +2800,7 @@ async def reply_to_notification(
         
         return {
             "message": "Reply sent successfully",
-            "reply_id": reply_id,
+            "reply_id": admin_notification_id,  # Use admin notification ID since we don't create a reply notification for sender
             "conversation_thread": conversation_thread,
             "original_sender_id": request.original_sender_id,
             "original_sender_name": request.original_sender_name
