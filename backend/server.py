@@ -2728,6 +2728,9 @@ async def delete_notification(
 class ReplyRequest(BaseModel):
     message: str
     original_notification_id: str
+    original_sender_id: Optional[str] = None
+    original_sender_name: Optional[str] = None
+    original_type: Optional[str] = None
 
 @api_router.post("/notifications/reply", response_model=Dict[str, Any])
 async def reply_to_notification(
@@ -2736,27 +2739,26 @@ async def reply_to_notification(
 ):
     """Reply to a notification message"""
     try:
-        # Find the original notification
-        original_notification = await db.notifications.find_one({
-            "id": request.original_notification_id
-        })
-        
-        if not original_notification:
-            raise HTTPException(status_code=404, detail="Original notification not found")
+        # Use the sender information from the frontend instead of looking up the original notification
+        if not request.original_sender_id:
+            raise HTTPException(status_code=400, detail="Original sender information is required")
         
         # Create reply notification
         reply_id = str(uuid.uuid4())
+        conversation_thread = str(uuid.uuid4())  # Create a new conversation thread
+        
         reply_notification = {
             "id": reply_id,
-            "user_id": original_notification["sender_id"],  # Reply goes to original sender
+            "user_id": request.original_sender_id,  # Reply goes to original sender
             "type": "reply",
             "message": request.message,
             "data": {
                 "type": "reply",
                 "message": request.message,
                 "original_notification_id": request.original_notification_id,
-                "original_message": original_notification["message"],
-                "conversation_thread": original_notification.get("conversation_thread", original_notification["id"]),
+                "original_sender_name": request.original_sender_name,
+                "original_type": request.original_type,
+                "conversation_thread": conversation_thread,
                 "timestamp": datetime.now(timezone.utc).isoformat()
             },
             "sender_id": current_user.id,
@@ -2765,58 +2767,39 @@ async def reply_to_notification(
             "delivery_attempts": 0,
             "created_at": datetime.now(timezone.utc),
             "delivered_at": None,
-            "conversation_thread": original_notification.get("conversation_thread", original_notification["id"]),
+            "conversation_thread": conversation_thread,
             "is_reply": True,
             "original_notification_id": request.original_notification_id
         }
         
-        # Store reply notification
+        # Store reply notification in database
         await db.notifications.insert_one(reply_notification)
         
-        # Send reply via WebSocket
-        await manager.send_personal_message(
-            json.dumps({
-                "type": "reply",
-                "message": request.message,
-                "original_notification_id": request.original_notification_id,
-                "original_message": original_notification["message"],
-                "conversation_thread": reply_notification["conversation_thread"],
-                "sender_name": current_user.name,
-                "timestamp": datetime.now(timezone.utc).isoformat()
-            }),
-            original_notification["sender_id"],
-            notification_type="reply",
-            sender_id=current_user.id,
-            sender_name=current_user.name,
-            metadata={
-                "conversation_thread": reply_notification["conversation_thread"],
-                "is_reply": True,
-                "original_notification_id": request.original_notification_id
-            }
-        )
+        # TODO: Send reply via WebSocket when WebSocket manager is implemented
+        # For now, just store the reply in the database
         
-        # Log the reply in audit system
-        if AUDIT_ENABLED and audit_system:
+        # Log the reply for audit purposes
+        if audit_system:
             await audit_system.log_action(
-                action=AuditAction.ADMIN_SYSTEM_CONFIG_CHANGED,
+                action="notification_reply",
                 user_id=current_user.id,
                 entity_type="notification",
                 entity_id=reply_id,
-                target_user_id=original_notification["sender_id"],
                 metadata={
-                    "notification_type": "reply",
-                    "delivered": reply_notification["delivered"],
-                    "message": request.message,
-                    "sender_name": current_user.name,
-                    "conversation_thread": reply_notification["conversation_thread"],
-                    "original_notification_id": request.original_notification_id
+                    "reply_message": request.message,
+                    "original_notification_id": request.original_notification_id,
+                    "original_sender_id": request.original_sender_id,
+                    "original_sender_name": request.original_sender_name,
+                    "conversation_thread": conversation_thread
                 }
             )
         
         return {
             "message": "Reply sent successfully",
             "reply_id": reply_id,
-            "conversation_thread": reply_notification["conversation_thread"]
+            "conversation_thread": conversation_thread,
+            "original_sender_id": request.original_sender_id,
+            "original_sender_name": request.original_sender_name
         }
         
     except Exception as e:

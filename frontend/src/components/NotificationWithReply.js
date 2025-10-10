@@ -27,7 +27,10 @@ const NotificationWithReply = ({ notification, onReplySent }) => {
         `${API_URL}/api/notifications/reply`,
         {
           message: replyMessage.trim(),
-          original_notification_id: notification.id
+          original_notification_id: notification.id,
+          original_sender_id: notification.sender_id,
+          original_sender_name: notification.sender_name,
+          original_type: notification.type
         },
         {
           headers: {
@@ -47,7 +50,14 @@ const NotificationWithReply = ({ notification, onReplySent }) => {
       }
     } catch (error) {
       console.error('Error sending reply:', error);
-      toast.error(error.response?.data?.detail || 'Failed to send reply');
+      const errorMessage = error.response?.data?.detail;
+      if (typeof errorMessage === 'string') {
+        toast.error(errorMessage);
+      } else if (errorMessage && Array.isArray(errorMessage)) {
+        toast.error(errorMessage.map(err => err.msg || err.message || String(err)).join(', '));
+      } else {
+        toast.error('Failed to send reply');
+      }
     } finally {
       setSendingReply(false);
     }

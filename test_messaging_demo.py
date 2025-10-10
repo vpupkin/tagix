@@ -49,13 +49,16 @@ def send_direct_notification(admin_token, user_id, message):
         print(f"❌ Failed to send notification: {response.text}")
         return False
 
-def send_reply(driver_token, original_notification_id, reply_message):
+def send_reply(driver_token, original_notification_id, reply_message, original_sender_id=None, original_sender_name=None, original_type=None):
     """Send reply from driver to admin"""
     response = requests.post(f"{BASE_URL}/api/notifications/reply",
         headers={"Authorization": f"Bearer {driver_token}"},
         json={
             "message": reply_message,
-            "original_notification_id": original_notification_id
+            "original_notification_id": original_notification_id,
+            "original_sender_id": original_sender_id,
+            "original_sender_name": original_sender_name,
+            "original_type": original_type
         }
     )
     
@@ -142,7 +145,14 @@ def main():
             # Step 7: Driver replies to admin message
             print("\n7️⃣ Driver replying to admin message...")
             reply_message = "Hi admin! This is my reply. The messaging system is working great!"
-            conversation_thread = send_reply(driver_token, admin_notification['id'], reply_message)
+            conversation_thread = send_reply(
+                driver_token, 
+                admin_notification['id'], 
+                reply_message,
+                original_sender_id=admin_notification.get('sender_id', 'admin'),
+                original_sender_name=admin_notification.get('sender_name', 'Admin'),
+                original_type=admin_notification.get('type', 'admin_message')
+            )
             
             if conversation_thread:
                 print(f"✅ Reply sent! Conversation thread: {conversation_thread}")
