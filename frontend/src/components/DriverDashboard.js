@@ -34,6 +34,9 @@ const DriverDashboard = () => {
   const { connected, rideRequests, notifications } = useWebSocket();
   const [isOnline, setIsOnline] = useState(user?.is_online || false);
   
+  // Debug logging for notifications
+  console.log('🔔 DriverDashboard: Component rendered, notifications:', notifications.length);
+  
   // Git revision for deployment verification
   const revisionInfo = getRevisionInfo();
   
@@ -690,6 +693,7 @@ const DriverDashboard = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent id="driver-dashboard-notifications-content">
+                {console.log('🔔 DriverDashboard: Rendering notifications, count:', notifications.length)}
                 {notifications.length > 0 ? (
                   <div className="space-y-3" id="driver-dashboard-notifications-list">
                     {notifications.slice(0, 5).map((notification) => (
