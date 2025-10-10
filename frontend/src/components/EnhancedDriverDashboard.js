@@ -16,7 +16,8 @@ import {
   Eye,
   Play,
   Square,
-  Navigation2
+  Navigation2,
+  Wallet
 } from 'lucide-react';
 import DriverLocationManager from './DriverLocationManager';
 import NotificationWithReply from './NotificationWithReply';
@@ -46,6 +47,7 @@ const EnhancedDriverDashboard = () => {
     total_revenue: 0
   });
   const [payments, setPayments] = useState([]);
+  const [balance, setBalance] = useState(0);
 
   const getAuthHeaders = () => ({
     Authorization: `Bearer ${token}`,
@@ -84,7 +86,8 @@ const EnhancedDriverDashboard = () => {
         fetchActiveRide(),
         fetchRideHistory(),
         fetchEarnings(),
-        fetchPayments()
+        fetchPayments(),
+        fetchBalance()
       ]);
     } catch (error) {
       console.error('Error fetching driver data:', error);
@@ -214,6 +217,17 @@ const EnhancedDriverDashboard = () => {
       setPayments(response.data.slice(0, 5)); // Show last 5 payments
     } catch (error) {
       console.error('Error fetching payments:', error);
+    }
+  };
+
+  const fetchBalance = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/api/users/${user.id}/balance`, {
+        headers: getAuthHeaders()
+      });
+      setBalance(response.data.balance || 0);
+    } catch (error) {
+      console.error('Error fetching balance:', error);
     }
   };
 
@@ -407,7 +421,7 @@ const EnhancedDriverDashboard = () => {
         </div>
 
         {/* Status Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
           <div className="bg-white p-6 rounded-lg shadow">
             <div className="flex items-center justify-between">
               <div>
@@ -456,6 +470,20 @@ const EnhancedDriverDashboard = () => {
               </div>
               <div className="p-2 rounded-full bg-purple-100">
                 <Navigation className="h-6 w-6 text-purple-600" />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white p-6 rounded-lg shadow">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Balance</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {formatCurrency(balance)}
+                </p>
+              </div>
+              <div className="p-2 rounded-full bg-indigo-100">
+                <Wallet className="h-6 w-6 text-indigo-600" />
               </div>
             </div>
           </div>
