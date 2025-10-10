@@ -491,8 +491,8 @@ const AdminDashboard = () => {
     return users.filter(user => {
       // Search filter
       const matchesSearch = !userSearchTerm || 
-        user.name.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
-        user.email.toLowerCase().includes(userSearchTerm.toLowerCase());
+        (user.name && user.name.toLowerCase().includes(userSearchTerm.toLowerCase())) ||
+        (user.email && user.email.toLowerCase().includes(userSearchTerm.toLowerCase()));
       
       // Role filter
       const matchesRole = userRoleFilter === 'all' || user.role === userRoleFilter;
@@ -1228,18 +1228,18 @@ const AdminDashboard = () => {
                             </Button>
                           </TableCell>
                           <TableCell className="font-medium text-sm" id={`admin-user-name-${user.id}`}>
-                            <div className="truncate max-w-32" title={user.name}>
-                              {user.name}
+                            <div className="truncate max-w-32" title={user.name || 'Unknown'}>
+                              {user.name || 'Unknown'}
                             </div>
                           </TableCell>
                           <TableCell id={`admin-user-email-${user.id}`}>
-                            <div className="truncate max-w-48 text-sm" title={user.email}>
-                              {user.email}
+                            <div className="truncate max-w-48 text-sm" title={user.email || 'Unknown'}>
+                              {user.email || 'Unknown'}
                             </div>
                           </TableCell>
                           <TableCell id={`admin-user-role-${user.id}`}>
-                            <Badge className={`${getUserRoleColor(user.role)} text-xs px-1 py-0`} id={`admin-user-role-badge-${user.id}`}>
-                              {user.role.charAt(0).toUpperCase()}
+                            <Badge className={`${getUserRoleColor(user.role || 'unknown')} text-xs px-1 py-0`} id={`admin-user-role-badge-${user.id}`}>
+                              {(user.role || 'unknown').charAt(0).toUpperCase()}
                             </Badge>
                           </TableCell>
                           <TableCell id={`admin-user-rating-${user.id}`}>
@@ -1508,7 +1508,7 @@ const AdminDashboard = () => {
                               <div className="flex flex-col space-y-1">
                                 {conversation.participants.map((participant, index) => (
                                   <Badge key={index} variant="secondary" className="text-xs w-fit">
-                                    {participant.name || participant.email || 'Unknown'}
+                                    {participant?.name || participant?.email || 'Unknown'}
                                   </Badge>
                                 ))}
                               </div>
@@ -1913,10 +1913,10 @@ const AdminDashboard = () => {
             </div>
             {userDetailsModal.user && (
               <div className="space-y-3">
-                <div><strong>Name:</strong> {userDetailsModal.user.name}</div>
-                <div><strong>Email:</strong> {userDetailsModal.user.email}</div>
-                <div><strong>Role:</strong> {userDetailsModal.user.role}</div>
-                <div><strong>Rating:</strong> {userDetailsModal.user.rating || 5.0}</div>
+                <div><strong>Name:</strong> {userDetailsModal.user?.name || 'Unknown'}</div>
+                <div><strong>Email:</strong> {userDetailsModal.user?.email || 'Unknown'}</div>
+                <div><strong>Role:</strong> {userDetailsModal.user?.role || 'Unknown'}</div>
+                <div><strong>Rating:</strong> {userDetailsModal.user?.rating || 5.0}</div>
                 <div><strong>Rides:</strong> {userDetailsModal.user.rides || 0}</div>
                 <div><strong>Status:</strong> {userDetailsModal.user.is_online ? 'Online' : 'Offline'}</div>
                 <div><strong>Joined:</strong> {new Date(userDetailsModal.user.created_at).toLocaleDateString()}</div>
@@ -1961,7 +1961,7 @@ const AdminDashboard = () => {
                   />
                 </div>
                 <div className="text-sm text-gray-600">
-                  Resetting password for: {passwordResetModal.user.name} ({passwordResetModal.user.email})
+                  Resetting password for: {passwordResetModal.user?.name || 'Unknown'} ({passwordResetModal.user?.email || 'Unknown'})
                 </div>
               </div>
             )}
@@ -1998,7 +1998,7 @@ const AdminDashboard = () => {
                   <Input
                     type="text"
                     id="editName"
-                    defaultValue={userEditModal.user.name}
+                    defaultValue={userEditModal.user?.name || ''}
                     className="w-full"
                   />
                 </div>
@@ -2007,13 +2007,13 @@ const AdminDashboard = () => {
                   <Input
                     type="email"
                     id="editEmail"
-                    defaultValue={userEditModal.user.email}
+                    defaultValue={userEditModal.user?.email || ''}
                     className="w-full"
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-2">Role</label>
-                  <Select defaultValue={userEditModal.user.role}>
+                  <Select defaultValue={userEditModal.user?.role || 'rider'}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
