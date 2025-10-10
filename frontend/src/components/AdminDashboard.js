@@ -33,7 +33,16 @@ import {
   Download,
   Eye,
   Search,
-  Filter
+  Filter,
+  ArrowUp,
+  ArrowDown,
+  User,
+  Edit,
+  Key,
+  Lock,
+  Unlock,
+  Mail,
+  MoreHorizontal
 } from 'lucide-react';
 import { toast } from 'sonner';
 import AdminNotificationModal from './AdminNotificationModal';
@@ -66,6 +75,14 @@ const AdminDashboard = () => {
   const [rides, setRides] = useState([]);
   const [pendingRequests, setPendingRequests] = useState([]);
   const [completedMatches, setCompletedMatches] = useState([]);
+  
+  // Unified rides table state
+  const [allRides, setAllRides] = useState([]);
+  const [rideSearchTerm, setRideSearchTerm] = useState('');
+  const [rideStatusFilter, setRideStatusFilter] = useState('all');
+  const [rideTypeFilter, setRideTypeFilter] = useState('all');
+  const [rideSortBy, setRideSortBy] = useState('created_at');
+  const [rideSortOrder, setRideSortOrder] = useState('desc');
   const [notificationModal, setNotificationModal] = useState({
     isOpen: false,
     rideId: null,
@@ -93,6 +110,23 @@ const AdminDashboard = () => {
   const [auditActionFilter, setAuditActionFilter] = useState('all');
   const [auditSeverityFilter, setAuditSeverityFilter] = useState('all');
   const [auditEntityFilter, setAuditEntityFilter] = useState('all');
+  const [auditTimeFilter, setAuditTimeFilter] = useState('all');
+  const [auditSortBy, setAuditSortBy] = useState('timestamp');
+  const [auditSortOrder, setAuditSortOrder] = useState('desc');
+  
+  // User management modals
+  const [userDetailsModal, setUserDetailsModal] = useState({
+    isOpen: false,
+    user: null
+  });
+  const [passwordResetModal, setPasswordResetModal] = useState({
+    isOpen: false,
+    user: null
+  });
+  const [userEditModal, setUserEditModal] = useState({
+    isOpen: false,
+    user: null
+  });
 
   useEffect(() => {
     console.log('🔍 AdminDashboard: useEffect triggered');
@@ -185,8 +219,15 @@ const AdminDashboard = () => {
       setCompletedMatches(ridesData.completed_matches || []);
       
       // Combine all rides for the overview tab
-      const allRides = [...(ridesData.pending_requests || []), ...(ridesData.completed_matches || [])];
-      setRides(allRides);
+      const combinedRides = [...(ridesData.pending_requests || []), ...(ridesData.completed_matches || [])];
+      setRides(combinedRides);
+      
+      // Set unified rides with type information
+      const unifiedRides = [
+        ...(ridesData.pending_requests || []).map(ride => ({ ...ride, ride_type: 'pending' })),
+        ...(ridesData.completed_matches || []).map(ride => ({ ...ride, ride_type: 'completed' }))
+      ];
+      setAllRides(unifiedRides);
       
       console.log('🔍 Final state:');
       console.log('Pending requests:', ridesData.pending_requests?.length || 0);
@@ -243,6 +284,132 @@ const AdminDashboard = () => {
       userEmail: null,
       userRole: null
     });
+  };
+
+  // User management functions
+  const openUserDetailsModal = (user) => {
+    setUserDetailsModal({ isOpen: true, user });
+  };
+
+  const closeUserDetailsModal = () => {
+    setUserDetailsModal({ isOpen: false, user: null });
+  };
+
+  const openPasswordResetModal = (user) => {
+    setPasswordResetModal({ isOpen: true, user });
+  };
+
+  const closePasswordResetModal = () => {
+    setPasswordResetModal({ isOpen: false, user: null });
+  };
+
+  const openUserEditModal = (user) => {
+    setUserEditModal({ isOpen: true, user });
+  };
+
+  const closeUserEditModal = () => {
+    setUserEditModal({ isOpen: false, user: null });
+  };
+
+  const toggleUserStatus = async (user) => {
+    try {
+      const token = localStorage.getItem('mobility_token');
+      const response = await axios.patch(
+        `${API_URL}/api/admin/users/${user.id}/status`,
+        { is_active: !user.is_active },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      if (response.status === 200) {
+        toast.success(`User ${user.is_active ? 'locked' : 'unlocked'} successfully`);
+        fetchDashboardData(); // Refresh data
+      }
+    } catch (error) {
+      console.error('Error toggling user status:', error);
+      if (error.response?.status === 404) {
+        toast.error('User not found');
+      } else if (error.response?.status === 403) {
+        toast.error('Admin access required');
+      } else {
+        toast.error('Failed to update user status');
+      }
+    }
+  };
+
+  const sendValidationEmail = async (user) => {
+    try {
+      const token = localStorage.getItem('mobility_token');
+      const response = await axios.post(
+        `${API_URL}/api/admin/users/${user.id}/send-validation`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      if (response.status === 200) {
+        toast.success('Validation email sent successfully');
+      }
+    } catch (error) {
+      console.error('Error sending validation email:', error);
+      if (error.response?.status === 404) {
+        toast.error('User not found');
+      } else if (error.response?.status === 403) {
+        toast.error('Admin access required');
+      } else {
+        toast.error('Failed to send validation email');
+      }
+    }
+  };
+
+  const resetUserPassword = async (userId, newPassword) => {
+    try {
+      const token = localStorage.getItem('mobility_token');
+      
+      // Use the new admin endpoint
+      const response = await axios.patch(
+        `${API_URL}/api/admin/users/${userId}/password`,
+        { new_password: newPassword },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      if (response.status === 200) {
+        toast.success('Password reset successfully');
+        closePasswordResetModal();
+      }
+      
+    } catch (error) {
+      console.error('Error resetting password:', error);
+      if (error.response?.status === 404) {
+        toast.error('User not found');
+      } else if (error.response?.status === 403) {
+        toast.error('Admin access required');
+      } else {
+        toast.error('Failed to reset password');
+      }
+    }
+  };
+
+  const updateUserProfile = async (userId, userData) => {
+    try {
+      const token = localStorage.getItem('mobility_token');
+      const response = await axios.patch(
+        `${API_URL}/api/admin/users/${userId}`,
+        userData,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      if (response.status === 200) {
+        toast.success('User profile updated successfully');
+        closeUserEditModal();
+        fetchDashboardData(); // Refresh data
+      }
+    } catch (error) {
+      console.error('Error updating user profile:', error);
+      if (error.response?.status === 404) {
+        toast.error('User profile update feature not yet implemented in backend');
+      } else {
+        toast.error('Failed to update user profile');
+      }
+    }
   };
 
   const downloadAuditLogs = async () => {
@@ -316,8 +483,8 @@ const AdminDashboard = () => {
     });
   };
 
-  const getFilteredAuditLogs = () => {
-    return auditLogs.filter(log => {
+  const getFilteredAndSortedAuditLogs = () => {
+    let filtered = auditLogs.filter(log => {
       // Search filter - enhanced to include metadata
       const matchesSearch = !auditSearchTerm || 
         log.action.toLowerCase().includes(auditSearchTerm.toLowerCase()) ||
@@ -335,8 +502,131 @@ const AdminDashboard = () => {
       // Entity type filter
       const matchesEntity = auditEntityFilter === 'all' || log.entity_type === auditEntityFilter;
       
-      return matchesSearch && matchesAction && matchesSeverity && matchesEntity;
+      // Time filter
+      const matchesTime = auditTimeFilter === 'all' || isWithinTimeRange(log.timestamp, auditTimeFilter);
+      
+      return matchesSearch && matchesAction && matchesSeverity && matchesEntity && matchesTime;
     });
+
+    // Sort the filtered results
+    filtered.sort((a, b) => {
+      let aValue, bValue;
+      
+      switch (auditSortBy) {
+        case 'timestamp':
+          aValue = new Date(a.timestamp);
+          bValue = new Date(b.timestamp);
+          break;
+        case 'action':
+          aValue = a.action;
+          bValue = b.action;
+          break;
+        case 'entity_type':
+          aValue = a.entity_type;
+          bValue = b.entity_type;
+          break;
+        case 'severity':
+          const severityOrder = { 'critical': 5, 'high': 4, 'medium': 3, 'low': 2, 'info': 1 };
+          aValue = severityOrder[a.severity] || 0;
+          bValue = severityOrder[b.severity] || 0;
+          break;
+        case 'user_id':
+          aValue = a.user_id || '';
+          bValue = b.user_id || '';
+          break;
+        default:
+          aValue = new Date(a.timestamp);
+          bValue = new Date(b.timestamp);
+      }
+      
+      if (auditSortOrder === 'asc') {
+        return aValue > bValue ? 1 : -1;
+      } else {
+        return aValue < bValue ? 1 : -1;
+      }
+    });
+
+    return filtered;
+  };
+
+  const isWithinTimeRange = (timestamp, timeFilter) => {
+    const now = new Date();
+    const logTime = new Date(timestamp);
+    const diffMs = now - logTime;
+    
+    switch (timeFilter) {
+      case 'last_hour':
+        return diffMs <= 60 * 60 * 1000; // 1 hour
+      case 'last_6_hours':
+        return diffMs <= 6 * 60 * 60 * 1000; // 6 hours
+      case 'last_24_hours':
+        return diffMs <= 24 * 60 * 60 * 1000; // 24 hours
+      case 'last_week':
+        return diffMs <= 7 * 24 * 60 * 60 * 1000; // 7 days
+      case 'last_month':
+        return diffMs <= 30 * 24 * 60 * 60 * 1000; // 30 days
+      default:
+        return true;
+    }
+  };
+
+  const getFilteredAndSortedRides = () => {
+    let filtered = allRides.filter(ride => {
+      // Search filter
+      const matchesSearch = !rideSearchTerm || 
+        ride.id.toLowerCase().includes(rideSearchTerm.toLowerCase()) ||
+        (ride.rider_id && ride.rider_id.toLowerCase().includes(rideSearchTerm.toLowerCase())) ||
+        (ride.driver_id && ride.driver_id.toLowerCase().includes(rideSearchTerm.toLowerCase())) ||
+        (ride.pickup_location?.address && ride.pickup_location.address.toLowerCase().includes(rideSearchTerm.toLowerCase())) ||
+        (ride.dropoff_location?.address && ride.dropoff_location.address.toLowerCase().includes(rideSearchTerm.toLowerCase()));
+      
+      // Status filter
+      const matchesStatus = rideStatusFilter === 'all' || ride.status === rideStatusFilter;
+      
+      // Type filter (pending vs completed)
+      const matchesType = rideTypeFilter === 'all' || ride.ride_type === rideTypeFilter;
+      
+      return matchesSearch && matchesStatus && matchesType;
+    });
+
+    // Sort the filtered results
+    filtered.sort((a, b) => {
+      let aValue, bValue;
+      
+      switch (rideSortBy) {
+        case 'created_at':
+          aValue = new Date(a.created_at);
+          bValue = new Date(b.created_at);
+          break;
+        case 'completed_at':
+          aValue = new Date(a.completed_at || a.created_at);
+          bValue = new Date(b.completed_at || b.created_at);
+          break;
+        case 'estimated_fare':
+          aValue = a.estimated_fare || 0;
+          bValue = b.estimated_fare || 0;
+          break;
+        case 'status':
+          aValue = a.status;
+          bValue = b.status;
+          break;
+        case 'ride_type':
+          aValue = a.ride_type;
+          bValue = b.ride_type;
+          break;
+        default:
+          aValue = new Date(a.created_at);
+          bValue = new Date(b.created_at);
+      }
+      
+      if (rideSortOrder === 'asc') {
+        return aValue > bValue ? 1 : -1;
+      } else {
+        return aValue < bValue ? 1 : -1;
+      }
+    });
+
+    return filtered;
   };
 
   const getStatusColor = (status) => {
@@ -681,56 +971,110 @@ const AdminDashboard = () => {
                   <Table id="admin-users-table">
                     <TableHeader id="admin-users-table-header">
                       <TableRow id="admin-users-table-header-row">
-                        <TableHead id="admin-users-table-header-balance" className="bg-green-200 text-green-800 font-bold text-lg">💰 BALANCE 💰</TableHead>
-                        <TableHead id="admin-users-table-header-name">Name</TableHead>
-                        <TableHead id="admin-users-table-header-email">Email</TableHead>
-                        <TableHead id="admin-users-table-header-role">Role</TableHead>
-                        <TableHead id="admin-users-table-header-rating">Rating</TableHead>
-                        <TableHead id="admin-users-table-header-rides">Rides</TableHead>
-                        <TableHead id="admin-users-table-header-status">Status</TableHead>
-                        <TableHead id="admin-users-table-header-joined">Joined</TableHead>
-                        <TableHead id="admin-users-table-header-actions">Actions</TableHead>
+                        <TableHead id="admin-users-table-header-actions" className="w-32">Actions</TableHead>
+                        <TableHead id="admin-users-table-header-balance" className="w-24">Balance</TableHead>
+                        <TableHead id="admin-users-table-header-name" className="w-32">Name</TableHead>
+                        <TableHead id="admin-users-table-header-email" className="w-48">Email</TableHead>
+                        <TableHead id="admin-users-table-header-role" className="w-16">Role</TableHead>
+                        <TableHead id="admin-users-table-header-rating" className="w-16">Rating</TableHead>
+                        <TableHead id="admin-users-table-header-rides" className="w-12">Rides</TableHead>
+                        <TableHead id="admin-users-table-header-status" className="w-16">Status</TableHead>
+                        <TableHead id="admin-users-table-header-joined" className="w-24">Joined</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody id="admin-users-table-body">
                       {getFilteredUsers().map((user) => (
                         <TableRow key={user.id} id={`admin-user-row-${user.id}`}>
+                          <TableCell id={`admin-user-actions-${user.id}`}>
+                            <div className="flex items-center space-x-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => openUserDetailsModal(user)}
+                                className="h-6 w-6 p-0"
+                                title="View Details"
+                              >
+                                <Eye className="h-3 w-3" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => openUserEditModal(user)}
+                                className="h-6 w-6 p-0"
+                                title="Edit Profile"
+                              >
+                                <Edit className="h-3 w-3" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => openPasswordResetModal(user)}
+                                className="h-6 w-6 p-0"
+                                title="Reset Password"
+                              >
+                                <Key className="h-3 w-3" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => toggleUserStatus(user)}
+                                className="h-6 w-6 p-0"
+                                title={user.is_active ? 'Lock User' : 'Unlock User'}
+                              >
+                                {user.is_active ? <Lock className="h-3 w-3" /> : <Unlock className="h-3 w-3" />}
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => sendValidationEmail(user)}
+                                className="h-6 w-6 p-0"
+                                title="Send Validation Email"
+                              >
+                                <Mail className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </TableCell>
                           <TableCell id={`admin-user-balance-cell-${user.id}`}>
                             <Button
                               variant="outline"
-                              size="lg"
+                              size="sm"
                               onClick={() => openBalanceModal(user)}
-                              className="flex items-center space-x-2 bg-green-500 hover:bg-green-600 border-green-600 text-white font-bold text-lg p-4"
+                              className="flex items-center space-x-1 bg-green-500 hover:bg-green-600 border-green-600 text-white text-xs px-2 py-1"
                               id={`admin-user-balance-button-${user.id}`}
                             >
-                              <Wallet className="h-6 w-6 text-white" />
-                              <span className="text-white font-bold">💰 BALANCE 💰</span>
+                              <Wallet className="h-3 w-3" />
+                              <span>Balance</span>
                             </Button>
                           </TableCell>
-                          <TableCell className="font-medium" id={`admin-user-name-${user.id}`}>{user.name}</TableCell>
-                          <TableCell id={`admin-user-email-${user.id}`}>{user.email}</TableCell>
+                          <TableCell className="font-medium text-sm" id={`admin-user-name-${user.id}`}>
+                            <div className="truncate max-w-32" title={user.name}>
+                              {user.name}
+                            </div>
+                          </TableCell>
+                          <TableCell id={`admin-user-email-${user.id}`}>
+                            <div className="truncate max-w-48 text-sm" title={user.email}>
+                              {user.email}
+                            </div>
+                          </TableCell>
                           <TableCell id={`admin-user-role-${user.id}`}>
-                            <Badge className={getUserRoleColor(user.role)} id={`admin-user-role-badge-${user.id}`}>
-                              {user.role}
+                            <Badge className={`${getUserRoleColor(user.role)} text-xs px-1 py-0`} id={`admin-user-role-badge-${user.id}`}>
+                              {user.role.charAt(0).toUpperCase()}
                             </Badge>
                           </TableCell>
                           <TableCell id={`admin-user-rating-${user.id}`}>
                             <div className="flex items-center space-x-1">
-                              <Star className="h-4 w-4 text-yellow-400 fill-current" />
-                              <span>{user.rating || 5.0}</span>
+                              <Star className="h-3 w-3 text-yellow-400 fill-current" />
+                              <span className="text-xs">{user.rating || 5.0}</span>
                             </div>
                           </TableCell>
-                          <TableCell id={`admin-user-rides-${user.id}`}>{user.rides || 0}</TableCell>
+                          <TableCell id={`admin-user-rides-${user.id}`} className="text-xs text-center">{user.rides || 0}</TableCell>
                           <TableCell id={`admin-user-status-${user.id}`}>
-                            <Badge className={user.is_online ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'} id={`admin-user-status-badge-${user.id}`}>
-                              {user.is_online ? 'Online' : 'Offline'}
+                            <Badge className={`${user.is_online ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'} text-xs px-1 py-0`} id={`admin-user-status-badge-${user.id}`}>
+                              {user.is_online ? 'ON' : 'OFF'}
                             </Badge>
                           </TableCell>
-                          <TableCell id={`admin-user-joined-${user.id}`}>
-                            {formatDate(user.created_at)}
-                          </TableCell>
-                          <TableCell id={`admin-user-actions-${user.id}`}>
-                            <span className="text-gray-400 text-sm">-</span>
+                          <TableCell id={`admin-user-joined-${user.id}`} className="text-xs">
+                            {new Date(user.created_at).toLocaleDateString()}
                           </TableCell>
                         </TableRow>
                       ))}
@@ -743,142 +1087,179 @@ const AdminDashboard = () => {
 
           {/* Rides Tab */}
           <TabsContent value="rides" className="space-y-6">
-            {/* Pending Requests */}
+            {/* Unified Rides Table */}
             <Card className="card-hover">
               <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <span>Pending Requests ({pendingRequests.length})</span>
-                  <Badge variant="secondary">{pendingRequests.length}</Badge>
-                </CardTitle>
-                <CardDescription>
-                  Ride requests waiting for driver acceptance
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Ride ID</TableHead>
-                        <TableHead>Rider</TableHead>
-                        <TableHead>Route</TableHead>
-                        <TableHead>Fare</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Created</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {pendingRequests.map((ride) => (
-                        <TableRow key={ride.id}>
-                          <TableCell className="font-mono text-sm">
-                            #{ride.id.slice(-8)}
-                          </TableCell>
-                          <TableCell>{ride.rider_id?.slice(-8) || 'N/A'}</TableCell>
-                          <TableCell>
-                            <div className="max-w-xs">
-                              <p className="text-sm truncate">
-                                {ride.pickup_location?.address || 'N/A'}
-                              </p>
-                              <p className="text-xs text-gray-500 truncate">
-                                → {ride.dropoff_location?.address || 'N/A'}
-                              </p>
-                            </div>
-                          </TableCell>
-                          <TableCell>{formatCurrency(ride.estimated_fare || 0)}</TableCell>
-                          <TableCell>
-                            <Badge className={getStatusColor(ride.status)}>
-                              {ride.status}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            {formatDate(ride.created_at)}
-                          </TableCell>
-                          <TableCell>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => openNotificationModal(ride)}
-                              className="flex items-center space-x-1"
-                            >
-                              <MessageSquare className="h-4 w-4" />
-                              <span>Notify</span>
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center space-x-2">
+                      <Car className="h-5 w-5 text-indigo-600" />
+                      <span>Ride Monitoring</span>
+                    </CardTitle>
+                    <CardDescription>
+                      Comprehensive view of all ride requests and completed rides ({getFilteredAndSortedRides().length} of {allRides.length} rides)
+                    </CardDescription>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => fetchDashboardData()}
+                      disabled={refreshing}
+                    >
+                      <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+                      <span className="ml-2">Refresh</span>
+                    </Button>
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
-
-            {/* Completed Matches */}
-            <Card className="card-hover">
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <span>Completed Rides ({completedMatches.length})</span>
-                  <Badge variant="default">{completedMatches.length}</Badge>
-                </CardTitle>
-                <CardDescription>
-                  Successfully completed ride matches
-                </CardDescription>
               </CardHeader>
               <CardContent>
+                {/* Search and Filter Controls */}
+                <div className="flex flex-col sm:flex-row gap-4 mb-6">
+                  <div className="flex-1">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <Input
+                        placeholder="Search by ride ID, rider, driver, or address..."
+                        value={rideSearchTerm}
+                        onChange={(e) => setRideSearchTerm(e.target.value)}
+                        className="pl-10"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Select value={rideStatusFilter} onValueChange={setRideStatusFilter}>
+                      <SelectTrigger className="w-32">
+                        <Filter className="h-4 w-4 mr-2" />
+                        <SelectValue placeholder="Status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Status</SelectItem>
+                        <SelectItem value="pending">Pending</SelectItem>
+                        <SelectItem value="accepted">Accepted</SelectItem>
+                        <SelectItem value="driver_arriving">Driver Arriving</SelectItem>
+                        <SelectItem value="driver_arrived">Driver Arrived</SelectItem>
+                        <SelectItem value="ride_started">Ride Started</SelectItem>
+                        <SelectItem value="completed">Completed</SelectItem>
+                        <SelectItem value="cancelled">Cancelled</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Select value={rideTypeFilter} onValueChange={setRideTypeFilter}>
+                      <SelectTrigger className="w-32">
+                        <SelectValue placeholder="Type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Types</SelectItem>
+                        <SelectItem value="pending">Pending Requests</SelectItem>
+                        <SelectItem value="completed">Completed Rides</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Select value={rideSortBy} onValueChange={setRideSortBy}>
+                      <SelectTrigger className="w-32">
+                        <SelectValue placeholder="Sort By" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="created_at">Created Date</SelectItem>
+                        <SelectItem value="completed_at">Completed Date</SelectItem>
+                        <SelectItem value="estimated_fare">Fare Amount</SelectItem>
+                        <SelectItem value="status">Status</SelectItem>
+                        <SelectItem value="ride_type">Type</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setRideSortOrder(rideSortOrder === 'asc' ? 'desc' : 'asc')}
+                    >
+                      {rideSortOrder === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setRideSearchTerm('');
+                        setRideStatusFilter('all');
+                        setRideTypeFilter('all');
+                        setRideSortBy('created_at');
+                        setRideSortOrder('desc');
+                      }}
+                    >
+                      Clear
+                    </Button>
+                  </div>
+                </div>
+                
                 <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>
                         <TableHead>Ride ID</TableHead>
+                        <TableHead>Type</TableHead>
                         <TableHead>Rider</TableHead>
                         <TableHead>Driver</TableHead>
                         <TableHead>Route</TableHead>
                         <TableHead>Fare</TableHead>
                         <TableHead>Status</TableHead>
-                        <TableHead>Completed</TableHead>
+                        <TableHead>Date</TableHead>
                         <TableHead>Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {completedMatches.map((ride) => (
-                        <TableRow key={ride.id}>
-                          <TableCell className="font-mono text-sm">
-                            #{ride.id.slice(-8)}
-                          </TableCell>
-                          <TableCell>{ride.rider_id?.slice(-8) || 'N/A'}</TableCell>
-                          <TableCell>{ride.driver_id?.slice(-8) || 'N/A'}</TableCell>
-                          <TableCell>
-                            <div className="max-w-xs">
-                              <p className="text-sm truncate">
-                                {ride.pickup_location?.address || 'N/A'}
-                              </p>
-                              <p className="text-xs text-gray-500 truncate">
-                                → {ride.dropoff_location?.address || 'N/A'}
-                              </p>
-                            </div>
-                          </TableCell>
-                          <TableCell>{formatCurrency(ride.estimated_fare || 0)}</TableCell>
-                          <TableCell>
-                            <Badge className={getStatusColor(ride.status)}>
-                              {ride.status}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            {formatDate(ride.completed_at || ride.created_at)}
-                          </TableCell>
-                          <TableCell>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => openNotificationModal(ride)}
-                              className="flex items-center space-x-1"
-                            >
-                              <MessageSquare className="h-4 w-4" />
-                              <span>Notify</span>
-                            </Button>
+                      {getFilteredAndSortedRides().length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={9} className="text-center py-8 text-gray-500">
+                            {allRides.length === 0 ? 'No rides found' : 'No rides match your filters'}
                           </TableCell>
                         </TableRow>
-                      ))}
+                      ) : (
+                        getFilteredAndSortedRides().map((ride) => (
+                          <TableRow key={ride.id}>
+                            <TableCell className="font-mono text-sm">
+                              #{ride.id.slice(-8)}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={ride.ride_type === 'pending' ? 'secondary' : 'default'}>
+                                {ride.ride_type === 'pending' ? 'Request' : 'Completed'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>{ride.rider_id?.slice(-8) || 'N/A'}</TableCell>
+                            <TableCell>{ride.driver_id?.slice(-8) || 'N/A'}</TableCell>
+                            <TableCell>
+                              <div className="max-w-xs">
+                                <p className="text-sm truncate">
+                                  {ride.pickup_location?.address || 'N/A'}
+                                </p>
+                                <p className="text-xs text-gray-500 truncate">
+                                  → {ride.dropoff_location?.address || 'N/A'}
+                                </p>
+                              </div>
+                            </TableCell>
+                            <TableCell>{formatCurrency(ride.estimated_fare || 0)}</TableCell>
+                            <TableCell>
+                              <Badge className={getStatusColor(ride.status)}>
+                                {ride.status}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              {ride.ride_type === 'completed' && ride.completed_at 
+                                ? formatDate(ride.completed_at)
+                                : formatDate(ride.created_at)
+                              }
+                            </TableCell>
+                            <TableCell>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => openNotificationModal(ride)}
+                                className="flex items-center space-x-1"
+                              >
+                                <MessageSquare className="h-4 w-4" />
+                                <span>Notify</span>
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
                     </TableBody>
                   </Table>
                 </div>
@@ -980,7 +1361,7 @@ const AdminDashboard = () => {
                       <span>Comprehensive Audit Trail</span>
                     </CardTitle>
                     <CardDescription>
-                      Complete immutable record of all platform activities ({getFilteredAuditLogs().length} of {auditLogs.length} logs)
+                      Complete immutable record of all platform activities ({getFilteredAndSortedAuditLogs().length} of {auditLogs.length} logs)
                     </CardDescription>
                   </div>
                   <div className="flex items-center space-x-2">
@@ -1072,6 +1453,39 @@ const AdminDashboard = () => {
                         <SelectItem value="admin_ride_query">Admin Ride Query</SelectItem>
                       </SelectContent>
                     </Select>
+                    <Select value={auditTimeFilter} onValueChange={setAuditTimeFilter}>
+                      <SelectTrigger className="w-32" id="admin-audit-time-filter">
+                        <Clock className="h-4 w-4 mr-2" />
+                        <SelectValue placeholder="Time" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Time</SelectItem>
+                        <SelectItem value="last_hour">Last Hour</SelectItem>
+                        <SelectItem value="last_6_hours">Last 6 Hours</SelectItem>
+                        <SelectItem value="last_24_hours">Last 24 Hours</SelectItem>
+                        <SelectItem value="last_week">Last Week</SelectItem>
+                        <SelectItem value="last_month">Last Month</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Select value={auditSortBy} onValueChange={setAuditSortBy}>
+                      <SelectTrigger className="w-32" id="admin-audit-sort-filter">
+                        <SelectValue placeholder="Sort By" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="timestamp">Timestamp</SelectItem>
+                        <SelectItem value="action">Action</SelectItem>
+                        <SelectItem value="entity_type">Entity Type</SelectItem>
+                        <SelectItem value="severity">Severity</SelectItem>
+                        <SelectItem value="user_id">User ID</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setAuditSortOrder(auditSortOrder === 'asc' ? 'desc' : 'asc')}
+                    >
+                      {auditSortOrder === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
+                    </Button>
                     <Button
                       variant="outline"
                       size="sm"
@@ -1080,6 +1494,9 @@ const AdminDashboard = () => {
                         setAuditActionFilter('all');
                         setAuditSeverityFilter('all');
                         setAuditEntityFilter('all');
+                        setAuditTimeFilter('all');
+                        setAuditSortBy('timestamp');
+                        setAuditSortOrder('desc');
                       }}
                       id="admin-audit-clear-filters"
                     >
@@ -1088,54 +1505,78 @@ const AdminDashboard = () => {
                   </div>
                 </div>
                 
-                <div className="space-y-4">
-                  {getFilteredAuditLogs().length === 0 ? (
-                    <div className="text-center py-8 text-gray-500" id="admin-audit-empty">
-                      {auditLogs.length === 0 ? 'No audit logs found' : 'No audit logs match your filters'}
-                    </div>
-                  ) : (
-                    <div className="space-y-3" id="admin-audit-logs-list">
-                      {getFilteredAuditLogs().map((log) => (
-                        <div key={log.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border">
-                          <div className="flex items-center space-x-4">
-                            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                              <Shield className="h-5 w-5 text-blue-600" />
-                            </div>
-                            <div>
-                              <p className="font-medium text-gray-900">
-                                {log.action} - {log.entity_type}
-                              </p>
-                              <p className="text-sm text-gray-600">
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Timestamp</TableHead>
+                        <TableHead>Action</TableHead>
+                        <TableHead>Entity</TableHead>
+                        <TableHead>User</TableHead>
+                        <TableHead>Severity</TableHead>
+                        <TableHead>Description</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {getFilteredAndSortedAuditLogs().length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={7} className="text-center py-8 text-gray-500">
+                            {auditLogs.length === 0 ? 'No audit logs found' : 'No audit logs match your filters'}
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        getFilteredAndSortedAuditLogs().map((log) => (
+                          <TableRow key={log.id}>
+                            <TableCell className="font-mono text-sm">
+                              {formatDate(log.timestamp)}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className="text-xs">
+                                {log.action}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="secondary" className="text-xs">
+                                {log.entity_type}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="font-mono text-sm">
+                              {log.user_id?.slice(-8) || 'Unknown'}
+                            </TableCell>
+                            <TableCell>
+                              <Badge className={
+                                log.severity === 'critical' ? 'bg-red-100 text-red-800' :
+                                log.severity === 'high' ? 'bg-orange-100 text-orange-800' :
+                                log.severity === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                                log.severity === 'low' ? 'bg-blue-100 text-blue-800' :
+                                'bg-green-100 text-green-800'
+                              }>
+                                {log.severity || 'info'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="max-w-xs">
+                              <p className="text-sm truncate" title={log.description || 'No description available'}>
                                 {log.description || 'No description available'}
                               </p>
-                              <p className="text-xs text-gray-500">
-                                {formatDate(log.timestamp)} • User: {log.user_id?.slice(-8) || 'Unknown'}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <Badge className={
-                              log.severity === 'high' ? 'bg-red-100 text-red-800' :
-                              log.severity === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-                              'bg-green-100 text-green-800'
-                            }>
-                              {log.severity || 'info'}
-                            </Badge>
-                            {log.metadata && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => showAuditDetails(log)}
-                                id={`admin-audit-details-${log.id}`}
-                              >
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                            </TableCell>
+                            <TableCell>
+                              {log.metadata && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => showAuditDetails(log)}
+                                  id={`admin-audit-details-${log.id}`}
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
                 </div>
               </CardContent>
             </Card>
@@ -1163,6 +1604,144 @@ const AdminDashboard = () => {
         userEmail={balanceModal.userEmail}
         userRole={balanceModal.userRole}
       />
+
+      {/* User Details Modal */}
+      {userDetailsModal.isOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">User Details</h3>
+              <Button variant="ghost" size="sm" onClick={closeUserDetailsModal}>
+                ×
+              </Button>
+            </div>
+            {userDetailsModal.user && (
+              <div className="space-y-3">
+                <div><strong>Name:</strong> {userDetailsModal.user.name}</div>
+                <div><strong>Email:</strong> {userDetailsModal.user.email}</div>
+                <div><strong>Role:</strong> {userDetailsModal.user.role}</div>
+                <div><strong>Rating:</strong> {userDetailsModal.user.rating || 5.0}</div>
+                <div><strong>Rides:</strong> {userDetailsModal.user.rides || 0}</div>
+                <div><strong>Status:</strong> {userDetailsModal.user.is_online ? 'Online' : 'Offline'}</div>
+                <div><strong>Joined:</strong> {new Date(userDetailsModal.user.created_at).toLocaleDateString()}</div>
+                <div><strong>Active:</strong> {userDetailsModal.user.is_active ? 'Yes' : 'No'}</div>
+              </div>
+            )}
+            <div className="flex justify-end mt-6">
+              <Button onClick={closeUserDetailsModal}>Close</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Password Reset Modal */}
+      {passwordResetModal.isOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">Reset Password</h3>
+              <Button variant="ghost" size="sm" onClick={closePasswordResetModal}>
+                ×
+              </Button>
+            </div>
+            {passwordResetModal.user && (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">New Password</label>
+                  <Input
+                    type="password"
+                    id="newPassword"
+                    placeholder="Enter new password"
+                    className="w-full"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Confirm Password</label>
+                  <Input
+                    type="password"
+                    id="confirmPassword"
+                    placeholder="Confirm new password"
+                    className="w-full"
+                  />
+                </div>
+                <div className="text-sm text-gray-600">
+                  Resetting password for: {passwordResetModal.user.name} ({passwordResetModal.user.email})
+                </div>
+              </div>
+            )}
+            <div className="flex justify-end space-x-2 mt-6">
+              <Button variant="outline" onClick={closePasswordResetModal}>Cancel</Button>
+              <Button onClick={() => {
+                const newPassword = document.getElementById('newPassword').value;
+                const confirmPassword = document.getElementById('confirmPassword').value;
+                if (newPassword && newPassword === confirmPassword) {
+                  resetUserPassword(passwordResetModal.user.id, newPassword);
+                } else {
+                  toast.error('Passwords do not match');
+                }
+              }}>Reset Password</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* User Edit Modal */}
+      {userEditModal.isOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">Edit User Profile</h3>
+              <Button variant="ghost" size="sm" onClick={closeUserEditModal}>
+                ×
+              </Button>
+            </div>
+            {userEditModal.user && (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Name</label>
+                  <Input
+                    type="text"
+                    id="editName"
+                    defaultValue={userEditModal.user.name}
+                    className="w-full"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Email</label>
+                  <Input
+                    type="email"
+                    id="editEmail"
+                    defaultValue={userEditModal.user.email}
+                    className="w-full"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Role</label>
+                  <Select defaultValue={userEditModal.user.role}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="admin">Admin</SelectItem>
+                      <SelectItem value="driver">Driver</SelectItem>
+                      <SelectItem value="rider">Rider</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
+            <div className="flex justify-end space-x-2 mt-6">
+              <Button variant="outline" onClick={closeUserEditModal}>Cancel</Button>
+              <Button onClick={() => {
+                const name = document.getElementById('editName').value;
+                const email = document.getElementById('editEmail').value;
+                const role = document.querySelector('[role="combobox"]').textContent;
+                updateUserProfile(userEditModal.user.id, { name, email, role });
+              }}>Update Profile</Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

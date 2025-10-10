@@ -129,12 +129,24 @@ const AuthModal = ({ isOpen, onClose }) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md" data-testid="auth-modal">
-        <DialogHeader>
-          <DialogTitle className="text-center text-2xl font-bold gradient-text">
+      <DialogContent 
+        className="sm:max-w-md w-[95vw] max-h-[90vh] overflow-y-auto" 
+        data-testid="auth-modal"
+        style={{
+          position: 'fixed',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          maxHeight: '90vh',
+          overflowY: 'auto',
+          zIndex: 9999
+        }}
+      >
+        <DialogHeader className="pb-4">
+          <DialogTitle className="text-center text-xl font-bold gradient-text">
             Welcome to MobilityHub
           </DialogTitle>
-          <DialogDescription className="text-center text-gray-600">
+          <DialogDescription className="text-center text-gray-600 text-sm">
             Your journey starts here
           </DialogDescription>
         </DialogHeader>
@@ -146,10 +158,10 @@ const AuthModal = ({ isOpen, onClose }) => {
           </TabsList>
 
           {/* Login Tab */}
-          <TabsContent value="login" className="space-y-4 mt-6">
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="login-email">Email</Label>
+          <TabsContent value="login" className="space-y-3 mt-4">
+            <form onSubmit={handleLogin} className="space-y-3">
+              <div className="space-y-1">
+                <Label htmlFor="login-email" className="text-sm">Email</Label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                   <Input
@@ -159,15 +171,15 @@ const AuthModal = ({ isOpen, onClose }) => {
                     placeholder="Enter your email"
                     value={formData.email}
                     onChange={handleInputChange}
-                    className="pl-10"
+                    className="pl-10 h-10"
                     data-testid="login-email-input"
                     required
                   />
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="login-password">Password</Label>
+              <div className="space-y-1">
+                <Label htmlFor="login-password" className="text-sm">Password</Label>
                 <div className="relative">
                   <Input
                     id="login-password"
@@ -176,7 +188,7 @@ const AuthModal = ({ isOpen, onClose }) => {
                     placeholder="Enter your password"
                     value={formData.password}
                     onChange={handleInputChange}
-                    className="pr-10"
+                    className="pr-10 h-10"
                     data-testid="login-password-input"
                     required
                   />
@@ -192,7 +204,7 @@ const AuthModal = ({ isOpen, onClose }) => {
 
               <Button
                 type="submit"
-                className="w-full btn-primary"
+                className="w-full btn-primary h-10"
                 disabled={loading}
                 data-testid="login-submit-button"
               >
@@ -200,7 +212,7 @@ const AuthModal = ({ isOpen, onClose }) => {
               </Button>
             </form>
 
-            <div className="text-center text-sm text-gray-600 mt-4">
+            <div className="text-center text-xs text-gray-600 mt-3">
               Don't have an account?{' '}
               <button 
                 onClick={() => document.querySelector('[value="register"]').click()}
@@ -212,10 +224,10 @@ const AuthModal = ({ isOpen, onClose }) => {
           </TabsContent>
 
           {/* Register Tab */}
-          <TabsContent value="register" className="space-y-4 mt-6">
-            <form onSubmit={handleRegister} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="register-name">Full Name</Label>
+          <TabsContent value="register" className="space-y-3 mt-4">
+            <form onSubmit={handleRegister} className="space-y-3">
+              <div className="space-y-1">
+                <Label htmlFor="register-name" className="text-sm">Full Name</Label>
                 <div className="relative">
                   <UserCheck className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                   <Input
@@ -225,15 +237,15 @@ const AuthModal = ({ isOpen, onClose }) => {
                     placeholder="Enter your full name"
                     value={formData.name}
                     onChange={handleInputChange}
-                    className="pl-10"
+                    className="pl-10 h-10"
                     data-testid="register-name-input"
                     required
                   />
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="register-email">Email</Label>
+              <div className="space-y-1">
+                <Label htmlFor="register-email" className="text-sm">Email</Label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                   <Input
@@ -243,15 +255,15 @@ const AuthModal = ({ isOpen, onClose }) => {
                     placeholder="Enter your email"
                     value={formData.email}
                     onChange={handleInputChange}
-                    className="pl-10"
+                    className="pl-10 h-10"
                     data-testid="register-email-input"
                     required
                   />
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="register-phone">Phone Number</Label>
+              <div className="space-y-1">
+                <Label htmlFor="register-phone" className="text-sm">Phone Number</Label>
                 <div className="relative">
                   <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                   <Input
@@ -261,17 +273,17 @@ const AuthModal = ({ isOpen, onClose }) => {
                     placeholder="Enter your phone number"
                     value={formData.phone}
                     onChange={handleInputChange}
-                    className="pl-10"
+                    className="pl-10 h-10"
                     data-testid="register-phone-input"
                     required
                   />
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="register-role">I want to</Label>
+              <div className="space-y-1">
+                <Label htmlFor="register-role" className="text-sm">I want to</Label>
                 <Select value={formData.role} onValueChange={handleRoleChange}>
-                  <SelectTrigger data-testid="role-select">
+                  <SelectTrigger data-testid="role-select" className="h-10">
                     <SelectValue placeholder="Select your role" />
                   </SelectTrigger>
                   <SelectContent>
@@ -297,8 +309,8 @@ const AuthModal = ({ isOpen, onClose }) => {
                 </Select>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="register-password">Password</Label>
+              <div className="space-y-1">
+                <Label htmlFor="register-password" className="text-sm">Password</Label>
                 <div className="relative">
                   <Input
                     id="register-password"
@@ -307,7 +319,7 @@ const AuthModal = ({ isOpen, onClose }) => {
                     placeholder="Create a password (min. 6 characters)"
                     value={formData.password}
                     onChange={handleInputChange}
-                    className="pr-10"
+                    className="pr-10 h-10"
                     data-testid="register-password-input"
                     required
                     minLength={6}
@@ -324,7 +336,7 @@ const AuthModal = ({ isOpen, onClose }) => {
 
               <Button
                 type="submit"
-                className="w-full btn-primary"
+                className="w-full btn-primary h-10"
                 disabled={loading}
                 data-testid="register-submit-button"
               >
@@ -332,7 +344,7 @@ const AuthModal = ({ isOpen, onClose }) => {
               </Button>
             </form>
 
-            <div className="text-center text-sm text-gray-600 mt-4">
+            <div className="text-center text-xs text-gray-600 mt-3">
               Already have an account?{' '}
               <button 
                 onClick={() => document.querySelector('[value="login"]').click()}

@@ -88,18 +88,27 @@ if [ "$PUSH_CHANGES" = true ]; then
     print_success "Git operations completed"
 fi
 
-# Step 2: Stop existing containers
+# Step 2: Stop existing containers (preserve data volumes)
 print_status "Step 2: Stopping existing containers..."
 docker compose down --remove-orphans
 print_success "Containers stopped"
 
+# Step 2.5: Backup user data if it exists
+print_status "Step 2.5: Checking for existing user data..."
+if docker volume ls | grep -q "tagix_mongodb_data"; then
+    print_success "✅ MongoDB volume exists - data will be preserved"
+else
+    print_warning "⚠️  No existing MongoDB volume found - fresh database will be created"
+fi
+
 # Step 3: Clean build (optional)
 if [ "$CLEAN_BUILD" = true ]; then
-    print_status "Step 3: Clean build - removing old images..."
-    docker compose down --rmi all --volumes --remove-orphans
+    print_status "Step 3: Clean build - removing old images (PRESERVING DATA VOLUMES)..."
+    docker compose down --rmi all --remove-orphans
+    print_warning "Note: Data volumes are preserved. Use 'docker volume rm tagix_mongodb_data' to remove data if needed."
     print_success "Old images cleaned"
 else
-    print_status "Step 3: Fast rebuild - keeping base images..."
+    print_status "Step 3: Fast rebuild - keeping base images and data..."
 fi
 
 # Step 4: Build images
@@ -126,6 +135,21 @@ print_status "Step 7: Running health checks..."
 # Check MongoDB
 if docker compose exec -T mongodb mongosh --eval "db.adminCommand('ping')" > /dev/null 2>&1; then
     print_success "✅ MongoDB is healthy"
+    
+    # Check if we have existing data
+    user_count=$(docker compose exec -T mongodb mongosh tagix_db --eval "db.users.countDocuments()" --quiet 2>/dev/null | tail -1)
+    if [ "$user_count" -gt 0 ] 2>/dev/null; then
+        print_success "✅ Database contains $user_count users - data preserved!"
+    else
+        print_warning "⚠️  Database appears empty - users may need to be recreated"
+        print_status "🔄 Attempting to recreate test users..."
+        if [ -f "./create_test_users.sh" ]; then
+            ./create_test_users.sh
+            print_success "✅ Test users recreation attempted"
+        else
+            print_warning "⚠️  create_test_users.sh not found - please run manually"
+        fi
+    fi
 else
     print_warning "⚠️  MongoDB health check failed"
 fi

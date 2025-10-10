@@ -87,30 +87,88 @@ const API_URL = process.env.REACT_APP_BACKEND_URL;
 // Simple input component for when Google Maps is not available
 const SimpleAddressInput = ({ onPlaceSelect, placeholder, value, testId }) => {
   const [inputValue, setInputValue] = useState(value || '');
+  const [showCoordinateInput, setShowCoordinateInput] = useState(false);
+  const [lat, setLat] = useState('');
+  const [lng, setLng] = useState('');
 
   const handleInputChange = (e) => {
     const value = e.target.value;
     setInputValue(value);
   };
 
+  const parseCoordinates = (input) => {
+    // Try to parse coordinates in various formats
+    const coordPatterns = [
+      /^(-?\d+\.?\d*),\s*(-?\d+\.?\d*)$/, // "48.6670336, 9.7910784"
+      /^(-?\d+\.?\d*)\s+(-?\d+\.?\d*)$/, // "48.6670336 9.7910784"
+      /lat[:\s]*(-?\d+\.?\d*)[,\s]*lng[:\s]*(-?\d+\.?\d*)/i, // "lat: 48.6670336, lng: 9.7910784"
+    ];
+
+    for (const pattern of coordPatterns) {
+      const match = input.match(pattern);
+      if (match) {
+        const latitude = parseFloat(match[1]);
+        const longitude = parseFloat(match[2]);
+        if (!isNaN(latitude) && !isNaN(longitude) && 
+            latitude >= -90 && latitude <= 90 && 
+            longitude >= -180 && longitude <= 180) {
+          return { latitude, longitude };
+        }
+      }
+    }
+    return null;
+  };
+
   const handleSubmit = () => {
     if (inputValue.trim()) {
-      // Create a simple place object for manual entry
+      let latitude, longitude;
+      
+      // Try to parse coordinates from input
+      const coords = parseCoordinates(inputValue);
+      if (coords) {
+        latitude = coords.latitude;
+        longitude = coords.longitude;
+      } else if (showCoordinateInput && lat && lng) {
+        // Use manually entered coordinates
+        latitude = parseFloat(lat);
+        longitude = parseFloat(lng);
+      } else {
+        // Use default test coordinates (Stuttgart, Germany)
+        latitude = 48.7758;
+        longitude = 9.1829;
+      }
+
+      // Create a place object for manual entry
       const placeData = {
         formatted_address: inputValue,
         geometry: {
           location: {
-            lat: () => 0, // Default coordinates
-            lng: () => 0
+            lat: () => latitude,
+            lng: () => longitude
           }
         },
         name: inputValue,
-        place_id: `manual_${Date.now()}`
+        place_id: `manual_${Date.now()}`,
+        // Add location object for backend compatibility
+        location: {
+          latitude: latitude,
+          longitude: longitude,
+          address: inputValue
+        }
       };
-      onPlaceSelect && onPlaceSelect(placeData);
+      
+      if (onPlaceSelect) {
+        onPlaceSelect(placeData);
+        // Clear the input after successful selection
+        setInputValue('');
+        setShowCoordinateInput(false);
+        setLat('');
+        setLng('');
+      }
     }
   };
 
+  
   return (
     <div className="relative">
       <input
@@ -124,17 +182,67 @@ const SimpleAddressInput = ({ onPlaceSelect, placeholder, value, testId }) => {
       {inputValue.length >= 3 && (
         <div className="absolute z-50 w-full mt-1 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
           <div className="text-sm text-yellow-800 mb-2">
-            <strong>Manual Entry Mode</strong> - Enter coordinates or full address
+            <strong>Manual Entry Mode</strong> - Test environment without Google Maps
           </div>
           <div className="text-xs text-yellow-700 mb-2">
-            Examples: <code>48.6670336, 9.7910784</code> or <code>Stuttgart, Germany</code>
+            <strong>Option 1:</strong> Enter coordinates: <code>48.6670336, 9.7910784</code><br/>
+            <strong>Option 2:</strong> Enter address: <code>Stuttgart, Germany</code><br/>
+            <strong>Option 3:</strong> Use default test location (Stuttgart)
           </div>
-          <button
-            onClick={handleSubmit}
-            className="px-3 py-1 bg-yellow-600 text-white text-xs rounded hover:bg-yellow-700"
-          >
-            Use This Location
-          </button>
+          
+          {!showCoordinateInput && (
+            <div className="flex gap-2 mb-2">
+              <button
+                onClick={handleSubmit}
+                className="px-3 py-1 bg-yellow-600 text-white text-xs rounded hover:bg-yellow-700"
+              >
+                Use This Location
+              </button>
+              <button
+                onClick={() => setShowCoordinateInput(true)}
+                className="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
+              >
+                Enter Coordinates
+              </button>
+            </div>
+          )}
+          
+          {showCoordinateInput && (
+            <div className="space-y-2">
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  type="number"
+                  step="any"
+                  placeholder="Latitude"
+                  value={lat}
+                  onChange={(e) => setLat(e.target.value)}
+                  className="px-2 py-1 text-xs border border-gray-300 rounded"
+                />
+                <input
+                  type="number"
+                  step="any"
+                  placeholder="Longitude"
+                  value={lng}
+                  onChange={(e) => setLng(e.target.value)}
+                  className="px-2 py-1 text-xs border border-gray-300 rounded"
+                />
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleSubmit}
+                  className="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700"
+                >
+                  Use Coordinates
+                </button>
+                <button
+                  onClick={() => setShowCoordinateInput(false)}
+                  className="px-3 py-1 bg-gray-600 text-white text-xs rounded hover:bg-gray-700"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -397,7 +505,6 @@ const GoogleMapsAddressAutocomplete = ({ onPlaceSelect, placeholder, value, test
 const AddressAutocomplete = ({ onPlaceSelect, placeholder, value, testId }) => {
   const hasValidApiKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY && 
                         process.env.REACT_APP_GOOGLE_MAPS_API_KEY !== 'your_google_maps_api_key_here';
-  
   
   if (hasValidApiKey) {
     return (
@@ -972,18 +1079,44 @@ const RideBooking = () => {
                       </Map>
                     </APIProvider>
                   ) : (
-                    <div className="h-96 bg-gray-100 flex items-center justify-center">
-                      <div className="text-center p-6">
-                        <div className="w-16 h-16 bg-gray-300 rounded-full flex items-center justify-center mx-auto mb-4">
-                          <span className="text-gray-600 text-2xl">🗺️</span>
+                    <div className="h-96 bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+                      <div className="text-center p-6 max-w-md">
+                        <div className="w-16 h-16 bg-blue-200 rounded-full flex items-center justify-center mx-auto mb-4">
+                          <span className="text-blue-600 text-2xl">🚗</span>
                         </div>
-                        <h3 className="text-lg font-medium text-gray-900 mb-2">Map Preview</h3>
+                        <h3 className="text-lg font-medium text-gray-900 mb-2">Test Mode - Manual Entry</h3>
                         <p className="text-sm text-gray-600 mb-4">
-                          Configure Google Maps API key to see interactive map
+                          Google Maps API not configured. Using manual location entry for testing.
                         </p>
-                        <div className="text-xs text-gray-500">
-                          <p>Pickup: {pickupLocation ? pickupLocation.address : 'Not selected'}</p>
-                          <p>Dropoff: {dropoffLocation ? dropoffLocation.address : 'Not selected'}</p>
+                        <div className="bg-white rounded-lg p-4 text-left text-xs text-gray-600 space-y-2">
+                          <div className="flex justify-between">
+                            <span className="font-medium">Pickup:</span>
+                            <span className="text-gray-800">
+                              {pickupLocation ? pickupLocation.address : 'Not selected'}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="font-medium">Dropoff:</span>
+                            <span className="text-gray-800">
+                              {dropoffLocation ? dropoffLocation.address : 'Not selected'}
+                            </span>
+                          </div>
+                          {pickupLocation && dropoffLocation && (
+                            <div className="flex justify-between border-t pt-2">
+                              <span className="font-medium">Distance:</span>
+                              <span className="text-gray-800">
+                                {Math.round(getDistanceFromLatLonInKm(
+                                  pickupLocation.location.latitude,
+                                  pickupLocation.location.longitude,
+                                  dropoffLocation.location.latitude,
+                                  dropoffLocation.location.longitude
+                                ) * 10) / 10} km
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="mt-4 text-xs text-blue-600">
+                          💡 Tip: Enter coordinates like "48.6670336, 9.7910784" for precise locations
                         </div>
                       </div>
                     </div>

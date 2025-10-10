@@ -71,7 +71,7 @@ function MainApp() {
           } />
           
           <Route path="/driver" element={
-            user && user.role === 'driver' ? <DriverDashboard /> : <Navigate to="/" />
+            user && user.role === 'driver' ? <EnhancedDriverDashboard /> : <Navigate to="/" />
           } />
           
           <Route path="/admin" element={

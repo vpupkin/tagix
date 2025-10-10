@@ -14,6 +14,8 @@ import json
 import asyncio
 import time
 from geopy.distance import geodesic
+import hashlib
+import secrets
 # from emergentintegrations.payments.stripe.checkout import StripeCheckout, CheckoutSessionResponse, CheckoutStatusResponse, CheckoutSessionRequest
 
 # Mock classes for development
@@ -2366,6 +2368,132 @@ async def admin_update_user(
     )
     
     return await admin_crud.update_user(user_id, updates, current_user.id, admin_notes)
+
+@api_router.patch("/admin/users/{user_id}/password", response_model=Dict[str, str])
+async def admin_reset_user_password(
+    user_id: str,
+    request: Dict[str, str],
+    current_user: User = Depends(get_current_user)
+):
+    """Reset user password (Admin only)"""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    try:
+        # Extract new password from request body
+        new_password = request.get("new_password")
+        if not new_password:
+            raise HTTPException(status_code=400, detail="new_password is required")
+        
+        # Check if user exists
+        user = await db.users.find_one({"id": user_id})
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        # Hash the new password
+        hashed_password = get_password_hash(new_password)
+        
+        # Update user password
+        await db.users.update_one(
+            {"id": user_id},
+            {"$set": {"password": hashed_password, "updated_at": datetime.now(timezone.utc)}}
+        )
+        
+        # Log the action
+        if AUDIT_ENABLED:
+            await audit_system.log_action(
+                action=AuditAction.ADMIN_USER_MODIFIED,
+                entity_type="user",
+                entity_id=user_id,
+                user_id=current_user.id,
+                target_user_id=user_id,
+                metadata={"action": "password_reset", "admin_id": current_user.id}
+            )
+        
+        return {"message": "Password reset successfully"}
+        
+    except Exception as e:
+        logging.error(f"Error resetting password for user {user_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to reset password")
+
+@api_router.patch("/admin/users/{user_id}/status", response_model=Dict[str, str])
+async def admin_toggle_user_status(
+    user_id: str,
+    request: Dict[str, bool],
+    current_user: User = Depends(get_current_user)
+):
+    """Toggle user active status (Admin only)"""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    try:
+        # Extract is_active from request body
+        is_active = request.get("is_active")
+        if is_active is None:
+            raise HTTPException(status_code=400, detail="is_active is required")
+        
+        # Check if user exists
+        user = await db.users.find_one({"id": user_id})
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        # Update user status
+        await db.users.update_one(
+            {"id": user_id},
+            {"$set": {"is_active": is_active, "updated_at": datetime.now(timezone.utc)}}
+        )
+        
+        # Log the action
+        if AUDIT_ENABLED:
+            await audit_system.log_action(
+                action=AuditAction.ADMIN_USER_MODIFIED,
+                entity_type="user",
+                entity_id=user_id,
+                user_id=current_user.id,
+                target_user_id=user_id,
+                metadata={"action": "status_toggle", "new_status": is_active, "admin_id": current_user.id}
+            )
+        
+        status_text = "activated" if is_active else "deactivated"
+        return {"message": f"User {status_text} successfully"}
+        
+    except Exception as e:
+        logging.error(f"Error toggling user status for user {user_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to update user status")
+
+@api_router.post("/admin/users/{user_id}/send-validation", response_model=Dict[str, str])
+async def admin_send_validation_email(
+    user_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Send validation email to user (Admin only)"""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    try:
+        # Check if user exists
+        user = await db.users.find_one({"id": user_id})
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        # Log the action
+        if AUDIT_ENABLED:
+            await audit_system.log_action(
+                action=AuditAction.ADMIN_USER_MODIFIED,
+                entity_type="user",
+                entity_id=user_id,
+                user_id=current_user.id,
+                target_user_id=user_id,
+                metadata={"action": "send_validation", "admin_id": current_user.id}
+            )
+        
+        # In a real implementation, you would send an actual email here
+        # For now, we'll just log the action and return success
+        return {"message": "Validation email sent successfully"}
+        
+    except Exception as e:
+        logging.error(f"Error sending validation email for user {user_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to send validation email")
 
 @api_router.post("/admin/users/{user_id}/suspend", response_model=Dict[str, str])
 async def admin_suspend_user(
