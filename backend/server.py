@@ -128,6 +128,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Include the API router
+app.include_router(api_router)
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -2884,6 +2887,11 @@ async def get_all_conversations(
         for conv in conversation_list:
             conv["participants"] = list(conv["participants"])
             conv["_id"] = str(conv["thread_id"])  # For React key
+            
+            # Convert ObjectIds to strings in messages
+            for message in conv["messages"]:
+                if "_id" in message:
+                    message["_id"] = str(message["_id"])
         
         return {
             "conversations": conversation_list,
@@ -2895,6 +2903,50 @@ async def get_all_conversations(
     except Exception as e:
         logging.error(f"Error fetching conversations: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to fetch conversations")
+
+# === GENERAL ADMIN NOTIFICATION ENDPOINT ===
+
+class AdminDirectNotificationRequest(BaseModel):
+    user_id: str
+    message: str
+    notification_type: str = "admin_message"
+
+@api_router.post("/admin/notifications", response_model=Dict[str, Any])
+async def admin_send_direct_notification(
+    request: AdminDirectNotificationRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """Send direct notification from admin to any user"""
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    try:
+        # Send notification via WebSocket
+        await manager.send_personal_message(
+            json.dumps({
+                "type": request.notification_type,
+                "message": request.message,
+                "timestamp": datetime.now(timezone.utc).isoformat()
+            }),
+            request.user_id,
+            notification_type=request.notification_type,
+            sender_id=current_user.id,
+            sender_name=current_user.name,
+            metadata={
+                "admin_direct_message": True,
+                "message": request.message
+            }
+        )
+        
+        return {
+            "message": "Notification sent successfully",
+            "user_id": request.user_id,
+            "notification_type": request.notification_type
+        }
+        
+    except Exception as e:
+        logging.error(f"Error sending direct notification: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to send notification")
 
 @api_router.post("/admin/users/{user_id}/suspend", response_model=Dict[str, str])
 async def admin_suspend_user(
