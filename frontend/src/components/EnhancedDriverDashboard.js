@@ -336,7 +336,7 @@ const EnhancedDriverDashboard = () => {
   };
 
   const formatCurrency = (amount) => {
-    return `Ŧ${amount.toFixed(2)}`;
+    return `Ⓣ${amount.toFixed(2)}`;
   };
 
   const formatDate = (dateString) => {

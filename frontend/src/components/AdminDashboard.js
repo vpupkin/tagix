@@ -693,7 +693,7 @@ const AdminDashboard = () => {
   };
 
   const formatCurrency = (amount) => {
-    return `Ŧ${amount.toFixed(2)}`;
+    return `Ⓣ${amount.toFixed(2)}`;
   };
 
   const getAuditDescription = (log) => {
@@ -927,7 +927,7 @@ const AdminDashboard = () => {
                           <div>
                             <p className="text-sm font-medium text-gray-900">
                               {item.type === 'ride' && `Ride #${item.id.slice(-8)}`}
-                              {item.type === 'transaction' && `Balance ${item.transaction_type} - Ŧ${item.amount}`}
+                              {item.type === 'transaction' && `Balance ${item.transaction_type} - Ⓣ${item.amount}`}
                               {item.type === 'audit' && `${item.action} - ${item.entity_type}`}
                             </p>
                             <p className="text-xs text-gray-600">

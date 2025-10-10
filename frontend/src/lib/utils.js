@@ -5,7 +5,7 @@ export function cn(...inputs) {
   return twMerge(clsx(inputs));
 }
 
-// Format currency using ŦaxiCoin (Ŧ) symbol
+// Format currency using Ⓣ symbol
 export function formatCurrency(amount) {
-  return `Ŧ${amount.toFixed(2)}`;
+  return `Ⓣ${amount.toFixed(2)}`;
 }
