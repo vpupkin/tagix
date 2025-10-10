@@ -1477,35 +1477,71 @@ const AdminDashboard = () => {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  {conversations.length === 0 ? (
-                    <div className="text-center py-8 text-gray-500">
-                      <MessageSquare className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                      <p>No conversations found</p>
-                      <p className="text-sm">Conversations will appear here when users reply to admin messages</p>
-                    </div>
-                  ) : (
-                    conversations.map((conversation) => (
-                      <Card key={conversation.thread_id} className="border-l-4 border-l-green-500">
-                        <CardContent className="p-4">
-                          <div className="flex items-center justify-between mb-3">
-                            <div className="flex items-center space-x-3">
-                              <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                                <MessageSquare className="h-4 w-4 text-green-600" />
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Thread ID</TableHead>
+                        <TableHead>Participants</TableHead>
+                        <TableHead>Messages</TableHead>
+                        <TableHead>Last Message</TableHead>
+                        <TableHead>Latest Message</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {conversations.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={6} className="text-center py-8 text-gray-500">
+                            <MessageSquare className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                            <p>No conversations found</p>
+                            <p className="text-sm">Conversations will appear here when users reply to admin messages</p>
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        conversations.map((conversation) => (
+                          <TableRow key={conversation.thread_id}>
+                            <TableCell className="font-mono text-sm">
+                              {conversation.thread_id.substring(0, 8)}...
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex flex-col space-y-1">
+                                {conversation.participants.map((participant, index) => (
+                                  <Badge key={index} variant="secondary" className="text-xs w-fit">
+                                    {participant.name || participant.email || 'Unknown'}
+                                  </Badge>
+                                ))}
                               </div>
-                              <div>
-                                <h4 className="font-medium text-gray-900">
-                                  Conversation Thread
-                                </h4>
-                                <p className="text-sm text-gray-500">
-                                  {conversation.participants.length} participants • {conversation.message_count} messages
-                                </p>
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <p className="text-sm text-gray-500">
-                                {new Date(conversation.last_message_at).toLocaleString()}
-                              </p>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className="text-xs">
+                                {conversation.message_count} messages
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="font-mono text-sm">
+                              {new Date(conversation.last_message_at).toLocaleString()}
+                            </TableCell>
+                            <TableCell className="max-w-xs">
+                              {conversation.messages.length > 0 ? (
+                                <div className="space-y-1">
+                                  <div className="flex items-center space-x-2 text-sm">
+                                    <span className="font-medium text-gray-700">
+                                      {conversation.messages[conversation.messages.length - 1].sender_name || 'System'}
+                                    </span>
+                                    <span className="text-gray-400">•</span>
+                                    <span className="text-gray-500 text-xs">
+                                      {new Date(conversation.messages[conversation.messages.length - 1].created_at).toLocaleTimeString()}
+                                    </span>
+                                  </div>
+                                  <p className="text-gray-600 text-sm truncate">
+                                    {conversation.messages[conversation.messages.length - 1].message}
+                                  </p>
+                                </div>
+                              ) : (
+                                <span className="text-gray-400 text-sm">No messages</span>
+                              )}
+                            </TableCell>
+                            <TableCell>
                               <Button
                                 variant="outline"
                                 size="sm"
@@ -1513,39 +1549,14 @@ const AdminDashboard = () => {
                                 id={`admin-conversation-view-${conversation.thread_id}`}
                               >
                                 <Eye className="h-4 w-4 mr-2" />
-                                View Messages
+                                View
                               </Button>
-                            </div>
-                          </div>
-                          
-                          {/* Show last few messages preview */}
-                          <div className="space-y-2 max-h-32 overflow-y-auto">
-                            {conversation.messages.slice(-3).map((message) => (
-                              <div key={message.id} className="flex items-start space-x-2 text-sm">
-                                <div className={`w-2 h-2 rounded-full mt-2 ${
-                                  message.is_reply ? 'bg-blue-500' : 'bg-green-500'
-                                }`}></div>
-                                <div className="flex-1">
-                                  <div className="flex items-center space-x-2">
-                                    <span className="font-medium text-gray-700">
-                                      {message.sender_name || 'System'}
-                                    </span>
-                                    <span className="text-gray-400">•</span>
-                                    <span className="text-gray-500">
-                                      {new Date(message.created_at).toLocaleTimeString()}
-                                    </span>
-                                  </div>
-                                  <p className="text-gray-600 truncate">
-                                    {message.message}
-                                  </p>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))
-                  )}
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
                 </div>
               </CardContent>
             </Card>
