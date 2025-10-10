@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -36,9 +36,19 @@ const DriverLocationManager = ({ onLocationUpdate, onPreferencesUpdate }) => {
   
   const [locationInput, setLocationInput] = useState('');
   const [isUpdatingLocation, setIsUpdatingLocation] = useState(false);
+  const radiusTimeoutRef = useRef(null);
 
   useEffect(() => {
     fetchPreferences();
+  }, []);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (radiusTimeoutRef.current) {
+        clearTimeout(radiusTimeoutRef.current);
+      }
+    };
   }, []);
 
   const fetchPreferences = async () => {
@@ -48,9 +58,18 @@ const DriverLocationManager = ({ onLocationUpdate, onPreferencesUpdate }) => {
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      setPreferences(response.data);
-      if (response.data.current_location?.address) {
-        setLocationInput(response.data.current_location.address);
+      console.log('🔍 Fetched preferences:', response.data);
+      
+      // Ensure radius_km is within valid range
+      const preferences = response.data;
+      if (preferences.radius_km && (preferences.radius_km < 5 || preferences.radius_km > 100)) {
+        console.warn('⚠️ Invalid radius_km detected, resetting to default:', preferences.radius_km);
+        preferences.radius_km = 25; // Reset to default
+      }
+      
+      setPreferences(preferences);
+      if (preferences.current_location?.address) {
+        setLocationInput(preferences.current_location.address);
       }
     } catch (error) {
       console.error('Error fetching preferences:', error);
@@ -113,7 +132,13 @@ const DriverLocationManager = ({ onLocationUpdate, onPreferencesUpdate }) => {
       }
     } catch (error) {
       console.error('Error updating preferences:', error);
-      toast.error('Failed to update preferences');
+      const errorMessage = error.response?.data?.detail || 'Failed to update preferences';
+      toast.error(errorMessage);
+      
+      // Revert local state on error
+      if (newPreferences.radius_km) {
+        setPreferences(prev => ({ ...prev, radius_km: prev.radius_km }));
+      }
     } finally {
       setLoading(false);
     }
@@ -121,7 +146,26 @@ const DriverLocationManager = ({ onLocationUpdate, onPreferencesUpdate }) => {
 
   const handleRadiusChange = (value) => {
     const radius = value[0];
-    updatePreferences({ radius_km: radius });
+    console.log('🔍 Radius change requested:', radius, 'Current:', preferences.radius_km);
+    
+    // Validate radius before updating
+    if (radius < 5 || radius > 100) {
+      console.warn('⚠️ Invalid radius value:', radius);
+      return;
+    }
+    
+    // Update local state immediately for responsive UI
+    setPreferences(prev => ({ ...prev, radius_km: radius }));
+    
+    // Debounce the API call to avoid too many requests
+    if (radiusTimeoutRef.current) {
+      clearTimeout(radiusTimeoutRef.current);
+    }
+    
+    radiusTimeoutRef.current = setTimeout(() => {
+      console.log('🔍 Sending radius update to API:', radius);
+      updatePreferences({ radius_km: radius });
+    }, 500); // Wait 500ms after user stops moving slider
   };
 
   const handleAutoAcceptChange = (checked) => {
@@ -284,12 +328,26 @@ const DriverLocationManager = ({ onLocationUpdate, onPreferencesUpdate }) => {
               onValueChange={handleRadiusChange}
               max={100}
               min={5}
-              step={5}
+              step={1}
               className="w-full"
             />
             <div className="flex justify-between text-xs text-gray-500">
               <span>5 km</span>
               <span>100 km</span>
+            </div>
+            {/* Quick preset buttons */}
+            <div className="flex gap-2 mt-2">
+              {[10, 25, 50, 75, 100].map((preset) => (
+                <Button
+                  key={preset}
+                  variant={preferences.radius_km === preset ? "default" : "outline"}
+                  size="sm"
+                  className="text-xs px-2 py-1 h-6"
+                  onClick={() => handleRadiusChange([preset])}
+                >
+                  {preset}km
+                </Button>
+              ))}
             </div>
           </div>
           <p className="text-xs text-gray-600">
