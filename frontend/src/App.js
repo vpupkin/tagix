@@ -8,7 +8,6 @@ import Navbar from './components/Navbar';
 import AuthModal from './components/AuthModal';
 import HomePage from './components/HomePage';
 import RiderDashboard from './components/RiderDashboard';
-import DriverDashboard from './components/DriverDashboard';
 import EnhancedDriverDashboard from './components/EnhancedDriverDashboard';
 import AdminDashboard from './components/AdminDashboard';
 import RideBooking from './components/RideBooking';
