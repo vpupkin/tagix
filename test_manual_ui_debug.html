@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual UI Debug Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .input-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+            font-size: 12px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button.success {
+            background-color: #28a745;
+        }
+        button.danger {
+            background-color: #dc3545;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            font-size: 12px;
+        }
+        .result.success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .result.error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .manual-entry-hint {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            font-size: 12px;
+        }
+        .coordinate-inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .debug-info {
+            background-color: #e9ecef;
+            border: 1px solid #ced4da;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+            font-size: 11px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <h1>🐛 Manual UI Debug Test</h1>
+    <p>This test simulates the exact UI behavior of the manual ride booking component.</p>
+
+    <div class="test-container">
+        <h2>SimpleAddressInput Component Test</h2>
+        <div class="manual-entry-hint">
+            <strong>Manual Entry Mode</strong> - Test environment without Google Maps<br>
+            <strong>Option 1:</strong> Enter coordinates: <code>48.6670336, 9.7910784</code><br>
+            <strong>Option 2:</strong> Enter address: <code>Stuttgart, Germany</code><br>
+            <strong>Option 3:</strong> Use default test location (Stuttgart)
+        </div>
+        
+        <div class="input-group">
+            <label for="test-input">Test Input (Type at least 3 characters):</label>
+            <input type="text" id="test-input" placeholder="Enter pickup location or coordinates">
+            <div id="button-container" style="margin-top: 10px;"></div>
+        </div>
+        
+        <div id="result" class="result" style="display: none;"></div>
+        <div id="debug-info" class="debug-info" style="display: none;"></div>
+    </div>
+
+    <script>
+        // Simulate the exact SimpleAddressInput component logic
+        let inputValue = '';
+        let showCoordinateInput = false;
+        let lat = '';
+        let lng = '';
+        let selectedLocation = null;
+
+        // Parse coordinates function (exact copy from frontend)
+        function parseCoordinates(input) {
+            const coordPatterns = [
+                /^(-?\d+\.?\d*),\s*(-?\d+\.?\d*)$/, // "48.6670336, 9.7910784"
+                /^(-?\d+\.?\d*)\s+(-?\d+\.?\d*)$/, // "48.6670336 9.7910784"
+                /lat[:\s]*(-?\d+\.?\d*)[,\s]*lng[:\s]*(-?\d+\.?\d*)/i, // "lat: 48.6670336, lng: 9.7910784"
+            ];
+
+            for (const pattern of coordPatterns) {
+                const match = input.match(pattern);
+                if (match) {
+                    const latitude = parseFloat(match[1]);
+                    const longitude = parseFloat(match[2]);
+                    if (!isNaN(latitude) && !isNaN(longitude) && 
+                        latitude >= -90 && latitude <= 90 && 
+                        longitude >= -180 && longitude <= 180) {
+                        return { latitude, longitude };
+                    }
+                }
+            }
+            return null;
+        }
+
+        // Handle submit function (exact copy from frontend)
+        function handleSubmit() {
+            console.log('handleSubmit called with:', { inputValue, showCoordinateInput, lat, lng });
+            
+            if (inputValue.trim()) {
+                let latitude, longitude;
+                
+                // Try to parse coordinates from input
+                const coords = parseCoordinates(inputValue);
+                if (coords) {
+                    latitude = coords.latitude;
+                    longitude = coords.longitude;
+                    console.log('Parsed coordinates:', coords);
+                } else if (showCoordinateInput && lat && lng) {
+                    // Use manually entered coordinates
+                    latitude = parseFloat(lat);
+                    longitude = parseFloat(lng);
+                    console.log('Using manual coordinates:', { latitude, longitude });
+                } else {
+                    // Use default test coordinates (Stuttgart, Germany)
+                    latitude = 48.7758;
+                    longitude = 9.1829;
+                    console.log('Using default coordinates:', { latitude, longitude });
+                }
+
+                // Create a place object for manual entry
+                const placeData = {
+                    formatted_address: inputValue,
+                    geometry: {
+                        location: {
+                            lat: () => latitude,
+                            lng: () => longitude
+                        }
+                    },
+                    name: inputValue,
+                    place_id: `manual_${Date.now()}`,
+                    // Add address property for compatibility with handleBookRide
+                    address: inputValue,
+                    // Add location object for backend compatibility
+                    location: {
+                        latitude: latitude,
+                        longitude: longitude,
+                        address: inputValue
+                    }
+                };
+                
+                console.log('Created placeData:', placeData);
+                selectedLocation = placeData;
+                
+                // Clear the input after successful selection
+                inputValue = '';
+                showCoordinateInput = false;
+                lat = '';
+                lng = '';
+                
+                // Update UI
+                updateUI();
+                showResult(`✅ Location processed successfully!\n` +
+                         `Address: ${placeData.address}\n` +
+                         `Coordinates: ${placeData.location.latitude}, ${placeData.location.longitude}\n` +
+                         `Place ID: ${placeData.place_id}`, 'success');
+                
+                return placeData;
+            } else {
+                showResult('❌ Please enter a location', 'error');
+                return null;
+            }
+        }
+
+        // Update UI function
+        function updateUI() {
+            const input = document.getElementById('test-input');
+            const buttonContainer = document.getElementById('button-container');
+            
+            input.value = inputValue;
+            
+            if (inputValue.length >= 3) {
+                if (!showCoordinateInput) {
+                    buttonContainer.innerHTML = `
+                        <button onclick="handleSubmit()" class="success">Use This Location</button>
+                        <button onclick="showCoordinateInputMode()">Enter Coordinates</button>
+                    `;
+                } else {
+                    buttonContainer.innerHTML = `
+                        <div class="coordinate-inputs">
+                            <input type="number" step="any" placeholder="Latitude" id="lat-input" value="${lat}">
+                            <input type="number" step="any" placeholder="Longitude" id="lng-input" value="${lng}">
+                        </div>
+                        <button onclick="handleSubmit()" class="success">Use Coordinates</button>
+                        <button onclick="hideCoordinateInputMode()" class="danger">Cancel</button>
+                    `;
+                }
+            } else {
+                buttonContainer.innerHTML = '';
+            }
+            
+            updateDebugInfo();
+        }
+
+        // Show coordinate input mode
+        function showCoordinateInputMode() {
+            console.log('showCoordinateInputMode called');
+            showCoordinateInput = true;
+            updateUI();
+        }
+
+        // Hide coordinate input mode
+        function hideCoordinateInputMode() {
+            console.log('hideCoordinateInputMode called');
+            showCoordinateInput = false;
+            lat = '';
+            lng = '';
+            updateUI();
+        }
+
+        // Update debug info
+        function updateDebugInfo() {
+            const debugInfo = document.getElementById('debug-info');
+            debugInfo.innerHTML = `
+State Debug Info:
+- inputValue: "${inputValue}"
+- showCoordinateInput: ${showCoordinateInput}
+- lat: "${lat}"
+- lng: "${lng}"
+- selectedLocation: ${selectedLocation ? 'Set' : 'Not set'}
+- inputValue.length: ${inputValue.length}
+            `;
+            debugInfo.style.display = 'block';
+        }
+
+        // Show result
+        function showResult(message, type) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.className = `result ${type}`;
+            resultDiv.textContent = message;
+            resultDiv.style.display = 'block';
+        }
+
+        // Handle input change
+        function handleInputChange(e) {
+            inputValue = e.target.value;
+            console.log('Input changed to:', inputValue);
+            updateUI();
+        }
+
+        // Handle coordinate input changes
+        function handleLatChange(e) {
+            lat = e.target.value;
+            console.log('Latitude changed to:', lat);
+            updateDebugInfo();
+        }
+
+        function handleLngChange(e) {
+            lng = e.target.value;
+            console.log('Longitude changed to:', lng);
+            updateDebugInfo();
+        }
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function() {
+            const input = document.getElementById('test-input');
+            input.addEventListener('input', handleInputChange);
+            
+            // Add event listeners for coordinate inputs when they're created
+            document.addEventListener('input', function(e) {
+                if (e.target.id === 'lat-input') {
+                    handleLatChange(e);
+                } else if (e.target.id === 'lng-input') {
+                    handleLngChange(e);
+                }
+            });
+            
+            updateDebugInfo();
+            console.log('Page initialized');
+        });
+
+        // Test functions
+        function testCoordinateInput() {
+            inputValue = '48.7758, 9.1829';
+            updateUI();
+            console.log('Test: Set coordinate input');
+        }
+
+        function testAddressInput() {
+            inputValue = 'Stuttgart, Germany';
+            updateUI();
+            console.log('Test: Set address input');
+        }
+
+        function testShortInput() {
+            inputValue = 'St';
+            updateUI();
+            console.log('Test: Set short input (should not show buttons)');
+        }
+    </script>
+
+    <div class="test-container">
+        <h2>Quick Tests</h2>
+        <button onclick="testCoordinateInput()">Test Coordinate Input</button>
+        <button onclick="testAddressInput()">Test Address Input</button>
+        <button onclick="testShortInput()">Test Short Input</button>
+        <button onclick="clearAll()" class="danger">Clear All</button>
+    </div>
+
+    <script>
+        function clearAll() {
+            inputValue = '';
+            showCoordinateInput = false;
+            lat = '';
+            lng = '';
+            selectedLocation = null;
+            document.getElementById('test-input').value = '';
+            document.getElementById('result').style.display = 'none';
+            updateUI();
+        }
+    </script>
+</body>
+</html>
