@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useWebSocket } from '../contexts/WebSocketContext';
+import { Button } from '@/components/ui/button';
 import axios from 'axios';
 import { toast } from 'sonner';
 import { 
@@ -418,7 +419,7 @@ const EnhancedDriverDashboard = () => {
         </div>
 
         {/* Status Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <div className="bg-white p-6 rounded-lg shadow">
             <div className="flex items-center justify-between">
               <div>
@@ -462,18 +463,6 @@ const EnhancedDriverDashboard = () => {
           <div className="bg-white p-6 rounded-lg shadow">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Available Rides</p>
-                <p className="text-2xl font-bold text-gray-900">{availableRides.length}</p>
-              </div>
-              <div className="p-2 rounded-full bg-purple-100">
-                <Navigation className="h-6 w-6 text-purple-600" />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white p-6 rounded-lg shadow">
-            <div className="flex items-center justify-between">
-              <div>
                 <p className="text-sm font-medium text-gray-600">Balance</p>
                 <p className="text-2xl font-bold text-gray-900">
                   {formatCurrency(balance)}
@@ -486,8 +475,9 @@ const EnhancedDriverDashboard = () => {
           </div>
         </div>
 
-        {/* Location & Preferences Manager */}
-        <div className="mb-8">
+        {/* Location & Preferences and Available Rides - Combined Row */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          {/* Location & Preferences Manager */}
           <DriverLocationManager 
             onLocationUpdate={(location) => {
               setCurrentLocation(location);
@@ -503,6 +493,65 @@ const EnhancedDriverDashboard = () => {
               }
             }}
           />
+
+          {/* Available Rides Card */}
+          <div className="bg-white p-6 rounded-lg shadow">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Available Rides</p>
+                <p className="text-2xl font-bold text-gray-900">{availableRides.length}</p>
+                {currentLocation && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    Within 25km of {currentLocation.latitude?.toFixed(4)}, {currentLocation.longitude?.toFixed(4)}
+                  </p>
+                )}
+              </div>
+              <div className="p-2 rounded-full bg-purple-100">
+                <Navigation className="h-6 w-6 text-purple-600" />
+              </div>
+            </div>
+            
+            {/* Available Rides List */}
+            {availableRides.length > 0 ? (
+              <div className="space-y-3 max-h-64 overflow-y-auto">
+                {availableRides.slice(0, 5).map((ride) => (
+                  <div key={ride.id} className="p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-900 truncate">
+                          {ride.pickup_location?.address || 'Pickup Location'} → {ride.dropoff_location?.address || 'Destination'}
+                        </p>
+                        <p className="text-xs text-gray-600">
+                          {ride.distance_km?.toFixed(1)}km • Ⓣ{ride.estimated_fare?.toFixed(2)}
+                        </p>
+                      </div>
+                      <Button
+                        size="sm"
+                        className="ml-2"
+                        onClick={() => {
+                          // Handle ride acceptance
+                          console.log('Accepting ride:', ride.id);
+                        }}
+                      >
+                        Accept
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+                {availableRides.length > 5 && (
+                  <p className="text-xs text-gray-500 text-center">
+                    +{availableRides.length - 5} more rides available
+                  </p>
+                )}
+              </div>
+            ) : (
+              <div className="text-center py-4">
+                <Navigation className="h-8 w-8 text-gray-300 mx-auto mb-2" />
+                <p className="text-sm text-gray-500">No rides available</p>
+                <p className="text-xs text-gray-400">Go online to see available rides</p>
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
