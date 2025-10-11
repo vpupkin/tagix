@@ -569,7 +569,9 @@ const EnhancedDriverDashboard = () => {
               <div className="text-center py-4">
                 <Navigation className="h-8 w-8 text-gray-300 mx-auto mb-2" />
                 <p className="text-sm text-gray-500">No rides available</p>
-                <p className="text-xs text-gray-400">Go online to see available rides</p>
+                <p className="text-xs text-gray-400">
+                  {isOnline ? 'Check back in a few moments' : 'Go online to see available rides'}
+                </p>
               </div>
             )}
           </div>
