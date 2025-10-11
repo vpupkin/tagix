@@ -25,7 +25,7 @@ import { toast } from 'sonner';
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
 const DriverRideHistory = () => {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const [rides, setRides] = useState([]);
   const [filteredRides, setFilteredRides] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -40,10 +40,23 @@ const DriverRideHistory = () => {
     filterRides();
   }, [rides, searchTerm, statusFilter]);
 
+  const getAuthHeaders = () => ({
+    Authorization: `Bearer ${token}`,
+    'Content-Type': 'application/json'
+  });
+
   const fetchRides = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${API_URL}/api/rides/my-rides`);
+      const response = await axios.get(`${API_URL}/api/rides/my-rides`, {
+        headers: getAuthHeaders()
+      });
+      
+      console.log('🔍 DriverRideHistory: API response:', response.data);
+      
+      // Debug: Check for rating data in the response
+      const ridesWithRatings = response.data.filter(ride => ride.rating);
+      console.log('🔍 Rides with ratings:', ridesWithRatings);
       
       // Sort by date (newest first)
       const sortedRides = response.data.sort((a, b) => {
@@ -146,6 +159,17 @@ const DriverRideHistory = () => {
   const calculateEarnings = (fare) => {
     // Driver gets 80% (20% platform fee)
     return fare * 0.8;
+  };
+
+  const getRatingEmoji = (rating) => {
+    switch (rating) {
+      case 1: return '😠';
+      case 2: return '😢';
+      case 3: return '😐';
+      case 4: return '😊';
+      case 5: return '🤩';
+      default: return '—';
+    }
   };
 
   return (
