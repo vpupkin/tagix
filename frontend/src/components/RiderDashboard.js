@@ -18,11 +18,13 @@ import {
   ChevronRight,
   Navigation,
   Zap,
-  Wallet
+  Wallet,
+  RotateCcw
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { getRevisionInfo } from '../utils/gitRevision';
 import NotificationWithReply from './NotificationWithReply';
+import BookAgainModal from './BookAgainModal';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -46,6 +48,8 @@ const RiderDashboard = () => {
     currentBalance: 0.0,
     recentTransactions: []
   });
+  const [showBookAgainModal, setShowBookAgainModal] = useState(false);
+  const [selectedRide, setSelectedRide] = useState(null);
 
   useEffect(() => {
     fetchRecentRides();
@@ -199,6 +203,37 @@ const RiderDashboard = () => {
       });
     } catch (error) {
       return 'Date error';
+    }
+  };
+
+  const openBookAgainModal = (ride) => {
+    setSelectedRide(ride);
+    setShowBookAgainModal(true);
+  };
+
+  const handleBookAgain = async (rideData) => {
+    try {
+      const response = await axios.post(`${API_URL}/api/rides/request`, rideData, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('mobility_token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      toast.success('Ride request submitted successfully!');
+      
+      // Close the modal
+      setShowBookAgainModal(false);
+      setSelectedRide(null);
+      
+      // Optionally redirect to rides page
+      setTimeout(() => {
+        window.location.href = '/rides';
+      }, 2000);
+      
+    } catch (error) {
+      console.error('Error booking ride:', error);
+      throw error; // Re-throw to let the modal handle the error
     }
   };
 
@@ -446,13 +481,23 @@ const RiderDashboard = () => {
                             })()}
                           </div>
                         </div>
-                        <div className="text-right" id={`rider-dashboard-ride-status-${ride.id}`}>
+                        <div className="text-right flex flex-col items-end space-y-2" id={`rider-dashboard-ride-status-${ride.id}`}>
                           <Badge className={getStatusColor(ride.status || 'pending')} id={`rider-dashboard-ride-badge-${ride.id}`}>
                             {(ride.status || 'pending').replace('_', ' ')}
                           </Badge>
-                          <p className="text-sm font-medium text-gray-900 mt-1" id={`rider-dashboard-ride-fare-${ride.id}`}>
+                          <p className="text-sm font-medium text-gray-900" id={`rider-dashboard-ride-fare-${ride.id}`}>
                             Ⓣ{(ride.estimated_fare || ride.fare || 0).toFixed(2)}
                           </p>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openBookAgainModal(ride)}
+                            className="flex items-center space-x-1 bg-indigo-50 border-indigo-200 text-indigo-700 hover:bg-indigo-100 text-xs"
+                            data-testid={`book-again-${ride.id}`}
+                          >
+                            <RotateCcw className="h-3 w-3" />
+                            <span>Book Again</span>
+                          </Button>
                         </div>
                       </div>
                     ))}
@@ -548,6 +593,17 @@ const RiderDashboard = () => {
           </div>
         </div>
       </div>
+
+      {/* Book Again Modal */}
+      <BookAgainModal
+        isOpen={showBookAgainModal}
+        onClose={() => {
+          setShowBookAgainModal(false);
+          setSelectedRide(null);
+        }}
+        previousRide={selectedRide}
+        onBookRide={handleBookAgain}
+      />
     </div>
   );
 };

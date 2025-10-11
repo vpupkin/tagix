@@ -37,9 +37,11 @@ import {
   XCircle,
   AlertCircle,
   Eye,
-  MessageSquare
+  MessageSquare,
+  RotateCcw
 } from 'lucide-react';
 import { toast } from 'sonner';
+import BookAgainModal from './BookAgainModal';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -301,6 +303,7 @@ const RideHistory = () => {
   const [selectedRide, setSelectedRide] = useState(null);
   const [showRatingModal, setShowRatingModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [showBookAgainModal, setShowBookAgainModal] = useState(false);
 
   useEffect(() => {
     fetchRides();
@@ -365,6 +368,37 @@ const RideHistory = () => {
 
   const canRateRide = (ride) => {
     return ride.status === 'completed' && user.role === 'rider';
+  };
+
+  const openBookAgainModal = (ride) => {
+    setSelectedRide(ride);
+    setShowBookAgainModal(true);
+  };
+
+  const handleBookAgain = async (rideData) => {
+    try {
+      const response = await axios.post(`${API_URL}/api/rides/request`, rideData, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('mobility_token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      toast.success('Ride request submitted successfully!');
+      
+      // Close the modal
+      setShowBookAgainModal(false);
+      setSelectedRide(null);
+      
+      // Optionally redirect to rides page
+      setTimeout(() => {
+        window.location.href = '/rides';
+      }, 2000);
+      
+    } catch (error) {
+      console.error('Error booking ride:', error);
+      throw error; // Re-throw to let the modal handle the error
+    }
   };
 
   if (loading) {
@@ -515,6 +549,19 @@ const RideHistory = () => {
                                 <span>Rate</span>
                               </Button>
                             )}
+                            
+                            {user.role === 'rider' && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => openBookAgainModal(ride)}
+                                className="flex items-center space-x-1 bg-indigo-50 border-indigo-200 text-indigo-700 hover:bg-indigo-100"
+                                data-testid={`book-again-${ride.id}`}
+                              >
+                                <RotateCcw className="h-4 w-4" />
+                                <span>Book Again</span>
+                              </Button>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -565,6 +612,17 @@ const RideHistory = () => {
             setShowDetailsModal(false);
             setSelectedRide(null);
           }}
+        />
+
+        {/* Book Again Modal */}
+        <BookAgainModal
+          isOpen={showBookAgainModal}
+          onClose={() => {
+            setShowBookAgainModal(false);
+            setSelectedRide(null);
+          }}
+          previousRide={selectedRide}
+          onBookRide={handleBookAgain}
         />
       </div>
     </div>
