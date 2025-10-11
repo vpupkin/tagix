@@ -9,9 +9,9 @@ console.log('🔍 Debugging Notification System...\n');
 const riderId = 'df5a5f77-8539-45fe-91d0-0affc9895500'; // Tatjana MAZO
 
 console.log(`Testing with Rider ID: ${riderId}`);
-console.log(`WebSocket URL: ws://localhost:3000/ws/${riderId}\n`);
+console.log(`WebSocket URL: ws://localhost:8001/ws/${riderId}\n`);
 
-const ws = new WebSocket(`ws://localhost:3000/ws/${riderId}`);
+const ws = new WebSocket(`ws://localhost:8001/ws/${riderId}`);
 
 ws.on('open', function open() {
     console.log('✅ WebSocket connection established');

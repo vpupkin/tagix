@@ -7,7 +7,7 @@ console.log('🔔 Testing Enhanced Notification System...\n');
 
 // Test configuration
 const testUserId = '78f12260-1486-4463-95fc-5bb6d26fdb3a';
-const wsUrl = `ws://localhost:3000/ws/${testUserId}`;
+const wsUrl = `ws://localhost:8001/ws/${testUserId}`;
 
 console.log(`Connecting to: ${wsUrl}`);
 

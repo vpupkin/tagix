@@ -1,6 +1,6 @@
 const axios = require('axios');
 
-const API_URL = 'http://localhost:8000';
+const API_URL = 'http://localhost:8001';
 
 async function testSimpleNotification() {
   console.log('🧪 Testing simple notification flow...\n');
