@@ -1663,6 +1663,90 @@ async def update_ride_status(ride_id: str, update: RideUpdate, current_user: Use
             }
         )
         
+        # Deduct platform fee from driver's balance
+        platform_fee = payment_data["platform_fee"]
+        if platform_fee > 0:
+            # Get current driver balance
+            balance_doc = await db.user_balances.find_one({"user_id": current_user.id})
+            current_balance = balance_doc.get("balance", 0.0) if balance_doc else 0.0
+            
+            # Calculate new balance (deduct platform fee)
+            new_balance = current_balance - platform_fee
+            
+            # Create balance transaction record for platform fee deduction
+            transaction_id = str(uuid.uuid4())
+            balance_transaction = {
+                "id": transaction_id,
+                "user_id": current_user.id,
+                "amount": platform_fee,
+                "amount_change": -platform_fee,
+                "transaction_type": "debit",
+                "description": f"Platform fee for ride {ride_id}",
+                "reference_id": payment_data["id"],
+                "admin_id": "system",
+                "admin_name": "System",
+                "previous_balance": current_balance,
+                "new_balance": new_balance,
+                "created_at": processing_time
+            }
+            
+            # Update driver's balance
+            await db.user_balances.update_one(
+                {"user_id": current_user.id},
+                {
+                    "$set": {
+                        "user_id": current_user.id,
+                        "balance": new_balance,
+                        "updated_at": processing_time
+                    }
+                },
+                upsert=True
+            )
+            
+            # Save balance transaction
+            await db.balance_transactions.insert_one(balance_transaction)
+            
+            # Send notification to driver about platform fee deduction
+            await manager.send_personal_message(
+                json.dumps({
+                    "type": "balance_transaction",
+                    "transaction_id": transaction_id,
+                    "amount": platform_fee,
+                    "amount_change": -platform_fee,
+                    "transaction_type": "debit",
+                    "description": f"Platform fee for ride {ride_id}",
+                    "previous_balance": current_balance,
+                    "new_balance": new_balance,
+                    "admin_name": "System",
+                    "message": f"Platform fee deducted: Ⓣ{platform_fee:.2f}. New balance: Ⓣ{new_balance:.2f}",
+                    "timestamp": processing_time.isoformat()
+                }),
+                current_user.id,
+                notification_type="balance_transaction",
+                sender_id="system",
+                sender_name="System"
+            )
+            
+            # Log audit for platform fee deduction
+            if AUDIT_ENABLED and audit_system:
+                await audit_system.log_action(
+                    action=AuditAction.BALANCE_TRANSACTION,
+                    user_id=current_user.id,
+                    entity_type="balance_transaction",
+                    entity_id=transaction_id,
+                    severity="medium",
+                    metadata={
+                        "transaction_type": "debit",
+                        "amount": platform_fee,
+                        "description": f"Platform fee for ride {ride_id}",
+                        "previous_balance": current_balance,
+                        "new_balance": new_balance,
+                        "payment_id": payment_data["id"],
+                        "ride_id": ride_id,
+                        "processed_at": processing_time.isoformat()
+                    }
+                )
+        
         # Log audit for payment completion
         if AUDIT_ENABLED and audit_system:
             await audit_system.log_action(
@@ -2301,17 +2385,19 @@ async def admin_balance_transaction(
     # Log the admin action
     if AUDIT_ENABLED and audit_system:
         await audit_system.log_action(
-            action=AuditAction.ADMIN_SYSTEM_CONFIG_CHANGED,
+            action=AuditAction.BALANCE_TRANSACTION,
             user_id=current_user.id,
             entity_type="balance_transaction",
             entity_id=transaction_id,
+            severity="medium",
             metadata={
-                "target_user_id": user_id,
-                "amount": request.amount,
                 "transaction_type": request.transaction_type,
+                "amount": request.amount,
                 "description": request.description,
+                "target_user_id": user_id,
                 "previous_balance": current_balance,
-                "new_balance": new_balance
+                "new_balance": new_balance,
+                "admin_action": True
             }
         )
     

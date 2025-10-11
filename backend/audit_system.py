@@ -64,6 +64,12 @@ class AuditAction:
     PAYMENT_REFUNDED = "payment_refunded"
     PAYMENT_QUERY = "payment_query"
     
+    # Balance actions
+    BALANCE_TRANSACTION = "balance_transaction"
+    BALANCE_CREDIT = "balance_credit"
+    BALANCE_DEBIT = "balance_debit"
+    BALANCE_REFUND = "balance_refund"
+    
     # Admin actions
     ADMIN_USER_MODIFIED = "admin_user_modified"
     ADMIN_RIDE_MODIFIED = "admin_ride_modified"
