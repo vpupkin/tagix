@@ -567,16 +567,50 @@ const EnhancedDriverDashboard = () => {
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-lg shadow">
+          <div className={`p-6 rounded-lg shadow ${
+            balance <= 0 
+              ? 'bg-red-50 border-2 border-red-200' 
+              : balance < 10 
+                ? 'bg-yellow-50 border-2 border-yellow-200' 
+                : 'bg-white'
+          }`}>
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Balance</p>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className={`text-2xl font-bold ${
+                  balance <= 0 
+                    ? 'text-red-600' 
+                    : balance < 10 
+                      ? 'text-yellow-600' 
+                      : 'text-gray-900'
+                }`}>
                   {formatCurrency(balance)}
                 </p>
+                {balance <= 0 && (
+                  <p className="text-xs text-red-600 mt-1">
+                    Cannot accept rides
+                  </p>
+                )}
+                {balance > 0 && balance < 10 && (
+                  <p className="text-xs text-yellow-600 mt-1">
+                    Low balance warning
+                  </p>
+                )}
               </div>
-              <div className="p-2 rounded-full bg-indigo-100">
-                <Wallet className="h-6 w-6 text-indigo-600" />
+              <div className={`p-2 rounded-full ${
+                balance <= 0 
+                  ? 'bg-red-100' 
+                  : balance < 10 
+                    ? 'bg-yellow-100' 
+                    : 'bg-indigo-100'
+              }`}>
+                <Wallet className={`h-6 w-6 ${
+                  balance <= 0 
+                    ? 'text-red-600' 
+                    : balance < 10 
+                      ? 'text-yellow-600' 
+                      : 'text-indigo-600'
+                }`} />
               </div>
             </div>
           </div>
@@ -668,7 +702,15 @@ const EnhancedDriverDashboard = () => {
                               ? 'bg-green-600 hover:bg-green-700' 
                               : 'bg-purple-600 hover:bg-purple-700'
                           }`}
+                          disabled={balance <= 0 || activeRide !== null}
                           onClick={() => acceptRide(ride.id)}
+                          title={
+                            balance <= 0 
+                              ? 'Cannot accept rides with insufficient balance' 
+                              : activeRide !== null 
+                                ? 'Cannot accept rides while another ride is in progress' 
+                                : 'Accept this ride'
+                          }
                         >
                           Accept
                         </Button>
@@ -680,6 +722,21 @@ const EnhancedDriverDashboard = () => {
                   <p className="text-xs text-gray-500 text-center">
                     +{availableRides.length - 5} more rides available
                   </p>
+                )}
+                
+                {/* Show reason why Accept button is disabled */}
+                {availableRides.length > 0 && (balance <= 0 || activeRide !== null) && (
+                  <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <AlertCircle className="h-4 w-4 text-yellow-600" />
+                      <p className="text-xs text-yellow-800">
+                        {balance <= 0 
+                          ? 'Cannot accept rides: Insufficient balance (Ⓣ0.00)' 
+                          : 'Cannot accept rides: Another ride is currently in progress'
+                        }
+                      </p>
+                    </div>
+                  </div>
                 )}
               </div>
             ) : (
