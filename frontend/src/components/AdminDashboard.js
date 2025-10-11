@@ -122,6 +122,9 @@ const AdminDashboard = () => {
   const [selectedConversation, setSelectedConversation] = useState(null);
   const [conversationMessages, setConversationMessages] = useState([]);
   
+  // Tab navigation state
+  const [activeTab, setActiveTab] = useState('overview');
+  
   // Audit Trail filters
   const [auditSearchTerm, setAuditSearchTerm] = useState('');
   const [auditActionFilter, setAuditActionFilter] = useState('all');
@@ -830,6 +833,15 @@ const AdminDashboard = () => {
     }
   };
 
+  const navigateToUser = (userId, userName) => {
+    // Set the user search term to filter for this specific user
+    setUserSearchTerm(userName || userId);
+    // Navigate to the users tab
+    setActiveTab('users');
+    // Show a toast notification
+    toast.success(`Navigating to User Management for ${userName || userId}`);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -946,7 +958,7 @@ const AdminDashboard = () => {
         </div>
 
         {/* Tabs for Different Views */}
-        <Tabs defaultValue="overview" className="space-y-6" id="admin-dashboard-tabs">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6" id="admin-dashboard-tabs">
           <TabsList className="grid w-full grid-cols-7" id="admin-dashboard-tabs-list">
             <TabsTrigger value="overview" id="admin-dashboard-tab-overview">Overview</TabsTrigger>
             <TabsTrigger value="notifications" id="admin-dashboard-tab-notifications">Notifications</TabsTrigger>
@@ -1607,7 +1619,13 @@ const AdminDashboard = () => {
                             <TableCell>
                               <div className="flex flex-col space-y-1">
                                 {conversation.participants.map((participant, index) => (
-                                  <Badge key={index} variant="secondary" className="text-xs w-fit">
+                                  <Badge 
+                                    key={index} 
+                                    variant="secondary" 
+                                    className="text-xs w-fit cursor-pointer hover:bg-blue-100 hover:text-blue-800 transition-colors"
+                                    onClick={() => navigateToUser(participant?.id, participant?.name || participant?.email)}
+                                    title={`Click to view ${participant?.name || participant?.email || 'Unknown'} in User Management`}
+                                  >
                                     {participant?.name || participant?.email || 'Unknown'}
                                   </Badge>
                                 ))}
