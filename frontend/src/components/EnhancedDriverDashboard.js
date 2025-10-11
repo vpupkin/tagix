@@ -233,9 +233,13 @@ const EnhancedDriverDashboard = () => {
       const response = await axios.get(`${API_URL}/api/payments`, {
         headers: getAuthHeaders()
       });
-      setPayments(response.data.slice(0, 5)); // Show last 5 payments
+      console.log('📊 Payments API Response:', response.data);
+      const paymentsData = response.data.slice(0, 5); // Show last 5 payments
+      console.log('📊 Processed payments data:', paymentsData);
+      setPayments(paymentsData);
     } catch (error) {
       console.error('Error fetching payments:', error);
+      console.error('Error details:', error.response?.data);
     }
   };
 
@@ -355,16 +359,38 @@ const EnhancedDriverDashboard = () => {
   };
 
   const formatCurrency = (amount) => {
-    return `Ⓣ${amount.toFixed(2)}`;
+    if (amount === null || amount === undefined || isNaN(amount)) {
+      return 'Ⓣ0.00';
+    }
+    return `Ⓣ${parseFloat(amount).toFixed(2)}`;
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    if (!dateString) {
+      return 'N/A';
+    }
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) {
+        return 'Invalid Date';
+      }
+      return date.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch (error) {
+      console.error('Date formatting error:', error);
+      return 'Invalid Date';
+    }
+  };
+
+  const formatRideId = (rideId) => {
+    if (!rideId) {
+      return 'N/A';
+    }
+    return rideId.slice(-8);
   };
 
   if (!user || user.role !== 'driver') {
@@ -666,16 +692,17 @@ const EnhancedDriverDashboard = () => {
                   {payments.map((payment) => (
                     <tr key={payment.id} className="border-b">
                       <td className="py-2 text-sm">{formatDate(payment.created_at)}</td>
-                      <td className="py-2 text-sm font-mono">{payment.ride_id.slice(-8)}</td>
+                      <td className="py-2 text-sm font-mono">{formatRideId(payment.ride_id)}</td>
                       <td className="py-2 text-sm">{formatCurrency(payment.amount)}</td>
                       <td className="py-2 text-sm font-semibold text-green-600">{formatCurrency(payment.driver_earnings)}</td>
                       <td className="py-2">
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                           payment.status === 'completed' ? 'bg-green-100 text-green-800' :
                           payment.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                          payment.status === 'failed' ? 'bg-red-100 text-red-800' :
                           'bg-gray-100 text-gray-800'
                         }`}>
-                          {payment.status.toUpperCase()}
+                          {payment.status ? payment.status.toUpperCase() : 'UNKNOWN'}
                         </span>
                       </td>
                     </tr>
