@@ -211,31 +211,6 @@ const RiderDashboard = () => {
     setShowBookAgainModal(true);
   };
 
-  const handleBookAgain = async (rideData) => {
-    try {
-      const response = await axios.post(`${API_URL}/api/rides/request`, rideData, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('mobility_token')}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      toast.success('Ride request submitted successfully!');
-      
-      // Close the modal
-      setShowBookAgainModal(false);
-      setSelectedRide(null);
-      
-      // Optionally redirect to rides page
-      setTimeout(() => {
-        window.location.href = '/rides';
-      }, 2000);
-      
-    } catch (error) {
-      console.error('Error booking ride:', error);
-      throw error; // Re-throw to let the modal handle the error
-    }
-  };
 
   const calculateDistance = (pickup, dropoff) => {
     if (!pickup?.latitude || !pickup?.longitude || !dropoff?.latitude || !dropoff?.longitude) {
@@ -602,7 +577,6 @@ const RiderDashboard = () => {
           setSelectedRide(null);
         }}
         previousRide={selectedRide}
-        onBookRide={handleBookAgain}
       />
     </div>
   );

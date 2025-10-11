@@ -568,6 +568,59 @@ const RideBooking = () => {
     }
   }, []);
 
+  // Check for pre-filled data from "Book Again" feature
+  useEffect(() => {
+    const bookAgainData = sessionStorage.getItem('bookAgainData');
+    if (bookAgainData) {
+      try {
+        const data = JSON.parse(bookAgainData);
+        
+        // Pre-fill the form with the previous ride data
+        if (data.pickup && data.pickup.address) {
+          setPickupLocation({
+            address: data.pickup.address,
+            location: {
+              latitude: data.pickup.latitude,
+              longitude: data.pickup.longitude
+            }
+          });
+        }
+        
+        if (data.dropoff && data.dropoff.address) {
+          setDropoffLocation({
+            address: data.dropoff.address,
+            location: {
+              latitude: data.dropoff.latitude,
+              longitude: data.dropoff.longitude
+            }
+          });
+        }
+        
+        if (data.vehicle_type) {
+          setSelectedVehicleType(data.vehicle_type);
+        }
+        
+        if (data.passenger_count) {
+          setPassengerCount(data.passenger_count);
+        }
+        
+        if (data.special_requirements) {
+          setSpecialRequirements(data.special_requirements);
+        }
+        
+        // Clear the session storage after using the data
+        sessionStorage.removeItem('bookAgainData');
+        
+        // Show a toast notification
+        toast.success('Previous ride details loaded! You can modify any details before booking.');
+        
+      } catch (error) {
+        console.error('Error parsing book again data:', error);
+        sessionStorage.removeItem('bookAgainData');
+      }
+    }
+  }, []);
+
   // Calculate fare when locations change
   useEffect(() => {
     if (pickupLocation && dropoffLocation) {
