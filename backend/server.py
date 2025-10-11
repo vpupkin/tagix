@@ -1122,6 +1122,21 @@ async def get_unified_ride_data(current_user: User = Depends(get_current_user)):
         available_requests = await db.ride_requests.find({"status": RideStatus.PENDING}).to_list(None)
         completed_matches = await db.ride_matches.find({"driver_id": current_user.id}).to_list(None)
         
+        # Get ratings for driver's completed matches
+        all_ratings = await db.ratings.find({}).to_list(None)
+        ratings_by_ride = {rating["ride_id"]: rating for rating in all_ratings}
+        
+        # Add rating information to completed matches
+        for match in completed_matches:
+            ride_id = match["id"]
+            if ride_id in ratings_by_ride:
+                rating = ratings_by_ride[ride_id]
+                match["rating"] = rating["rating"]
+                match["comment"] = rating["comment"]
+            else:
+                match["rating"] = None
+                match["comment"] = None
+        
         # Get driver location for distance calculations
         driver = await db.users.find_one({"id": current_user.id})
         driver_location = driver.get("current_location") if driver else None
