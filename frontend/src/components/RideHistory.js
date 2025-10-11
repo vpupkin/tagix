@@ -41,7 +41,7 @@ import {
   RotateCcw
 } from 'lucide-react';
 import { toast } from 'sonner';
-import BookAgainModal from './BookAgainModal';
+import { useNavigate } from 'react-router-dom';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -295,6 +295,7 @@ const calculateDuration = (distanceKm) => {
 
 const RideHistory = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [rides, setRides] = useState([]);
   const [filteredRides, setFilteredRides] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -303,7 +304,6 @@ const RideHistory = () => {
   const [selectedRide, setSelectedRide] = useState(null);
   const [showRatingModal, setShowRatingModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
-  const [showBookAgainModal, setShowBookAgainModal] = useState(false);
 
   useEffect(() => {
     fetchRides();
@@ -370,9 +370,31 @@ const RideHistory = () => {
     return ride.status === 'completed' && user.role === 'rider';
   };
 
-  const openBookAgainModal = (ride) => {
-    setSelectedRide(ride);
-    setShowBookAgainModal(true);
+  const handleBookAgain = (ride) => {
+    // Prepare the location data to pass to the booking page
+    const bookingData = {
+      pickup: {
+        address: ride.pickup_location?.address || ride.pickup_address || '',
+        latitude: ride.pickup_location?.latitude || 0,
+        longitude: ride.pickup_location?.longitude || 0
+      },
+      dropoff: {
+        address: ride.dropoff_location?.address || ride.dropoff_address || '',
+        latitude: ride.dropoff_location?.latitude || 0,
+        longitude: ride.dropoff_location?.longitude || 0
+      },
+      vehicle_type: ride.vehicle_type || 'economy',
+      passenger_count: ride.passenger_count || 1,
+      special_requirements: ride.special_requirements || ''
+    };
+
+    // Store the booking data in sessionStorage for the booking page to use
+    sessionStorage.setItem('bookAgainData', JSON.stringify(bookingData));
+    
+    // Navigate to the booking page
+    navigate('/book-ride');
+    
+    toast.success('Previous ride details loaded! You can modify any details before booking.');
   };
 
 
@@ -529,7 +551,7 @@ const RideHistory = () => {
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => openBookAgainModal(ride)}
+                                onClick={() => handleBookAgain(ride)}
                                 className="flex items-center space-x-1 bg-indigo-50 border-indigo-200 text-indigo-700 hover:bg-indigo-100"
                                 data-testid={`book-again-${ride.id}`}
                               >
@@ -589,15 +611,6 @@ const RideHistory = () => {
           }}
         />
 
-        {/* Book Again Modal */}
-        <BookAgainModal
-          isOpen={showBookAgainModal}
-          onClose={() => {
-            setShowBookAgainModal(false);
-            setSelectedRide(null);
-          }}
-          previousRide={selectedRide}
-        />
       </div>
     </div>
   );
