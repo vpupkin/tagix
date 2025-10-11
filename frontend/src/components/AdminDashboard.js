@@ -307,6 +307,57 @@ const AdminDashboard = () => {
     }
   };
 
+  // Helper function to get rating emoji based on rating value
+  const getRatingEmoji = (rating) => {
+    switch (rating) {
+      case 1:
+        return '😠'; // Angry
+      case 2:
+        return '😢'; // Sad
+      case 3:
+        return '😐'; // Neutral
+      case 4:
+        return '😊'; // Happy
+      case 5:
+        return '🤩'; // Excited
+      default:
+        return '❓'; // Unknown
+    }
+  };
+
+  // Helper function to get status color class
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'completed':
+        return 'bg-green-100 text-green-800';
+      case 'in_progress':
+        return 'bg-blue-100 text-blue-800';
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'cancelled':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  // Helper function to format date
+  const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch (error) {
+      return 'Invalid Date';
+    }
+  };
+
   const openNotificationModal = (ride) => {
     setNotificationModal({
       isOpen: true,
@@ -694,22 +745,6 @@ const AdminDashboard = () => {
     return filtered;
   };
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'completed':
-        return 'bg-green-100 text-green-800';
-      case 'in_progress':
-        return 'bg-blue-100 text-blue-800';
-      case 'accepted':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'cancelled':
-        return 'bg-red-100 text-red-800';
-      case 'pending':
-        return 'bg-gray-100 text-gray-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
 
   const getUserRoleColor = (role) => {
     switch (role) {
@@ -724,15 +759,6 @@ const AdminDashboard = () => {
     }
   };
 
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
 
 
   const getAuditDescription = (log) => {
@@ -1439,6 +1465,7 @@ const AdminDashboard = () => {
                         <TableHead>Driver</TableHead>
                         <TableHead>Route</TableHead>
                         <TableHead>Fare</TableHead>
+                        <TableHead>Rating</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Date</TableHead>
                         <TableHead>Actions</TableHead>
@@ -1447,7 +1474,7 @@ const AdminDashboard = () => {
                     <TableBody>
                       {getFilteredAndSortedRides().length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={9} className="text-center py-8 text-gray-500">
+                          <TableCell colSpan={10} className="text-center py-8 text-gray-500">
                             {allRides.length === 0 ? 'No rides found' : 'No rides match your filters'}
                           </TableCell>
                         </TableRow>
@@ -1475,6 +1502,20 @@ const AdminDashboard = () => {
                               </div>
                             </TableCell>
                             <TableCell>{formatCurrency(ride.estimated_fare || 0)}</TableCell>
+                            <TableCell>
+                              {ride.rating ? (
+                                <div className="flex items-center space-x-2">
+                                  <span className="text-lg">
+                                    {getRatingEmoji(ride.rating)}
+                                  </span>
+                                  <span className="text-xs text-gray-500">
+                                    {ride.rider_id?.slice(-8) || 'N/A'}
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="text-gray-400 text-sm">No rating</span>
+                              )}
+                            </TableCell>
                             <TableCell>
                               <Badge className={getStatusColor(ride.status)}>
                                 {ride.status}
