@@ -92,48 +92,38 @@ const RatingModal = ({ ride, isOpen, onClose, onSubmit }) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-[95vw] max-w-md mx-4 my-4 sm:mx-0 sm:my-0">
+      <DialogContent className="max-w-sm sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-lg sm:text-xl">Rate Your Ride</DialogTitle>
-          <DialogDescription className="text-sm sm:text-base">
+          <DialogTitle>Rate Your Ride</DialogTitle>
+          <DialogDescription>
             How was your experience with this ride?
           </DialogDescription>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label className="text-sm sm:text-base">Rating</Label>
+            <Label>Rating</Label>
             <div className="flex items-center justify-center py-4">
               <StarRating rating={rating} onRatingChange={setRating} />
             </div>
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="comment" className="text-sm sm:text-base">Comment (Optional)</Label>
+            <Label htmlFor="comment">Comment (Optional)</Label>
             <Textarea
               id="comment"
               placeholder="Share your experience..."
               value={comment}
               onChange={(e) => setComment(e.target.value)}
               rows={3}
-              className="text-sm sm:text-base min-h-[80px]"
             />
           </div>
           
-          <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2">
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={onClose}
-              className="w-full sm:w-auto min-h-[44px] text-sm sm:text-base"
-            >
+          <div className="flex justify-end space-x-2">
+            <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button 
-              type="submit" 
-              disabled={submitting} 
-              className="btn-primary w-full sm:w-auto min-h-[44px] text-sm sm:text-base"
-            >
+            <Button type="submit" disabled={submitting} className="btn-primary">
               {submitting ? 'Submitting...' : 'Submit Rating'}
             </Button>
           </div>
