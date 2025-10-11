@@ -1026,6 +1026,21 @@ async def get_unified_ride_data(current_user: User = Depends(get_current_user)):
         pending_requests = await db.ride_requests.find({}).to_list(None)
         completed_matches = await db.ride_matches.find({}).to_list(None)
         
+        # Get all ratings to include in ride data
+        all_ratings = await db.ratings.find({}).to_list(None)
+        ratings_by_ride = {rating["ride_id"]: rating for rating in all_ratings}
+        
+        # Add rating information to completed matches
+        for match in completed_matches:
+            ride_id = match["id"]
+            if ride_id in ratings_by_ride:
+                rating = ratings_by_ride[ride_id]
+                match["rating"] = rating["rating"]
+                match["comment"] = rating["comment"]
+            else:
+                match["rating"] = None
+                match["comment"] = None
+        
         # Get statistics
         total_users = await db.users.count_documents({})
         online_drivers = await db.users.count_documents({"role": UserRole.DRIVER, "is_online": True})
@@ -1062,6 +1077,21 @@ async def get_unified_ride_data(current_user: User = Depends(get_current_user)):
         # Riders see their requests and matches
         pending_requests = await db.ride_requests.find({"rider_id": current_user.id}).to_list(None)
         completed_matches = await db.ride_matches.find({"rider_id": current_user.id}).to_list(None)
+        
+        # Get ratings for rider's completed matches
+        rider_ratings = await db.ratings.find({"rater_id": current_user.id}).to_list(None)
+        ratings_by_ride = {rating["ride_id"]: rating for rating in rider_ratings}
+        
+        # Add rating information to completed matches
+        for match in completed_matches:
+            ride_id = match["id"]
+            if ride_id in ratings_by_ride:
+                rating = ratings_by_ride[ride_id]
+                match["rating"] = rating["rating"]
+                match["comment"] = rating["comment"]
+            else:
+                match["rating"] = None
+                match["comment"] = None
         
         # Log audit event
         if AUDIT_ENABLED and audit_system:
@@ -2623,6 +2653,21 @@ async def get_all_rides(current_user: User = Depends(get_current_user)):
     pending_requests = await db.ride_requests.find({}).to_list(None)
     # Get all completed matches
     completed_matches = await db.ride_matches.find({}).to_list(None)
+    
+    # Get all ratings to include in ride data
+    all_ratings = await db.ratings.find({}).to_list(None)
+    ratings_by_ride = {rating["ride_id"]: rating for rating in all_ratings}
+    
+    # Add rating information to completed matches
+    for match in completed_matches:
+        ride_id = match["id"]
+        if ride_id in ratings_by_ride:
+            rating = ratings_by_ride[ride_id]
+            match["rating"] = rating["rating"]
+            match["comment"] = rating["comment"]
+        else:
+            match["rating"] = None
+            match["comment"] = None
     
     # Log audit event
     if AUDIT_ENABLED and audit_system:
