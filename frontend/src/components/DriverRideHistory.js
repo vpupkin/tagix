@@ -48,18 +48,22 @@ const DriverRideHistory = () => {
   const fetchRides = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${API_URL}/api/rides/my-rides`, {
+      // Use the unified endpoint which includes rating data
+      const response = await axios.get(`${API_URL}/api/rides/unified`, {
         headers: getAuthHeaders()
       });
       
-      console.log('🔍 DriverRideHistory: API response:', response.data);
+      console.log('🔍 DriverRideHistory: Unified API response:', response.data);
+      
+      // Extract completed matches (rides) from the unified response
+      const rides = response.data.completed_matches || [];
       
       // Debug: Check for rating data in the response
-      const ridesWithRatings = response.data.filter(ride => ride.rating);
+      const ridesWithRatings = rides.filter(ride => ride.rating);
       console.log('🔍 Rides with ratings:', ridesWithRatings);
       
       // Sort by date (newest first)
-      const sortedRides = response.data.sort((a, b) => {
+      const sortedRides = rides.sort((a, b) => {
         const dateA = new Date(b.completed_at || b.created_at);
         const dateB = new Date(a.completed_at || a.created_at);
         return dateA - dateB;
