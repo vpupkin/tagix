@@ -319,7 +319,8 @@ const EnhancedDriverDashboard = () => {
     }
 
     try {
-      const response = await axios.post(`${API_URL}/api/driver/online`, {}, {
+      const endpoint = isOnline ? '/api/driver/offline' : '/api/driver/online';
+      const response = await axios.post(`${API_URL}${endpoint}`, {}, {
         headers: getAuthHeaders()
       });
       
