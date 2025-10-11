@@ -83,6 +83,7 @@ const AdminDashboard = () => {
     completion_rate: 0
   });
   const [users, setUsers] = useState([]);
+  const [userBalances, setUserBalances] = useState({}); // Map of user_id -> balance
   const [rides, setRides] = useState([]);
   const [pendingRequests, setPendingRequests] = useState([]);
   const [completedMatches, setCompletedMatches] = useState([]);
@@ -225,6 +226,14 @@ const AdminDashboard = () => {
       setAuditLogs(auditResponse.data || []);
       setConversations(conversationsResponse.data?.conversations || []);
       
+      // Process balance data to create user_id -> balance mapping
+      const balanceData = transactionsResponse.data?.balances || [];
+      const balanceMap = {};
+      balanceData.forEach(balance => {
+        balanceMap[balance.user_id] = balance.balance || 0;
+      });
+      setUserBalances(balanceMap);
+      
       // Debug: Log the stats that were set
       console.log('🔍 Stats set in state:', statsResponse.data);
       console.log('🔍 Total rides from API:', statsResponse.data.total_rides);
@@ -264,6 +273,23 @@ const AdminDashboard = () => {
     } finally {
       setLoading(false);
       setRefreshing(false);
+    }
+  };
+
+  // Helper function to format currency
+  const formatCurrency = (amount) => {
+    return `Ⓣ${(amount || 0).toFixed(2)}`;
+  };
+
+  // Helper function to get balance color class
+  const getBalanceColorClass = (balance) => {
+    const amount = balance || 0;
+    if (amount > 0) {
+      return 'text-green-600 bg-green-50 border-green-200';
+    } else if (amount < 0) {
+      return 'text-red-600 bg-red-50 border-red-200';
+    } else {
+      return 'text-gray-600 bg-gray-50 border-gray-200';
     }
   };
 
@@ -307,6 +333,8 @@ const AdminDashboard = () => {
       userEmail: null,
       userRole: null
     });
+    // Refresh balance data when modal is closed to show updated balances
+    fetchDashboardData();
   };
 
   // User management functions
@@ -692,9 +720,6 @@ const AdminDashboard = () => {
     });
   };
 
-  const formatCurrency = (amount) => {
-    return `Ⓣ${amount.toFixed(2)}`;
-  };
 
   const getAuditDescription = (log) => {
     // For notification entries, extract message from metadata
@@ -1217,11 +1242,11 @@ const AdminDashboard = () => {
                               variant="outline"
                               size="sm"
                               onClick={() => openBalanceModal(user)}
-                              className="flex items-center space-x-1 bg-green-500 hover:bg-green-600 border-green-600 text-white text-xs px-2 py-1"
+                              className={`flex items-center space-x-1 text-xs px-2 py-1 border ${getBalanceColorClass(userBalances[user.id])}`}
                               id={`admin-user-balance-button-${user.id}`}
                             >
                               <Wallet className="h-3 w-3" />
-                              <span>Balance</span>
+                              <span>{formatCurrency(userBalances[user.id])}</span>
                             </Button>
                           </TableCell>
                           <TableCell className="font-medium text-sm" id={`admin-user-name-${user.id}`}>
