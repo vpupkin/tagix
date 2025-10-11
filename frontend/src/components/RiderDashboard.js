@@ -299,8 +299,8 @@ const RiderDashboard = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8" id="rider-dashboard-grid">
           {/* Left Column - Quick Actions, Stats and Recent Rides */}
           <div className="lg:col-span-2 space-y-6" id="rider-dashboard-left-column">
-            {/* Action Buttons - Clean, direct layout without panel wrapper */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full" id="rider-dashboard-action-buttons-grid">
+            {/* Action Buttons and Balance - All 4 cards in single row */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 w-full" id="rider-dashboard-action-buttons-grid">
               {quickActions.map((action, index) => (
                 <Link key={index} to={action.action} data-testid={action.testId} id={`rider-dashboard-action-button-${index}`}>
                   <Card className="card-hover group cursor-pointer h-full w-full" id={`rider-dashboard-action-button-card-${index}`}>
@@ -318,23 +318,23 @@ const RiderDashboard = () => {
                   </Card>
                 </Link>
               ))}
+              
+              {/* Balance Card - 4th card in the same row */}
+              <Card className="card-hover" id="rider-dashboard-balance-card">
+                <CardContent className="p-8" id="rider-dashboard-balance-content">
+                  <div className="flex items-center justify-between" id="rider-dashboard-balance-layout">
+                    <div id="rider-dashboard-balance-info">
+                      <p className="text-lg font-bold text-gray-900" id="rider-dashboard-balance-label">Balance</p>
+                      <p className="text-2xl font-bold text-gray-900" id="rider-dashboard-balance-value">Ⓣ{balance.currentBalance.toFixed(2)}</p>
+                      <p className="text-sm text-gray-600 mt-1" id="rider-dashboard-balance-details">Available funds</p>
+                    </div>
+                    <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg flex items-center justify-center text-white" id="rider-dashboard-balance-icon">
+                      <Wallet className="h-6 w-6" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
-
-            {/* Balance Card - Positioned after Payment Methods */}
-            <Card className="card-hover" id="rider-dashboard-balance-card">
-              <CardContent className="p-6" id="rider-dashboard-balance-content">
-                <div className="flex items-center justify-between" id="rider-dashboard-balance-layout">
-                  <div id="rider-dashboard-balance-info">
-                    <p className="text-sm font-medium text-gray-600" id="rider-dashboard-balance-label">Balance</p>
-                    <p className="text-2xl font-bold text-gray-900" id="rider-dashboard-balance-value">Ⓣ{balance.currentBalance.toFixed(2)}</p>
-                    <p className="text-xs text-gray-500" id="rider-dashboard-balance-details">Available funds</p>
-                  </div>
-                  <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center" id="rider-dashboard-balance-icon">
-                    <Wallet className="h-6 w-6 text-green-600" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
 
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4" id="rider-dashboard-stats-grid">
