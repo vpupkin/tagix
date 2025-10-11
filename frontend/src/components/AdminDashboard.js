@@ -293,6 +293,20 @@ const AdminDashboard = () => {
     }
   };
 
+  // Helper function to get row background color based on role
+  const getRoleRowColorClass = (role) => {
+    switch (role) {
+      case 'admin':
+        return 'bg-purple-50 hover:bg-purple-100';
+      case 'driver':
+        return 'bg-blue-50 hover:bg-blue-100';
+      case 'rider':
+        return 'bg-green-50 hover:bg-green-100';
+      default:
+        return 'bg-gray-50 hover:bg-gray-100';
+    }
+  };
+
   const openNotificationModal = (ride) => {
     setNotificationModal({
       isOpen: true,
@@ -1170,6 +1184,35 @@ const AdminDashboard = () => {
                     </Button>
                   </div>
                 </div>
+                
+                {/* Role Color Legend */}
+                <div className="mb-4 p-3 bg-gray-50 rounded-lg border" id="admin-role-legend">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <span className="text-sm font-medium text-gray-700">Role Colors:</span>
+                      <div className="flex items-center space-x-2">
+                        <div className="w-4 h-4 bg-purple-100 border border-purple-200 rounded"></div>
+                        <span className="text-xs text-gray-600">Admin</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <div className="w-4 h-4 bg-blue-100 border border-blue-200 rounded"></div>
+                        <span className="text-xs text-gray-600">Driver</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <div className="w-4 h-4 bg-green-100 border border-green-200 rounded"></div>
+                        <span className="text-xs text-gray-600">Rider</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <div className="w-4 h-4 bg-gray-100 border border-gray-200 rounded"></div>
+                        <span className="text-xs text-gray-600">Other</span>
+                      </div>
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      Row background color indicates user role
+                    </div>
+                  </div>
+                </div>
+                
                 <div className="overflow-x-auto" id="admin-users-table-container">
                   <Table id="admin-users-table">
                     <TableHeader id="admin-users-table-header">
@@ -1178,7 +1221,6 @@ const AdminDashboard = () => {
                         <TableHead id="admin-users-table-header-balance" className="w-24">Balance</TableHead>
                         <TableHead id="admin-users-table-header-name" className="w-32">Name</TableHead>
                         <TableHead id="admin-users-table-header-email" className="w-48">Email</TableHead>
-                        <TableHead id="admin-users-table-header-role" className="w-16">Role</TableHead>
                         <TableHead id="admin-users-table-header-rating" className="w-16">Rating</TableHead>
                         <TableHead id="admin-users-table-header-rides" className="w-12">Rides</TableHead>
                         <TableHead id="admin-users-table-header-status" className="w-16">Status</TableHead>
@@ -1187,7 +1229,7 @@ const AdminDashboard = () => {
                     </TableHeader>
                     <TableBody id="admin-users-table-body">
                       {getFilteredUsers().map((user) => (
-                        <TableRow key={user.id} id={`admin-user-row-${user.id}`}>
+                        <TableRow key={user.id} id={`admin-user-row-${user.id}`} className={getRoleRowColorClass(user.role)}>
                           <TableCell id={`admin-user-actions-${user.id}`}>
                             <div className="flex items-center space-x-1">
                               <Button
@@ -1258,11 +1300,6 @@ const AdminDashboard = () => {
                             <div className="truncate max-w-48 text-sm" title={user.email || 'Unknown'}>
                               {user.email || 'Unknown'}
                             </div>
-                          </TableCell>
-                          <TableCell id={`admin-user-role-${user.id}`}>
-                            <Badge className={`${getUserRoleColor(user.role || 'unknown')} text-xs px-1 py-0`} id={`admin-user-role-badge-${user.id}`}>
-                              {(user.role || 'unknown').charAt(0).toUpperCase()}
-                            </Badge>
                           </TableCell>
                           <TableCell id={`admin-user-rating-${user.id}`}>
                             <div className="flex items-center space-x-1">
