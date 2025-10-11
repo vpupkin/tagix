@@ -1639,6 +1639,47 @@ async def update_ride_status(ride_id: str, update: RideUpdate, current_user: Use
         
         await db.payments.insert_one(payment_data)
         
+        # Automatically process the payment (mock payment always succeeds)
+        processing_time = datetime.now(timezone.utc)
+        await db.payments.update_one(
+            {"id": payment_data["id"]},
+            {
+                "$set": {
+                    "status": PaymentStatus.COMPLETED,
+                    "completed_at": processing_time,
+                    "processed_at": processing_time
+                }
+            }
+        )
+        
+        # Update driver earnings
+        await db.users.update_one(
+            {"id": current_user.id},
+            {
+                "$inc": {
+                    "total_earnings": payment_data["driver_earnings"],
+                    "completed_rides": 1
+                }
+            }
+        )
+        
+        # Log audit for payment completion
+        if AUDIT_ENABLED and audit_system:
+            await audit_system.log_action(
+                action=AuditAction.PAYMENT_COMPLETED,
+                user_id=current_user.id,
+                entity_type="payment",
+                entity_id=payment_data["id"],
+                severity="medium",
+                metadata={
+                    "amount": payment_data["amount"],
+                    "driver_earnings": payment_data["driver_earnings"],
+                    "platform_fee": payment_data["platform_fee"],
+                    "transaction_id": payment_data["transaction_id"],
+                    "completed_at": processing_time.isoformat()
+                }
+            )
+        
         # Log audit for ride completion
         if AUDIT_ENABLED and audit_system:
             await audit_system.log_action(
@@ -1654,9 +1695,10 @@ async def update_ride_status(ride_id: str, update: RideUpdate, current_user: Use
             )
         
         return {
-            "message": "Ride completed successfully", 
+            "message": "Ride completed successfully and payment processed", 
             "status": RideStatus.COMPLETED,
             "payment_id": payment_data["id"],
+            "payment_status": PaymentStatus.COMPLETED,
             "amount": payment_data["amount"],
             "driver_earnings": payment_data["driver_earnings"]
         }
