@@ -673,6 +673,11 @@ const EnhancedDriverDashboard = () => {
               <div className="space-y-3 max-h-80 overflow-y-auto">
                 {availableRides.slice(0, 5).map((ride) => {
                   const isNewRequest = newRideRequests.some(newReq => newReq.id === ride.id);
+                  const rideFare = ride.estimated_fare || 0;
+                  const requiredPlatformFee = rideFare * 0.20; // 20% platform fee
+                  const hasInsufficientBalance = balance < requiredPlatformFee;
+                  const isDisabled = hasInsufficientBalance || activeRide !== null;
+                  
                   return (
                     <div key={ride.id} className={`p-3 rounded-lg border-l-4 ${
                       isNewRequest 
@@ -693,6 +698,11 @@ const EnhancedDriverDashboard = () => {
                           </div>
                           <p className="text-xs text-gray-600">
                             {ride.distance_km?.toFixed(1)}km • Ⓣ{ride.estimated_fare?.toFixed(2)}
+                            {hasInsufficientBalance && (
+                              <span className="ml-2 text-red-600 font-medium">
+                                (Platform fee: Ⓣ{requiredPlatformFee.toFixed(2)})
+                              </span>
+                            )}
                           </p>
                         </div>
                         <Button
@@ -701,12 +711,12 @@ const EnhancedDriverDashboard = () => {
                             isNewRequest 
                               ? 'bg-green-600 hover:bg-green-700' 
                               : 'bg-purple-600 hover:bg-purple-700'
-                          }`}
-                          disabled={balance <= 0 || activeRide !== null}
+                          } ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+                          disabled={isDisabled}
                           onClick={() => acceptRide(ride.id)}
                           title={
-                            balance <= 0 
-                              ? 'Cannot accept rides with insufficient balance' 
+                            hasInsufficientBalance
+                              ? `Insufficient balance for platform fee. Required: Ⓣ${requiredPlatformFee.toFixed(2)}, Current: Ⓣ${balance.toFixed(2)}`
                               : activeRide !== null 
                                 ? 'Cannot accept rides while another ride is in progress' 
                                 : 'Accept this ride'
@@ -725,19 +735,30 @@ const EnhancedDriverDashboard = () => {
                 )}
                 
                 {/* Show reason why Accept button is disabled */}
-                {availableRides.length > 0 && (balance <= 0 || activeRide !== null) && (
-                  <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded-lg">
-                    <div className="flex items-center gap-2">
-                      <AlertCircle className="h-4 w-4 text-yellow-600" />
-                      <p className="text-xs text-yellow-800">
-                        {balance <= 0 
-                          ? 'Cannot accept rides: Insufficient balance (Ⓣ0.00)' 
-                          : 'Cannot accept rides: Another ride is currently in progress'
-                        }
-                      </p>
-                    </div>
-                  </div>
-                )}
+                {availableRides.length > 0 && (() => {
+                  const hasAnyInsufficientBalance = availableRides.some(ride => {
+                    const rideFare = ride.estimated_fare || 0;
+                    const requiredPlatformFee = rideFare * 0.20;
+                    return balance < requiredPlatformFee;
+                  });
+                  
+                  if (hasAnyInsufficientBalance || activeRide !== null) {
+                    return (
+                      <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded-lg">
+                        <div className="flex items-center gap-2">
+                          <AlertCircle className="h-4 w-4 text-yellow-600" />
+                          <p className="text-xs text-yellow-800">
+                            {activeRide !== null
+                              ? 'Cannot accept rides: Another ride is currently in progress'
+                              : 'Cannot accept rides: Insufficient balance to cover platform fees for available rides'
+                            }
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
               </div>
             ) : (
               <div className="text-center py-4">

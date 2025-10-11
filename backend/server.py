@@ -803,11 +803,23 @@ async def accept_ride_request(request_id: str, current_user: User = Depends(get_
     if current_user.role != UserRole.DRIVER:
         raise HTTPException(status_code=403, detail="Only drivers can accept ride requests")
     
-    # Check driver balance - must be positive to accept rides
+    # Get the ride request first to calculate required platform fee
+    request_doc = await db.ride_requests.find_one({"id": request_id})
+    if not request_doc:
+        raise HTTPException(status_code=404, detail="Ride request not found")
+    
+    if request_doc["status"] != RideStatus.PENDING:
+        raise HTTPException(status_code=400, detail="Ride request is no longer available")
+    
+    # Calculate required platform fee for this specific ride
+    ride_fare = request_doc.get("estimated_fare", 0.0)
+    required_platform_fee = ride_fare * 0.20  # 20% platform fee
+    
+    # Check driver balance - must be sufficient to cover platform fee
     balance_doc = await db.user_balances.find_one({"user_id": current_user.id})
     current_balance = balance_doc.get("balance", 0.0) if balance_doc else 0.0
     
-    if current_balance <= 0:
+    if current_balance < required_platform_fee:
         # Log audit for insufficient balance
         if AUDIT_ENABLED and audit_system:
             await audit_system.log_action(
@@ -817,15 +829,18 @@ async def accept_ride_request(request_id: str, current_user: User = Depends(get_
                 entity_id=request_id,
                 severity="medium",
                 metadata={
-                    "validation_failed": "insufficient_balance",
+                    "validation_failed": "insufficient_balance_for_platform_fee",
                     "current_balance": current_balance,
-                    "reason": "Driver attempted to accept ride with insufficient balance"
+                    "ride_fare": ride_fare,
+                    "required_platform_fee": required_platform_fee,
+                    "shortfall": required_platform_fee - current_balance,
+                    "reason": "Driver attempted to accept ride with insufficient balance to cover platform fee"
                 }
             )
         
         raise HTTPException(
             status_code=400, 
-            detail=f"Insufficient balance to accept rides. Current balance: Ⓣ{current_balance:.2f}. Please add funds to your account."
+            detail=f"Insufficient balance to accept this ride. Required platform fee: Ⓣ{required_platform_fee:.2f}, Current balance: Ⓣ{current_balance:.2f}. Shortfall: Ⓣ{required_platform_fee - current_balance:.2f}. Please add funds to your account."
         )
     
     # Check if driver has an active ride in progress
@@ -856,13 +871,6 @@ async def accept_ride_request(request_id: str, current_user: User = Depends(get_
             detail=f"Cannot accept new rides while another ride is in progress. Current ride status: {active_ride['status']}"
         )
     
-    # Get the ride request
-    request_doc = await db.ride_requests.find_one({"id": request_id})
-    if not request_doc:
-        raise HTTPException(status_code=404, detail="Ride request not found")
-    
-    if request_doc["status"] != RideStatus.PENDING:
-        raise HTTPException(status_code=400, detail="Ride request is no longer available")
     
     request_obj = RideRequest(**request_doc)
     
@@ -1572,11 +1580,15 @@ async def update_ride_status(ride_id: str, update: RideUpdate, current_user: Use
         if current_status != RideStatus.PENDING:
             raise HTTPException(status_code=400, detail="Ride is no longer available")
         
-        # Check driver balance - must be positive to accept rides
+        # Calculate required platform fee for this specific ride
+        ride_fare = ride.get("estimated_fare", 0.0)
+        required_platform_fee = ride_fare * 0.20  # 20% platform fee
+        
+        # Check driver balance - must be sufficient to cover platform fee
         balance_doc = await db.user_balances.find_one({"user_id": current_user.id})
         current_balance = balance_doc.get("balance", 0.0) if balance_doc else 0.0
         
-        if current_balance <= 0:
+        if current_balance < required_platform_fee:
             # Log audit for insufficient balance
             if AUDIT_ENABLED and audit_system:
                 await audit_system.log_action(
@@ -1586,15 +1598,18 @@ async def update_ride_status(ride_id: str, update: RideUpdate, current_user: Use
                     entity_id=ride_id,
                     severity="medium",
                     metadata={
-                        "validation_failed": "insufficient_balance",
+                        "validation_failed": "insufficient_balance_for_platform_fee",
                         "current_balance": current_balance,
-                        "reason": "Driver attempted to accept ride with insufficient balance"
+                        "ride_fare": ride_fare,
+                        "required_platform_fee": required_platform_fee,
+                        "shortfall": required_platform_fee - current_balance,
+                        "reason": "Driver attempted to accept ride with insufficient balance to cover platform fee"
                     }
                 )
             
             raise HTTPException(
                 status_code=400, 
-                detail=f"Insufficient balance to accept rides. Current balance: Ⓣ{current_balance:.2f}. Please add funds to your account."
+                detail=f"Insufficient balance to accept this ride. Required platform fee: Ⓣ{required_platform_fee:.2f}, Current balance: Ⓣ{current_balance:.2f}. Shortfall: Ⓣ{required_platform_fee - current_balance:.2f}. Please add funds to your account."
             )
         
         # Check if driver has an active ride in progress
