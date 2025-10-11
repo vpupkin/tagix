@@ -803,6 +803,59 @@ async def accept_ride_request(request_id: str, current_user: User = Depends(get_
     if current_user.role != UserRole.DRIVER:
         raise HTTPException(status_code=403, detail="Only drivers can accept ride requests")
     
+    # Check driver balance - must be positive to accept rides
+    balance_doc = await db.user_balances.find_one({"user_id": current_user.id})
+    current_balance = balance_doc.get("balance", 0.0) if balance_doc else 0.0
+    
+    if current_balance <= 0:
+        # Log audit for insufficient balance
+        if AUDIT_ENABLED and audit_system:
+            await audit_system.log_action(
+                action=AuditAction.RIDE_ACCEPTED,
+                user_id=current_user.id,
+                entity_type="ride_request",
+                entity_id=request_id,
+                severity="medium",
+                metadata={
+                    "validation_failed": "insufficient_balance",
+                    "current_balance": current_balance,
+                    "reason": "Driver attempted to accept ride with insufficient balance"
+                }
+            )
+        
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Insufficient balance to accept rides. Current balance: Ⓣ{current_balance:.2f}. Please add funds to your account."
+        )
+    
+    # Check if driver has an active ride in progress
+    active_ride = await db.ride_matches.find_one({
+        "driver_id": current_user.id,
+        "status": {"$in": [RideStatus.ACCEPTED, RideStatus.DRIVER_ARRIVING, RideStatus.IN_PROGRESS]}
+    })
+    
+    if active_ride:
+        # Log audit for active ride conflict
+        if AUDIT_ENABLED and audit_system:
+            await audit_system.log_action(
+                action=AuditAction.RIDE_ACCEPTED,
+                user_id=current_user.id,
+                entity_type="ride_request",
+                entity_id=request_id,
+                severity="medium",
+                metadata={
+                    "validation_failed": "active_ride_conflict",
+                    "active_ride_id": active_ride["id"],
+                    "active_ride_status": active_ride["status"],
+                    "reason": "Driver attempted to accept ride while another ride is in progress"
+                }
+            )
+        
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Cannot accept new rides while another ride is in progress. Current ride status: {active_ride['status']}"
+        )
+    
     # Get the ride request
     request_doc = await db.ride_requests.find_one({"id": request_id})
     if not request_doc:
@@ -1518,6 +1571,59 @@ async def update_ride_status(ride_id: str, update: RideUpdate, current_user: Use
             raise HTTPException(status_code=403, detail="Only drivers can accept rides")
         if current_status != RideStatus.PENDING:
             raise HTTPException(status_code=400, detail="Ride is no longer available")
+        
+        # Check driver balance - must be positive to accept rides
+        balance_doc = await db.user_balances.find_one({"user_id": current_user.id})
+        current_balance = balance_doc.get("balance", 0.0) if balance_doc else 0.0
+        
+        if current_balance <= 0:
+            # Log audit for insufficient balance
+            if AUDIT_ENABLED and audit_system:
+                await audit_system.log_action(
+                    action=AuditAction.RIDE_ACCEPTED,
+                    user_id=current_user.id,
+                    entity_type="ride_request",
+                    entity_id=ride_id,
+                    severity="medium",
+                    metadata={
+                        "validation_failed": "insufficient_balance",
+                        "current_balance": current_balance,
+                        "reason": "Driver attempted to accept ride with insufficient balance"
+                    }
+                )
+            
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Insufficient balance to accept rides. Current balance: Ⓣ{current_balance:.2f}. Please add funds to your account."
+            )
+        
+        # Check if driver has an active ride in progress
+        active_ride = await db.ride_matches.find_one({
+            "driver_id": current_user.id,
+            "status": {"$in": [RideStatus.ACCEPTED, RideStatus.DRIVER_ARRIVING, RideStatus.IN_PROGRESS]}
+        })
+        
+        if active_ride:
+            # Log audit for active ride conflict
+            if AUDIT_ENABLED and audit_system:
+                await audit_system.log_action(
+                    action=AuditAction.RIDE_ACCEPTED,
+                    user_id=current_user.id,
+                    entity_type="ride_request",
+                    entity_id=ride_id,
+                    severity="medium",
+                    metadata={
+                        "validation_failed": "active_ride_conflict",
+                        "active_ride_id": active_ride["id"],
+                        "active_ride_status": active_ride["status"],
+                        "reason": "Driver attempted to accept ride while another ride is in progress"
+                    }
+                )
+            
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Cannot accept new rides while another ride is in progress. Current ride status: {active_ride['status']}"
+            )
         
         # Create ride match
         match_data = {
