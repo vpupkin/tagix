@@ -120,42 +120,47 @@ const SimpleAddressInput = ({ onPlaceSelect, placeholder, value, testId }) => {
   };
 
   const handleSubmit = () => {
-    if (inputValue.trim()) {
+    // Allow submission if we have input value OR if we're in coordinate mode with valid coordinates
+    if (inputValue.trim() || (showCoordinateInput && lat && lng)) {
       let latitude, longitude;
+      let displayAddress = inputValue || `Location (${lat}, ${lng})`;
       
       // Try to parse coordinates from input
       const coords = parseCoordinates(inputValue);
       if (coords) {
         latitude = coords.latitude;
         longitude = coords.longitude;
+        displayAddress = inputValue;
       } else if (showCoordinateInput && lat && lng) {
         // Use manually entered coordinates
         latitude = parseFloat(lat);
         longitude = parseFloat(lng);
+        displayAddress = `Location (${lat}, ${lng})`;
       } else {
         // Use default test coordinates (Stuttgart, Germany)
         latitude = 48.7758;
         longitude = 9.1829;
+        displayAddress = inputValue || 'Stuttgart, Germany (Default)';
       }
 
       // Create a place object for manual entry
       const placeData = {
-        formatted_address: inputValue,
+        formatted_address: displayAddress,
         geometry: {
           location: {
             lat: () => latitude,
             lng: () => longitude
           }
         },
-        name: inputValue,
+        name: displayAddress,
         place_id: `manual_${Date.now()}`,
         // Add address property for compatibility with handleBookRide
-        address: inputValue,
+        address: displayAddress,
         // Add location object for backend compatibility
         location: {
           latitude: latitude,
           longitude: longitude,
-          address: inputValue
+          address: displayAddress
         }
       };
       
@@ -232,7 +237,8 @@ const SimpleAddressInput = ({ onPlaceSelect, placeholder, value, testId }) => {
               <div className="flex gap-2">
                 <button
                   onClick={handleSubmit}
-                  className="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700"
+                  disabled={!lat || !lng || isNaN(parseFloat(lat)) || isNaN(parseFloat(lng))}
+                  className="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
                 >
                   Use Coordinates
                 </button>

@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coordinate Input Fix Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .input-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+            font-size: 12px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button.success {
+            background-color: #28a745;
+        }
+        button.danger {
+            background-color: #dc3545;
+        }
+        button:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            font-size: 12px;
+        }
+        .result.success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .result.error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .manual-entry-hint {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            font-size: 12px;
+        }
+        .coordinate-inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .test-step {
+            margin-bottom: 10px;
+            padding: 8px;
+            background-color: #f8f9fa;
+            border-left: 4px solid #007bff;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Coordinate Input Fix Test</h1>
+    
+    <div class="test-container">
+        <h2>Fixed SimpleAddressInput Component</h2>
+        <div class="manual-entry-hint">
+            <strong>Manual Entry Mode</strong> - Test environment without Google Maps<br>
+            <strong>Option 1:</strong> Enter coordinates: <code>48.6670336, 9.7910784</code><br>
+            <strong>Option 2:</strong> Enter address: <code>Stuttgart, Germany</code><br>
+            <strong>Option 3:</strong> Use manual coordinate input (FIXED!)
+        </div>
+        
+        <div class="input-group">
+            <label for="test-input">Test Input (Type at least 3 characters):</label>
+            <input type="text" id="test-input" placeholder="Enter pickup location or coordinates">
+            <div id="button-container" style="margin-top: 10px;"></div>
+        </div>
+        
+        <div id="result" class="result" style="display: none;"></div>
+    </div>
+
+    <div class="test-container">
+        <h2>Test Cases for Coordinate Input Fix</h2>
+        
+        <div class="test-step">
+            <strong>Test 1 - Coordinate Input Mode:</strong>
+            <button onclick="testCoordinateMode()">Test Manual Coordinate Input</button>
+            <p>1. Click "Enter Coordinates" button<br>
+               2. Enter latitude: 49.7758<br>
+               3. Enter longitude: 10.1829<br>
+               4. Click "Use Coordinates" button<br>
+               5. ✅ Should work now (was broken before)</p>
+        </div>
+        
+        <div class="test-step">
+            <strong>Test 2 - Button State:</strong>
+            <button onclick="testButtonState()">Test Button Disabled State</button>
+            <p>1. Click "Enter Coordinates"<br>
+               2. Leave fields empty<br>
+               3. ✅ "Use Coordinates" button should be disabled<br>
+               4. Enter valid coordinates<br>
+               5. ✅ "Use Coordinates" button should be enabled</p>
+        </div>
+        
+        <div class="test-step">
+            <strong>Test 3 - Address Input:</strong>
+            <button onclick="testAddressInput()">Test Address Input</button>
+            <p>1. Type "Stuttgart, Germany"<br>
+               2. Click "Use This Location"<br>
+               3. ✅ Should work as before</p>
+        </div>
+    </div>
+
+    <script>
+        // Simulate the FIXED SimpleAddressInput component logic
+        let inputValue = '';
+        let showCoordinateInput = false;
+        let lat = '';
+        let lng = '';
+        let selectedLocation = null;
+
+        // Parse coordinates function (exact copy from frontend)
+        function parseCoordinates(input) {
+            const coordPatterns = [
+                /^(-?\d+\.?\d*),\s*(-?\d+\.?\d*)$/, // "48.6670336, 9.7910784"
+                /^(-?\d+\.?\d*)\s+(-?\d+\.?\d*)$/, // "48.6670336 9.7910784"
+                /lat[:\s]*(-?\d+\.?\d*)[,\s]*lng[:\s]*(-?\d+\.?\d*)/i, // "lat: 48.6670336, lng: 9.7910784"
+            ];
+
+            for (const pattern of coordPatterns) {
+                const match = input.match(pattern);
+                if (match) {
+                    const latitude = parseFloat(match[1]);
+                    const longitude = parseFloat(match[2]);
+                    if (!isNaN(latitude) && !isNaN(longitude) && 
+                        latitude >= -90 && latitude <= 90 && 
+                        longitude >= -180 && longitude <= 180) {
+                        return { latitude, longitude };
+                    }
+                }
+            }
+            return null;
+        }
+
+        // FIXED handleSubmit function
+        function handleSubmit() {
+            console.log('handleSubmit called with:', { inputValue, showCoordinateInput, lat, lng });
+            
+            // FIXED: Allow submission if we have input value OR if we're in coordinate mode with valid coordinates
+            if (inputValue.trim() || (showCoordinateInput && lat && lng)) {
+                let latitude, longitude;
+                let displayAddress = inputValue || `Location (${lat}, ${lng})`;
+                
+                // Try to parse coordinates from input
+                const coords = parseCoordinates(inputValue);
+                if (coords) {
+                    latitude = coords.latitude;
+                    longitude = coords.longitude;
+                    displayAddress = inputValue;
+                    console.log('Parsed coordinates:', coords);
+                } else if (showCoordinateInput && lat && lng) {
+                    // Use manually entered coordinates
+                    latitude = parseFloat(lat);
+                    longitude = parseFloat(lng);
+                    displayAddress = `Location (${lat}, ${lng})`;
+                    console.log('Using manual coordinates:', { latitude, longitude });
+                } else {
+                    // Use default test coordinates (Stuttgart, Germany)
+                    latitude = 48.7758;
+                    longitude = 9.1829;
+                    displayAddress = inputValue || 'Stuttgart, Germany (Default)';
+                    console.log('Using default coordinates:', { latitude, longitude });
+                }
+
+                // Create a place object for manual entry
+                const placeData = {
+                    formatted_address: displayAddress,
+                    geometry: {
+                        location: {
+                            lat: () => latitude,
+                            lng: () => longitude
+                        }
+                    },
+                    name: displayAddress,
+                    place_id: `manual_${Date.now()}`,
+                    // Add address property for compatibility with handleBookRide
+                    address: displayAddress,
+                    // Add location object for backend compatibility
+                    location: {
+                        latitude: latitude,
+                        longitude: longitude,
+                        address: displayAddress
+                    }
+                };
+                
+                console.log('Created placeData:', placeData);
+                selectedLocation = placeData;
+                
+                // Clear the input after successful selection
+                inputValue = '';
+                showCoordinateInput = false;
+                lat = '';
+                lng = '';
+                
+                // Update UI
+                updateUI();
+                showResult(`✅ Location processed successfully!\n` +
+                         `Address: ${placeData.address}\n` +
+                         `Coordinates: ${placeData.location.latitude}, ${placeData.location.longitude}\n` +
+                         `Place ID: ${placeData.place_id}`, 'success');
+                
+                return placeData;
+            } else {
+                showResult('❌ Please enter a location or valid coordinates', 'error');
+                return null;
+            }
+        }
+
+        // Update UI function
+        function updateUI() {
+            const input = document.getElementById('test-input');
+            const buttonContainer = document.getElementById('button-container');
+            
+            input.value = inputValue;
+            
+            if (inputValue.length >= 3) {
+                if (!showCoordinateInput) {
+                    buttonContainer.innerHTML = `
+                        <button onclick="handleSubmit()" class="success">Use This Location</button>
+                        <button onclick="showCoordinateInputMode()">Enter Coordinates</button>
+                    `;
+                } else {
+                    // FIXED: Button is disabled when coordinates are invalid
+                    const isDisabled = !lat || !lng || isNaN(parseFloat(lat)) || isNaN(parseFloat(lng));
+                    buttonContainer.innerHTML = `
+                        <div class="coordinate-inputs">
+                            <input type="number" step="any" placeholder="Latitude" id="lat-input" value="${lat}">
+                            <input type="number" step="any" placeholder="Longitude" id="lng-input" value="${lng}">
+                        </div>
+                        <button onclick="handleSubmit()" class="success" ${isDisabled ? 'disabled' : ''}>Use Coordinates</button>
+                        <button onclick="hideCoordinateInputMode()" class="danger">Cancel</button>
+                    `;
+                }
+            } else {
+                buttonContainer.innerHTML = '';
+            }
+        }
+
+        // Show coordinate input mode
+        function showCoordinateInputMode() {
+            console.log('showCoordinateInputMode called');
+            showCoordinateInput = true;
+            updateUI();
+        }
+
+        // Hide coordinate input mode
+        function hideCoordinateInputMode() {
+            console.log('hideCoordinateInputMode called');
+            showCoordinateInput = false;
+            lat = '';
+            lng = '';
+            updateUI();
+        }
+
+        // Show result
+        function showResult(message, type) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.className = `result ${type}`;
+            resultDiv.textContent = message;
+            resultDiv.style.display = 'block';
+        }
+
+        // Handle input change
+        function handleInputChange(e) {
+            inputValue = e.target.value;
+            console.log('Input changed to:', inputValue);
+            updateUI();
+        }
+
+        // Handle coordinate input changes
+        function handleLatChange(e) {
+            lat = e.target.value;
+            console.log('Latitude changed to:', lat);
+            updateUI(); // Update UI to enable/disable button
+        }
+
+        function handleLngChange(e) {
+            lng = e.target.value;
+            console.log('Longitude changed to:', lng);
+            updateUI(); // Update UI to enable/disable button
+        }
+
+        // Test functions
+        function testCoordinateMode() {
+            inputValue = 'Test Location';
+            showCoordinateInput = true;
+            lat = '49.7758';
+            lng = '10.1829';
+            updateUI();
+            console.log('Test: Set coordinate input mode with valid coordinates');
+        }
+
+        function testButtonState() {
+            inputValue = 'Test';
+            showCoordinateInput = true;
+            lat = '';
+            lng = '';
+            updateUI();
+            console.log('Test: Set coordinate input mode with empty coordinates (button should be disabled)');
+        }
+
+        function testAddressInput() {
+            inputValue = 'Stuttgart, Germany';
+            showCoordinateInput = false;
+            lat = '';
+            lng = '';
+            updateUI();
+            console.log('Test: Set address input');
+        }
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function() {
+            const input = document.getElementById('test-input');
+            input.addEventListener('input', handleInputChange);
+            
+            // Add event listeners for coordinate inputs when they're created
+            document.addEventListener('input', function(e) {
+                if (e.target.id === 'lat-input') {
+                    handleLatChange(e);
+                } else if (e.target.id === 'lng-input') {
+                    handleLngChange(e);
+                }
+            });
+            
+            console.log('Page initialized with FIXED coordinate input logic');
+        });
+    </script>
+</body>
+</html>
