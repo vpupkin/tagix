@@ -25,19 +25,29 @@ code {
     max-height: calc(100vh - 2rem) !important;
     width: calc(100vw - 2rem) !important;
     max-width: calc(100vw - 2rem) !important;
+    position: fixed !important;
+    left: 50% !important;
+    top: 50% !important;
+    transform: translate(-50%, -50%) !important;
   }
   
   /* Ensure inputs are touch-friendly on mobile */
   input[type="email"], 
   input[type="password"], 
   input[type="text"], 
-  input[type="tel"] {
+  input[type="tel"],
+  textarea {
     font-size: 16px !important; /* Prevents zoom on iOS */
   }
   
   /* Improve button touch targets */
   button {
     min-height: 44px !important; /* iOS recommended touch target */
+  }
+  
+  /* Ensure dialog content is scrollable on very small screens */
+  [data-radix-dialog-content] {
+    overflow-y: auto !important;
   }
 }
 
