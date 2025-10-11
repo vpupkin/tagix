@@ -35,6 +35,7 @@ const EnhancedDriverDashboard = () => {
   const [driverProfile, setDriverProfile] = useState(null);
   const [isOnline, setIsOnline] = useState(false);
   const [currentLocation, setCurrentLocation] = useState(null);
+  const [currentRadius, setCurrentRadius] = useState(25); // Default radius in km
   
   // Ride data
   const [availableRides, setAvailableRides] = useState([]);
@@ -83,6 +84,7 @@ const EnhancedDriverDashboard = () => {
     try {
       await Promise.all([
         fetchDriverProfile(),
+        fetchDriverPreferences(),
         fetchAvailableRides(),
         fetchActiveRide(),
         fetchRideHistory(),
@@ -117,6 +119,22 @@ const EnhancedDriverDashboard = () => {
         setIsOnline(user.is_online || false);
         setCurrentLocation(user.current_location);
       }
+    }
+  };
+
+  const fetchDriverPreferences = async () => {
+    try {
+      console.log('🔍 EnhancedDriverDashboard: fetchDriverPreferences called');
+      const response = await axios.get(`${API_URL}/api/driver/preferences`, {
+        headers: getAuthHeaders()
+      });
+      console.log('🔍 Driver preferences loaded:', response.data);
+      if (response.data.radius_km) {
+        setCurrentRadius(response.data.radius_km);
+      }
+    } catch (error) {
+      console.log('⚠️ Driver preferences not found - using default radius');
+      // Keep default radius of 25km
     }
   };
 
@@ -487,7 +505,10 @@ const EnhancedDriverDashboard = () => {
               }
             }}
             onPreferencesUpdate={(preferences) => {
-              // Refresh available rides when radius changes
+              // Update current radius and refresh available rides when radius changes
+              if (preferences.radius_km) {
+                setCurrentRadius(preferences.radius_km);
+              }
               if (isOnline) {
                 fetchAvailableRides();
               }
@@ -502,7 +523,7 @@ const EnhancedDriverDashboard = () => {
                 <p className="text-2xl font-bold text-gray-900">{availableRides.length}</p>
                 {currentLocation && (
                   <p className="text-xs text-gray-500 mt-1">
-                    Within 25km of {currentLocation.latitude?.toFixed(4)}, {currentLocation.longitude?.toFixed(4)}
+                    Within {currentRadius}km of {currentLocation.latitude?.toFixed(4)}, {currentLocation.longitude?.toFixed(4)}
                   </p>
                 )}
               </div>
