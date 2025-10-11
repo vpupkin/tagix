@@ -12,6 +12,7 @@ import EnhancedDriverDashboard from './components/EnhancedDriverDashboard';
 import AdminDashboard from './components/AdminDashboard';
 import RideBooking from './components/RideBooking';
 import RideHistory from './components/RideHistory';
+import DriverRideHistory from './components/DriverRideHistory';
 import PaymentSuccess from './components/PaymentSuccess';
 import Profile from './components/Profile';
 import GravatarDemo from './components/GravatarDemo';
@@ -82,7 +83,11 @@ function MainApp() {
           } />
           
           <Route path="/rides" element={
-            user ? <RideHistory /> : <Navigate to="/" />
+            user ? (
+              user.role === 'driver' ? <DriverRideHistory /> :
+              user.role === 'admin' ? <RideHistory /> :
+              <RideHistory />
+            ) : <Navigate to="/" />
           } />
           
           <Route path="/profile" element={
