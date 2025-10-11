@@ -27,7 +27,7 @@ const API_URL = process.env.REACT_APP_BACKEND_URL;
 
 const EnhancedDriverDashboard = () => {
   const { user, token } = useAuth();
-  const { notifications } = useWebSocket();
+  const { notifications, rideRequests } = useWebSocket();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   
@@ -50,6 +50,8 @@ const EnhancedDriverDashboard = () => {
   });
   const [payments, setPayments] = useState([]);
   const [balance, setBalance] = useState(0);
+  const [newRideRequests, setNewRideRequests] = useState([]);
+  const [lastRideRequestCount, setLastRideRequestCount] = useState(0);
 
   const getAuthHeaders = () => ({
     Authorization: `Bearer ${token}`,
@@ -78,6 +80,41 @@ const EnhancedDriverDashboard = () => {
       console.log('⚠️ Not a driver or user not loaded');
     }
   }, [user, token]);
+
+  // Listen for new ride requests via WebSocket
+  useEffect(() => {
+    if (rideRequests && rideRequests.length > lastRideRequestCount) {
+      console.log('🚗 New ride request detected via WebSocket!');
+      
+      // Get the new ride requests
+      const newRequests = rideRequests.slice(0, rideRequests.length - lastRideRequestCount);
+      setNewRideRequests(prev => [...newRequests, ...prev]);
+      
+      // Update the count
+      setLastRideRequestCount(rideRequests.length);
+      
+      // Show toast notification for new ride requests
+      newRequests.forEach(request => {
+        toast.info(`New ride request available!`, {
+          description: `${request.pickup_address} → ${request.dropoff_address}`,
+          duration: 8000,
+          action: {
+            label: 'View',
+            onClick: () => {
+              // Refresh available rides to show the new request
+              fetchAvailableRides();
+            }
+          }
+        });
+      });
+      
+      // Automatically refresh available rides
+      if (isOnline) {
+        console.log('🔄 Auto-refreshing available rides due to new request');
+        fetchAvailableRides();
+      }
+    }
+  }, [rideRequests, lastRideRequestCount, isOnline]);
 
   const fetchAllData = async () => {
     setRefreshing(true);
@@ -189,6 +226,9 @@ const EnhancedDriverDashboard = () => {
       }
       setAvailableRides([]);
     }
+    
+    // Clear new ride requests indicator after fetching
+    setNewRideRequests([]);
   };
 
   const fetchActiveRide = async () => {
@@ -545,7 +585,14 @@ const EnhancedDriverDashboard = () => {
           <div className="bg-white p-6 rounded-lg shadow">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <p className="text-sm font-medium text-gray-600">Available Rides</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-medium text-gray-600">Available Rides</p>
+                  {newRideRequests.length > 0 && (
+                    <span className="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full animate-pulse">
+                      {newRideRequests.length} NEW
+                    </span>
+                  )}
+                </div>
                 <p className="text-2xl font-bold text-gray-900">{availableRides.length}</p>
                 {currentLocation && (
                   <p className="text-xs text-gray-500 mt-1">
@@ -553,38 +600,66 @@ const EnhancedDriverDashboard = () => {
                   </p>
                 )}
               </div>
-              <div className="p-2 rounded-full bg-purple-100">
-                <Navigation className="h-6 w-6 text-purple-600" />
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={fetchAvailableRides}
+                  className="p-2 rounded-full bg-purple-100 hover:bg-purple-200 transition-colors"
+                  title="Refresh available rides"
+                >
+                  <Navigation className="h-6 w-6 text-purple-600" />
+                </button>
               </div>
             </div>
             
             {/* Available Rides List */}
             {availableRides.length > 0 ? (
               <div className="space-y-3 max-h-64 overflow-y-auto">
-                {availableRides.slice(0, 5).map((ride) => (
-                  <div key={ride.id} className="p-3 bg-gray-50 rounded-lg">
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-900 truncate">
-                          {ride.pickup_location?.address || 'Pickup Location'} → {ride.dropoff_location?.address || 'Destination'}
-                        </p>
-                        <p className="text-xs text-gray-600">
-                          {ride.distance_km?.toFixed(1)}km • Ⓣ{ride.estimated_fare?.toFixed(2)}
-                        </p>
+                {availableRides.slice(0, 5).map((ride) => {
+                  const isNewRequest = newRideRequests.some(newReq => newReq.id === ride.id);
+                  return (
+                    <div key={ride.id} className={`p-3 rounded-lg border-l-4 ${
+                      isNewRequest 
+                        ? 'bg-green-50 border-green-400 shadow-md' 
+                        : 'bg-gray-50 border-gray-200'
+                    }`}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-medium text-gray-900 truncate">
+                              {ride.pickup_location?.address || 'Pickup Location'} → {ride.dropoff_location?.address || 'Destination'}
+                            </p>
+                            {isNewRequest && (
+                              <span className="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full animate-pulse">
+                                NEW
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-gray-600">
+                            {ride.distance_km?.toFixed(1)}km • Ⓣ{ride.estimated_fare?.toFixed(2)}
+                          </p>
+                        </div>
+                        <Button
+                          size="sm"
+                          className={`ml-2 ${
+                            isNewRequest 
+                              ? 'bg-green-600 hover:bg-green-700' 
+                              : 'bg-purple-600 hover:bg-purple-700'
+                          }`}
+                          onClick={() => {
+                            // Handle ride acceptance
+                            console.log('Accepting ride:', ride.id);
+                            // Remove from new requests when accepted
+                            if (isNewRequest) {
+                              setNewRideRequests(prev => prev.filter(req => req.id !== ride.id));
+                            }
+                          }}
+                        >
+                          Accept
+                        </Button>
                       </div>
-                      <Button
-                        size="sm"
-                        className="ml-2"
-                        onClick={() => {
-                          // Handle ride acceptance
-                          console.log('Accepting ride:', ride.id);
-                        }}
-                      >
-                        Accept
-                      </Button>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
                 {availableRides.length > 5 && (
                   <p className="text-xs text-gray-500 text-center">
                     +{availableRides.length - 5} more rides available
