@@ -67,11 +67,13 @@ const EnhancedDriverDashboard = () => {
     if (user && user.role === 'driver') {
       console.log('🔍 Driver detected, fetching all data...');
       fetchAllData();
-      // Set up auto-refresh every 30 seconds for available rides
+      // Set up auto-refresh every 15 seconds for available rides when online
       const interval = setInterval(() => {
-        console.log('🔍 Interval: Refreshing available rides...');
-        fetchAvailableRides();
-      }, 30000);
+        if (isOnline) {
+          console.log('🔍 Interval: Refreshing available rides...');
+          fetchAvailableRides();
+        }
+      }, 15000);
       return () => {
         console.log('🔍 Clearing interval');
         clearInterval(interval);
@@ -85,9 +87,13 @@ const EnhancedDriverDashboard = () => {
   useEffect(() => {
     if (rideRequests && rideRequests.length > lastRideRequestCount) {
       console.log('🚗 New ride request detected via WebSocket!');
+      console.log('🚗 rideRequests:', rideRequests);
+      console.log('🚗 lastRideRequestCount:', lastRideRequestCount);
       
       // Get the new ride requests
       const newRequests = rideRequests.slice(0, rideRequests.length - lastRideRequestCount);
+      console.log('🚗 newRequests:', newRequests);
+      
       setNewRideRequests(prev => [...newRequests, ...prev]);
       
       // Update the count
@@ -96,7 +102,7 @@ const EnhancedDriverDashboard = () => {
       // Show toast notification for new ride requests
       newRequests.forEach(request => {
         toast.info(`New ride request available!`, {
-          description: `${request.pickup_address} → ${request.dropoff_address}`,
+          description: `${request.pickup_address || request.pickup_location?.address} → ${request.dropoff_address || request.dropoff_location?.address}`,
           duration: 8000,
           action: {
             label: 'View',
@@ -115,6 +121,18 @@ const EnhancedDriverDashboard = () => {
       }
     }
   }, [rideRequests, lastRideRequestCount, isOnline]);
+
+  // Also listen for notifications that might indicate new ride requests
+  useEffect(() => {
+    if (notifications && notifications.length > 0) {
+      const latestNotification = notifications[0];
+      if (latestNotification.type === 'ride_request' && isOnline) {
+        console.log('🔔 New ride request notification detected!');
+        // Refresh available rides when we get a ride request notification
+        fetchAvailableRides();
+      }
+    }
+  }, [notifications, isOnline]);
 
   const fetchAllData = async () => {
     setRefreshing(true);
@@ -367,6 +385,10 @@ const EnhancedDriverDashboard = () => {
       });
       
       toast.success('Ride accepted successfully!');
+      
+      // Remove from new requests when accepted
+      setNewRideRequests(prev => prev.filter(req => req.id !== rideId));
+      
       fetchAvailableRides();
       fetchActiveRide();
     } catch (error) {
@@ -613,7 +635,7 @@ const EnhancedDriverDashboard = () => {
             
             {/* Available Rides List */}
             {availableRides.length > 0 ? (
-              <div className="space-y-3 max-h-64 overflow-y-auto">
+              <div className="space-y-3 max-h-80 overflow-y-auto">
                 {availableRides.slice(0, 5).map((ride) => {
                   const isNewRequest = newRideRequests.some(newReq => newReq.id === ride.id);
                   return (
@@ -645,14 +667,7 @@ const EnhancedDriverDashboard = () => {
                               ? 'bg-green-600 hover:bg-green-700' 
                               : 'bg-purple-600 hover:bg-purple-700'
                           }`}
-                          onClick={() => {
-                            // Handle ride acceptance
-                            console.log('Accepting ride:', ride.id);
-                            // Remove from new requests when accepted
-                            if (isNewRequest) {
-                              setNewRideRequests(prev => prev.filter(req => req.id !== ride.id));
-                            }
-                          }}
+                          onClick={() => acceptRide(ride.id)}
                         >
                           Accept
                         </Button>
