@@ -19,8 +19,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
 import axios from 'axios';
 import { 
   History, 
@@ -45,91 +43,80 @@ import { useNavigate } from 'react-router-dom';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
-const StarRating = ({ rating, onRatingChange, readonly = false }) => {
+const SmileRating = ({ selectedEmotion, onEmotionSelect, readonly = false }) => {
+  const emotions = [
+    { id: 1, emoji: '😠', label: 'Angry', color: 'text-red-500' },
+    { id: 2, emoji: '😢', label: 'Sad', color: 'text-orange-500' },
+    { id: 3, emoji: '😐', label: 'Neutral', color: 'text-yellow-500' },
+    { id: 4, emoji: '😊', label: 'Happy', color: 'text-green-500' },
+    { id: 5, emoji: '🤩', label: 'Excited', color: 'text-blue-500' }
+  ];
+
   return (
-    <div className="flex items-center space-x-1">
-      {[1, 2, 3, 4, 5].map((star) => (
+    <div className="flex items-center justify-center space-x-2">
+      {emotions.map((emotion) => (
         <button
-          key={star}
+          key={emotion.id}
           type="button"
-          onClick={() => !readonly && onRatingChange && onRatingChange(star)}
+          onClick={() => !readonly && onEmotionSelect && onEmotionSelect(emotion)}
           disabled={readonly}
-          className={`h-5 w-5 ${
-            star <= rating 
-              ? 'text-yellow-400 fill-current' 
-              : 'text-gray-300'
-          } ${!readonly ? 'hover:text-yellow-400 cursor-pointer' : 'cursor-default'}`}
+          className={`text-2xl transition-all duration-200 ${
+            selectedEmotion?.id === emotion.id 
+              ? `${emotion.color} scale-125` 
+              : 'text-gray-300 hover:text-gray-400'
+          } ${!readonly ? 'cursor-pointer hover:scale-110' : 'cursor-default'}`}
+          title={emotion.label}
         >
-          <Star className="h-full w-full" />
+          {emotion.emoji}
         </button>
       ))}
     </div>
   );
 };
 
-const RatingModal = ({ ride, isOpen, onClose, onSubmit }) => {
-  const [rating, setRating] = useState(5);
-  const [comment, setComment] = useState('');
+const InlineRating = ({ ride, onRatingSubmit }) => {
+  const [selectedEmotion, setSelectedEmotion] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleEmotionSelect = async (emotion) => {
+    setSelectedEmotion(emotion);
     setSubmitting(true);
     
     try {
-      await onSubmit({
-        rating,
-        comment: comment.trim() || null
+      // Generate automatic comment based on emotion and ride details
+      const driverName = ride.driver_name || 'Driver';
+      const pickupAddress = ride.pickup_location?.address || 'pickup location';
+      const dropoffAddress = ride.dropoff_location?.address || 'destination';
+      
+      const emotionText = emotion.label.toLowerCase();
+      const autoComment = `Rider was ${emotionText} with ${driverName} on the ride from ${pickupAddress} to ${dropoffAddress}`;
+      
+      await onRatingSubmit({
+        rating: emotion.id,
+        comment: autoComment
       });
-      onClose();
-      toast.success('Rating submitted successfully!');
+      
+      toast.success(`Rating submitted! You were ${emotionText} with this ride.`);
     } catch (error) {
       toast.error('Failed to submit rating');
+      setSelectedEmotion(null);
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-sm sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Rate Your Ride</DialogTitle>
-          <DialogDescription>
-            How was your experience with this ride?
-          </DialogDescription>
-        </DialogHeader>
-        
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label>Rating</Label>
-            <div className="flex items-center justify-center py-4">
-              <StarRating rating={rating} onRatingChange={setRating} />
-            </div>
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="comment">Comment (Optional)</Label>
-            <Textarea
-              id="comment"
-              placeholder="Share your experience..."
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-              rows={3}
-            />
-          </div>
-          
-          <div className="flex justify-end space-x-2">
-            <Button type="button" variant="outline" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={submitting} className="btn-primary">
-              {submitting ? 'Submitting...' : 'Submit Rating'}
-            </Button>
-          </div>
-        </form>
-      </DialogContent>
-    </Dialog>
+    <div className="mt-3 p-3 bg-gray-50 rounded-lg border">
+      <p className="text-sm text-gray-600 mb-2 text-center">How was your ride?</p>
+      <SmileRating 
+        selectedEmotion={selectedEmotion} 
+        onEmotionSelect={handleEmotionSelect}
+        readonly={submitting}
+      />
+      {submitting && (
+        <p className="text-xs text-gray-500 text-center mt-2">Submitting rating...</p>
+      )}
+    </div>
   );
 };
 
@@ -302,8 +289,8 @@ const RideHistory = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedRide, setSelectedRide] = useState(null);
-  const [showRatingModal, setShowRatingModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [ratingRides, setRatingRides] = useState(new Set()); // Track which rides are being rated
 
   useEffect(() => {
     fetchRides();
@@ -356,9 +343,16 @@ const RideHistory = () => {
     }
   };
 
-  const openRatingModal = (ride) => {
-    setSelectedRide(ride);
-    setShowRatingModal(true);
+  const startRating = (ride) => {
+    setRatingRides(prev => new Set([...prev, ride.id]));
+  };
+
+  const stopRating = (rideId) => {
+    setRatingRides(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(rideId);
+      return newSet;
+    });
   };
 
   const openDetailsModal = (ride) => {
@@ -534,11 +528,11 @@ const RideHistory = () => {
                               <span>Details</span>
                             </Button>
                             
-                            {canRateRide(ride) && (
+                            {canRateRide(ride) && !ratingRides.has(ride.id) && (
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => openRatingModal(ride)}
+                                onClick={() => startRating(ride)}
                                 className="flex items-center space-x-1"
                                 data-testid={`rate-ride-${ride.id}`}
                               >
@@ -564,6 +558,17 @@ const RideHistory = () => {
                       </div>
                     </div>
                   </div>
+                  
+                  {/* Inline Rating System */}
+                  {canRateRide(ride) && ratingRides.has(ride.id) && (
+                    <InlineRating 
+                      ride={ride} 
+                      onRatingSubmit={(ratingData) => {
+                        handleRateRide(ride.id, ratingData);
+                        stopRating(ride.id);
+                      }}
+                    />
+                  )}
                 </CardContent>
               </Card>
             ))}
@@ -590,16 +595,6 @@ const RideHistory = () => {
           </Card>
         )}
 
-        {/* Rating Modal */}
-        <RatingModal
-          ride={selectedRide}
-          isOpen={showRatingModal}
-          onClose={() => {
-            setShowRatingModal(false);
-            setSelectedRide(null);
-          }}
-          onSubmit={(ratingData) => handleRateRide(selectedRide.id, ratingData)}
-        />
 
         {/* Details Modal */}
         <RideDetailsModal
