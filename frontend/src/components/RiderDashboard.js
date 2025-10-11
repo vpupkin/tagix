@@ -86,24 +86,21 @@ const RiderDashboard = () => {
         return;
       }
       
-      console.log('🔍 Making API call to /api/rides/my-requests...');
-      const response = await axios.get(`${API_URL}/api/rides/my-requests`);
-      console.log('🔍 My requests response:', response.data);
+      console.log('🔍 Making API call to /api/rides/my-rides...');
+      const response = await axios.get(`${API_URL}/api/rides/my-rides`);
+      console.log('🔍 My rides response:', response.data);
       
-      // Combine pending requests and completed rides
-      const pendingRequests = response.data.pending_requests || [];
-      const completedRides = response.data.completed_rides || [];
-      const allRides = [...pendingRequests, ...completedRides];
+      // Get all rides and sort by creation date (newest first)
+      const allRides = response.data || [];
       
       // Sort by creation date (newest first) and get last 3
       const sortedRides = allRides.sort((a, b) => 
-        new Date(b.created_at || b.requested_at) - new Date(a.created_at || a.requested_at)
+        new Date(b.created_at || b.accepted_at || b.completed_at) - new Date(a.created_at || a.accepted_at || a.completed_at)
       );
       const recentRides = sortedRides.slice(0, 3);
       
       console.log('🔍 Setting recent rides:', recentRides.length);
-      console.log('🔍 Total pending requests:', pendingRequests.length);
-      console.log('🔍 Total completed rides:', completedRides.length);
+      console.log('🔍 Total rides:', allRides.length);
       console.log('🔍 Recent rides data:', recentRides);
       setRecentRides(recentRides);
     } catch (error) {
@@ -116,21 +113,22 @@ const RiderDashboard = () => {
   const fetchUserStats = async () => {
     try {
       console.log('🔍 RiderDashboard: fetchUserStats called');
-      const response = await axios.get(`${API_URL}/api/rides/my-requests`);
-      const data = response.data;
+      const response = await axios.get(`${API_URL}/api/rides/my-rides`);
+      const allRides = response.data || [];
       
-      const completedRides = data.completed_rides || [];
-      const pendingRides = data.pending_requests || [];
-      const totalSpent = completedRides.reduce((sum, ride) => sum + (ride.estimated_fare || 0), 0);
+      // Calculate stats from the same data source as recent rides
+      const completedRides = allRides.filter(ride => ride.status === 'completed');
+      const pendingRides = allRides.filter(ride => ['pending', 'accepted', 'driver_arriving', 'in_progress'].includes(ride.status));
+      const totalSpent = completedRides.reduce((sum, ride) => sum + (ride.estimated_fare || ride.fare || 0), 0);
       
       console.log('🔍 Setting user stats:');
-      console.log('  Total rides:', completedRides.length + pendingRides.length);
+      console.log('  Total rides:', allRides.length);
       console.log('  Completed rides:', completedRides.length);
       console.log('  Pending rides:', pendingRides.length);
       console.log('  Total spent:', totalSpent);
       
       setStats({
-        totalRides: completedRides.length + pendingRides.length,
+        totalRides: allRides.length,
         completedRides: completedRides.length,
         pendingRides: pendingRides.length,
         totalSpent: totalSpent,
