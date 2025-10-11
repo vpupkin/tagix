@@ -3224,9 +3224,31 @@ async def get_all_conversations(
         conversation_list = list(conversations.values())
         conversation_list.sort(key=lambda x: x["last_message_at"], reverse=True)
         
-        # Convert sets to lists for JSON serialization
+        # Convert sets to lists and fetch user details for participants
         for conv in conversation_list:
-            conv["participants"] = list(conv["participants"])
+            participant_ids = list(conv["participants"])
+            participants_with_details = []
+            
+            # Fetch user details for each participant
+            for user_id in participant_ids:
+                if user_id:  # Skip None/empty user IDs
+                    user = await db.users.find_one({"id": user_id})
+                    if user:
+                        participants_with_details.append({
+                            "id": user_id,
+                            "name": user.get("name", "Unknown"),
+                            "email": user.get("email", "Unknown"),
+                            "role": user.get("role", "Unknown")
+                        })
+                    else:
+                        participants_with_details.append({
+                            "id": user_id,
+                            "name": "Unknown",
+                            "email": "Unknown",
+                            "role": "Unknown"
+                        })
+            
+            conv["participants"] = participants_with_details
             conv["_id"] = str(conv["thread_id"])  # For React key
             
             # Convert ObjectIds to strings in messages
