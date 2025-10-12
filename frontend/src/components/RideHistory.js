@@ -595,7 +595,7 @@ const RideHistory = () => {
                         <div className="flex flex-col items-end space-y-2">
                           <div className="text-right">
                             <p className="text-lg font-bold text-gray-900">
-                              ${ride.estimated_fare?.toFixed(2) || '0.00'}
+                              Ⓣ{ride.estimated_fare?.toFixed(2) || '0.00'}
                             </p>
                             <p className="text-sm text-gray-500">
                               {(() => {
