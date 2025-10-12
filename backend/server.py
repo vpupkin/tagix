@@ -946,8 +946,59 @@ async def get_my_rides(current_user: User = Depends(get_current_user)):
     """Get completed rides for the current user"""
     if current_user.role == UserRole.RIDER:
         rides = await db.ride_matches.find({"rider_id": current_user.id}).to_list(None)
+        
+        # Get driver names for rider's rides
+        driver_ids = set()
+        for ride in rides:
+            if ride.get("driver_id"):
+                driver_ids.add(ride["driver_id"])
+        
+        drivers = {}
+        if driver_ids:
+            driver_cursor = db.users.find({"id": {"$in": list(driver_ids)}})
+            driver_list = await driver_cursor.to_list(None)
+            for driver in driver_list:
+                drivers[driver['id']] = {
+                    'name': driver.get('name', 'Unknown Driver'),
+                    'email': driver.get('email', 'Unknown Email')
+                }
+        
+        # Add driver names to rides
+        for ride in rides:
+            if ride.get("driver_id") and ride["driver_id"] in drivers:
+                ride["driver_name"] = drivers[ride["driver_id"]]["name"]
+                ride["driver_email"] = drivers[ride["driver_id"]]["email"]
+            else:
+                ride["driver_name"] = "Unknown Driver"
+                ride["driver_email"] = "Unknown Email"
+                
     elif current_user.role == UserRole.DRIVER:
         rides = await db.ride_matches.find({"driver_id": current_user.id}).to_list(None)
+        
+        # Get rider names for driver's rides
+        rider_ids = set()
+        for ride in rides:
+            if ride.get("rider_id"):
+                rider_ids.add(ride["rider_id"])
+        
+        riders = {}
+        if rider_ids:
+            rider_cursor = db.users.find({"id": {"$in": list(rider_ids)}})
+            rider_list = await rider_cursor.to_list(None)
+            for rider in rider_list:
+                riders[rider['id']] = {
+                    'name': rider.get('name', 'Unknown Rider'),
+                    'email': rider.get('email', 'Unknown Email')
+                }
+        
+        # Add rider names to rides
+        for ride in rides:
+            if ride.get("rider_id") and ride["rider_id"] in riders:
+                ride["rider_name"] = riders[ride["rider_id"]]["name"]
+                ride["rider_email"] = riders[ride["rider_id"]]["email"]
+            else:
+                ride["rider_name"] = "Unknown Rider"
+                ride["rider_email"] = "Unknown Email"
     else:
         rides = await db.ride_matches.find({}).to_list(None)
     
@@ -1082,7 +1133,23 @@ async def get_unified_ride_data(current_user: User = Depends(get_current_user)):
         rider_ratings = await db.ratings.find({"rater_id": current_user.id}).to_list(None)
         ratings_by_ride = {rating["ride_id"]: rating for rating in rider_ratings}
         
-        # Add rating information to completed matches
+        # Get driver names for completed matches
+        driver_ids = set()
+        for match in completed_matches:
+            if match.get("driver_id"):
+                driver_ids.add(match["driver_id"])
+        
+        drivers = {}
+        if driver_ids:
+            driver_cursor = db.users.find({"id": {"$in": list(driver_ids)}})
+            driver_list = await driver_cursor.to_list(None)
+            for driver in driver_list:
+                drivers[driver['id']] = {
+                    'name': driver.get('name', 'Unknown Driver'),
+                    'email': driver.get('email', 'Unknown Email')
+                }
+        
+        # Add rating information and driver names to completed matches
         for match in completed_matches:
             ride_id = match["id"]
             if ride_id in ratings_by_ride:
@@ -1092,6 +1159,14 @@ async def get_unified_ride_data(current_user: User = Depends(get_current_user)):
             else:
                 match["rating"] = None
                 match["comment"] = None
+            
+            # Add driver name
+            if match.get("driver_id") and match["driver_id"] in drivers:
+                match["driver_name"] = drivers[match["driver_id"]]["name"]
+                match["driver_email"] = drivers[match["driver_id"]]["email"]
+            else:
+                match["driver_name"] = "Unknown Driver"
+                match["driver_email"] = "Unknown Email"
         
         # Log audit event
         if AUDIT_ENABLED and audit_system:
