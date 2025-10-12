@@ -963,7 +963,11 @@ async def get_my_rides(current_user: User = Depends(get_current_user)):
                     'email': driver.get('email', 'Unknown Email')
                 }
         
-        # Add driver names to rides
+        # Get ratings for rider's rides
+        rider_ratings = await db.ratings.find({"rater_id": current_user.id}).to_list(None)
+        ratings_by_ride = {rating["ride_id"]: rating for rating in rider_ratings}
+        
+        # Add driver names and ratings to rides
         for ride in rides:
             if ride.get("driver_id") and ride["driver_id"] in drivers:
                 ride["driver_name"] = drivers[ride["driver_id"]]["name"]
@@ -971,6 +975,16 @@ async def get_my_rides(current_user: User = Depends(get_current_user)):
             else:
                 ride["driver_name"] = "Unknown Driver"
                 ride["driver_email"] = "Unknown Email"
+            
+            # Add rating information
+            ride_id = ride["id"]
+            if ride_id in ratings_by_ride:
+                rating = ratings_by_ride[ride_id]
+                ride["rating"] = rating["rating"]
+                ride["comment"] = rating["comment"]
+            else:
+                ride["rating"] = None
+                ride["comment"] = None
                 
     elif current_user.role == UserRole.DRIVER:
         rides = await db.ride_matches.find({"driver_id": current_user.id}).to_list(None)
@@ -991,7 +1005,11 @@ async def get_my_rides(current_user: User = Depends(get_current_user)):
                     'email': rider.get('email', 'Unknown Email')
                 }
         
-        # Add rider names to rides
+        # Get ratings for driver's rides
+        all_ratings = await db.ratings.find({}).to_list(None)
+        ratings_by_ride = {rating["ride_id"]: rating for rating in all_ratings}
+        
+        # Add rider names and ratings to rides
         for ride in rides:
             if ride.get("rider_id") and ride["rider_id"] in riders:
                 ride["rider_name"] = riders[ride["rider_id"]]["name"]
@@ -999,6 +1017,16 @@ async def get_my_rides(current_user: User = Depends(get_current_user)):
             else:
                 ride["rider_name"] = "Unknown Rider"
                 ride["rider_email"] = "Unknown Email"
+            
+            # Add rating information
+            ride_id = ride["id"]
+            if ride_id in ratings_by_ride:
+                rating = ratings_by_ride[ride_id]
+                ride["rating"] = rating["rating"]
+                ride["comment"] = rating["comment"]
+            else:
+                ride["rating"] = None
+                ride["comment"] = None
     else:
         rides = await db.ride_matches.find({}).to_list(None)
     
