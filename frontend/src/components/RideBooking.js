@@ -1012,9 +1012,58 @@ const RideBooking = () => {
 
                 <div className="space-y-2">
                   <Label htmlFor="requirements">Special Requirements (Optional)</Label>
+                  
+                  {/* Emoji Picker */}
+                  <div className="flex flex-wrap gap-2 p-3 bg-gray-50 rounded-lg border">
+                    <span className="text-xs text-gray-600 font-medium mb-1 w-full">Quick add:</span>
+                    {[
+                      { emoji: '🚗', tooltip: 'Vehicle related' },
+                      { emoji: '♿', tooltip: 'Wheelchair accessible' },
+                      { emoji: '👶', tooltip: 'Baby/Child seat' },
+                      { emoji: '🛒', tooltip: 'Shopping/Groceries' },
+                      { emoji: '🧳', tooltip: 'Luggage/Baggage' },
+                      { emoji: '🐕', tooltip: 'Pet friendly' },
+                      { emoji: '🚭', tooltip: 'No smoking' },
+                      { emoji: '🔇', tooltip: 'Quiet ride' },
+                      { emoji: '🌡️', tooltip: 'Temperature control' },
+                      { emoji: '🔌', tooltip: 'Phone charging' },
+                      { emoji: '💧', tooltip: 'Water needed' },
+                      { emoji: '🍽️', tooltip: 'Food delivery' },
+                      { emoji: '🏥', tooltip: 'Medical/Doctor' },
+                      { emoji: '✈️', tooltip: 'Airport pickup' },
+                      { emoji: '🎵', tooltip: 'Music preference' },
+                      { emoji: '📱', tooltip: 'Phone call needed' },
+                      { emoji: '⏰', tooltip: 'Time sensitive' },
+                      { emoji: '🚪', tooltip: 'Door to door' },
+                      { emoji: '💺', tooltip: 'Extra comfort' },
+                      { emoji: '🆘', tooltip: 'Emergency/Urgent' }
+                    ].map(({ emoji, tooltip }) => (
+                      <button
+                        key={emoji}
+                        type="button"
+                        onClick={() => {
+                          const textarea = document.getElementById('requirements');
+                          const start = textarea.selectionStart;
+                          const end = textarea.selectionEnd;
+                          const newText = specialRequirements.substring(0, start) + emoji + specialRequirements.substring(end);
+                          setSpecialRequirements(newText);
+                          // Focus back to textarea and set cursor position
+                          setTimeout(() => {
+                            textarea.focus();
+                            textarea.setSelectionRange(start + emoji.length, start + emoji.length);
+                          }, 0);
+                        }}
+                        className="w-8 h-8 rounded-full flex items-center justify-center text-lg transition-all duration-200 bg-white hover:bg-gray-100 hover:scale-110 border border-gray-200 hover:border-gray-300"
+                        title={tooltip}
+                      >
+                        {emoji}
+                      </button>
+                    ))}
+                  </div>
+                  
                   <Textarea
                     id="requirements"
-                    placeholder="Any special requests or requirements..."
+                    placeholder="Any special requests or requirements... (Click emojis above to add them)"
                     value={specialRequirements}
                     onChange={(e) => setSpecialRequirements(e.target.value)}
                     rows={3}
