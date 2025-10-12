@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import io from 'socket.io-client';
 import { getWebSocketUrl, getApiUrl } from '../utils/config';
 import axios from 'axios';
+import soundManager from '../utils/soundManager';
 
 const WebSocketContext = createContext();
 
@@ -236,6 +237,8 @@ export const WebSocketProvider = ({ children }) => {
               }
             }
           });
+          // 🔊 Play sound notification for new ride request
+          soundManager.playNotificationSound('ride_request', data);
         }
         break;
 
@@ -253,6 +256,8 @@ export const WebSocketProvider = ({ children }) => {
             timestamp: new Date(),
             data: data
           });
+          // 🔊 Play sound notification for ride acceptance
+          soundManager.playNotificationSound('ride_accepted', data);
         }
         break;
 
@@ -276,6 +281,8 @@ export const WebSocketProvider = ({ children }) => {
           message: data.reason || 'Your ride has been cancelled',
           timestamp: new Date()
         });
+        // 🔊 Play sound notification for ride cancellation
+        soundManager.playNotificationSound('ride_canceled', data);
         break;
 
       case 'driver_arrived':
@@ -291,6 +298,8 @@ export const WebSocketProvider = ({ children }) => {
             timestamp: new Date(),
             data: data
           });
+          // 🔊 Play sound notification for driver arrival
+          soundManager.playNotificationSound('driver_arrived', data);
         }
         break;
 
@@ -307,6 +316,8 @@ export const WebSocketProvider = ({ children }) => {
             timestamp: new Date(),
             data: data
           });
+          // 🔊 Play sound notification for ride start
+          soundManager.playNotificationSound('ride_started', data);
         }
         break;
 
@@ -323,6 +334,8 @@ export const WebSocketProvider = ({ children }) => {
             timestamp: new Date(),
             data: data
           });
+          // 🔊 Play sound notification for ride completion
+          soundManager.playNotificationSound('ride_completed', data);
         }
         break;
 
@@ -350,6 +363,8 @@ export const WebSocketProvider = ({ children }) => {
           description: 'Please complete payment to finish your ride',
           duration: 10000
         });
+        // 🔊 Play sound notification for payment required
+        soundManager.playNotificationSound('payment_required', data);
         break;
 
       case 'ride_message':
@@ -389,6 +404,8 @@ export const WebSocketProvider = ({ children }) => {
           sender_name: data.sender_name || 'Admin',
           data: data
         });
+        // 🔊 Play sound notification for admin message
+        soundManager.playNotificationSound('admin_message', data);
         break;
 
       case 'reply_received':
@@ -605,7 +622,16 @@ export const WebSocketProvider = ({ children }) => {
     clearNotifications,
     clearAllNotifications,
     fetchNotifications,
-    reconnect: connectWebSocket
+    reconnect: connectWebSocket,
+    // 🔊 Sound management functions
+    soundManager: {
+      playSound: (soundType, volume) => soundManager.playSound(soundType, volume),
+      playNotificationSound: (notificationType, data) => soundManager.playNotificationSound(notificationType, data),
+      setEnabled: (enabled) => soundManager.setEnabled(enabled),
+      setVolume: (volume) => soundManager.setVolume(volume),
+      setForceWebAudio: (force) => soundManager.setForceWebAudio(force),
+      getSettings: () => soundManager.getSettings()
+    }
   };
 
   return (

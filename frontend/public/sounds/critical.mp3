@@ -1,0 +1,7 @@
+# Placeholder for critical.mp3
+# This file should contain an urgent/attention sound
+# for critical notifications (admin messages, payment required, etc.)
+# 
+# Recommended: 1-2 second urgent sound
+# Format: MP3, 44.1kHz, stereo
+# Volume: High (critical notification)

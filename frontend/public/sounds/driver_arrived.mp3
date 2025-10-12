@@ -1,0 +1,7 @@
+# Placeholder for driver_arrived.mp3
+# This file should contain an alert sound
+# for when a driver arrives at pickup location
+# 
+# Recommended: 1-2 second alert sound
+# Format: MP3, 44.1kHz, stereo
+# Volume: Medium-High (important notification)

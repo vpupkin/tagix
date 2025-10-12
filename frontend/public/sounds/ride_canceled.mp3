@@ -1,0 +1,7 @@
+# Placeholder for ride_canceled.mp3
+# This file should contain a warning/alert sound
+# for when a ride is canceled
+# 
+# Recommended: 1-2 second warning sound
+# Format: MP3, 44.1kHz, stereo
+# Volume: Medium-High (important notification)

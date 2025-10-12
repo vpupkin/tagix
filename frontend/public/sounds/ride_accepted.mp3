@@ -1,0 +1,7 @@
+# Placeholder for ride_accepted.mp3
+# This file should contain a positive, confirmation sound
+# for when a driver accepts a ride request
+# 
+# Recommended: 1-2 second success sound
+# Format: MP3, 44.1kHz, stereo
+# Volume: Medium
