@@ -598,7 +598,9 @@ const AdminDashboard = () => {
       // Status filter
       const matchesStatus = userStatusFilter === 'all' || 
         (userStatusFilter === 'online' && user.is_online) ||
-        (userStatusFilter === 'offline' && !user.is_online);
+        (userStatusFilter === 'offline' && !user.is_online) ||
+        (userStatusFilter === 'locked' && !user.is_active) ||
+        (userStatusFilter === 'unlocked' && user.is_active);
       
       return matchesSearch && matchesRole && matchesStatus;
     });
@@ -1208,6 +1210,8 @@ const AdminDashboard = () => {
                         <SelectItem value="all">All Status</SelectItem>
                         <SelectItem value="online">Online</SelectItem>
                         <SelectItem value="offline">Offline</SelectItem>
+                        <SelectItem value="locked">Locked</SelectItem>
+                        <SelectItem value="unlocked">Unlocked</SelectItem>
                       </SelectContent>
                     </Select>
                     <Button
@@ -1349,9 +1353,14 @@ const AdminDashboard = () => {
                           </TableCell>
                           <TableCell id={`admin-user-rides-${user.id}`} className="text-xs text-center">{user.rides || 0}</TableCell>
                           <TableCell id={`admin-user-status-${user.id}`}>
-                            <Badge className={`${user.is_online ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'} text-xs px-1 py-0`} id={`admin-user-status-badge-${user.id}`}>
-                              {user.is_online ? 'ON' : 'OFF'}
-                            </Badge>
+                            <div className="flex items-center space-x-1">
+                              <Badge className={`${user.is_online ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'} text-xs px-1 py-0`} id={`admin-user-online-badge-${user.id}`}>
+                                {user.is_online ? 'ON' : 'OFF'}
+                              </Badge>
+                              <Badge className={`${user.is_active ? 'bg-blue-100 text-blue-800' : 'bg-red-100 text-red-800'} text-xs px-1 py-0`} id={`admin-user-lock-badge-${user.id}`}>
+                                {user.is_active ? 'UNLOCKED' : 'LOCKED'}
+                              </Badge>
+                            </div>
                           </TableCell>
                           <TableCell id={`admin-user-joined-${user.id}`} className="text-xs">
                             {new Date(user.created_at).toLocaleDateString()}
