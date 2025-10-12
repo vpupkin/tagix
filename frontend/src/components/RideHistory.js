@@ -36,7 +36,9 @@ import {
   AlertCircle,
   Eye,
   MessageSquare,
-  RotateCcw
+  RotateCcw,
+  User,
+  Car
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
@@ -280,6 +282,17 @@ const calculateDuration = (distanceKm) => {
   return Math.round((distanceKm / averageSpeed) * 60); // minutes
 };
 
+const getRatingEmoji = (rating) => {
+  switch (rating) {
+    case 1: return '😠'; // Angry
+    case 2: return '😢'; // Sad
+    case 3: return '😐'; // Neutral
+    case 4: return '😊'; // Happy
+    case 5: return '🤩'; // Excited
+    default: return '❓'; // Unknown
+  }
+};
+
 const RideHistory = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -303,7 +316,16 @@ const RideHistory = () => {
   const fetchRides = async () => {
     try {
       const response = await axios.get(`${API_URL}/api/rides/my-rides`);
-      setRides(response.data);
+      const rides = response.data || [];
+      
+      // Sort rides by date (newest first) - default sorting
+      const sortedRides = rides.sort((a, b) => {
+        const dateA = new Date(b.completed_at || b.created_at || b.accepted_at || b.requested_at);
+        const dateB = new Date(a.completed_at || a.created_at || a.accepted_at || a.requested_at);
+        return dateA - dateB;
+      });
+      
+      setRides(sortedRides);
     } catch (error) {
       console.error('Error fetching rides:', error);
       toast.error('Failed to load ride history');
@@ -497,6 +519,75 @@ const RideHistory = () => {
                                 </p>
                               </div>
                             </div>
+                          </div>
+                        </div>
+
+                        {/* Additional Ride Information */}
+                        <div className="flex-1 mt-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
+                            {/* Driver Information */}
+                            <div className="flex items-center space-x-2">
+                              <User className="h-4 w-4 text-gray-500" />
+                              <div>
+                                <p className="text-xs text-gray-500">Driver</p>
+                                <p className="text-sm font-medium text-gray-900">
+                                  {ride.driver_name || 'Unknown Driver'}
+                                </p>
+                              </div>
+                            </div>
+
+                            {/* Vehicle Type */}
+                            <div className="flex items-center space-x-2">
+                              <Car className="h-4 w-4 text-gray-500" />
+                              <div>
+                                <p className="text-xs text-gray-500">Vehicle</p>
+                                <p className="text-sm font-medium text-gray-900">
+                                  {ride.vehicle_type || 'Economy'}
+                                </p>
+                              </div>
+                            </div>
+
+                            {/* Passenger Count */}
+                            <div className="flex items-center space-x-2">
+                              <User className="h-4 w-4 text-gray-500" />
+                              <div>
+                                <p className="text-xs text-gray-500">Passengers</p>
+                                <p className="text-sm font-medium text-gray-900">
+                                  {ride.passenger_count || 1} passenger{(ride.passenger_count || 1) > 1 ? 's' : ''}
+                                </p>
+                              </div>
+                            </div>
+
+                            {/* Rating Display */}
+                            {ride.rating && (
+                              <div className="flex items-center space-x-2">
+                                <Star className="h-4 w-4 text-yellow-500" />
+                                <div>
+                                  <p className="text-xs text-gray-500">Your Rating</p>
+                                  <div className="flex items-center space-x-1">
+                                    <span className="text-lg">
+                                      {getRatingEmoji(ride.rating)}
+                                    </span>
+                                    <span className="text-sm font-medium text-gray-900">
+                                      {ride.rating}/5
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Special Requirements */}
+                            {ride.special_requirements && (
+                              <div className="flex items-start space-x-2 md:col-span-2">
+                                <AlertCircle className="h-4 w-4 text-blue-500 mt-0.5 flex-shrink-0" />
+                                <div>
+                                  <p className="text-xs text-gray-500">Special Requirements</p>
+                                  <p className="text-sm text-blue-700 bg-blue-50 px-2 py-1 rounded">
+                                    {ride.special_requirements}
+                                  </p>
+                                </div>
+                              </div>
+                            )}
                           </div>
                         </div>
 
