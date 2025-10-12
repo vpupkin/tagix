@@ -1206,26 +1206,79 @@ const AdminDashboard = () => {
                         <SelectItem value="rider">Rider</SelectItem>
                       </SelectContent>
                     </Select>
-                    <Select value={userStatusFilter} onValueChange={setUserStatusFilter}>
-                      <SelectTrigger className="w-32" id="admin-users-status-filter">
-                        <SelectValue placeholder="Status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Any Status</SelectItem>
-                        <SelectItem value="online">Online</SelectItem>
-                        <SelectItem value="offline">Offline</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <Select value={userLockFilter} onValueChange={setUserLockFilter}>
-                      <SelectTrigger className="w-32" id="admin-users-lock-filter">
-                        <SelectValue placeholder="Lock" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Any Lock</SelectItem>
-                        <SelectItem value="locked">Locked</SelectItem>
-                        <SelectItem value="unlocked">Unlocked</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    {/* Online Status Filter - Colored Radio Buttons */}
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm font-medium text-gray-700">Status:</span>
+                      <div className="flex items-center space-x-1">
+                        <label className="flex items-center space-x-1 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="statusFilter"
+                            value="all"
+                            checked={userStatusFilter === 'all'}
+                            onChange={(e) => setUserStatusFilter(e.target.value)}
+                            className="w-3 h-3"
+                          />
+                          <span className="text-xs text-gray-600">All</span>
+                        </label>
+                        <label className="flex items-center space-x-1 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="statusFilter"
+                            value="online"
+                            checked={userStatusFilter === 'online'}
+                            onChange={(e) => setUserStatusFilter(e.target.value)}
+                            className="w-3 h-3 text-green-600"
+                          />
+                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                          <span className="text-xs text-gray-600">Online</span>
+                        </label>
+                        <label className="flex items-center space-x-1 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="statusFilter"
+                            value="offline"
+                            checked={userStatusFilter === 'offline'}
+                            onChange={(e) => setUserStatusFilter(e.target.value)}
+                            className="w-3 h-3 text-gray-600"
+                          />
+                          <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                          <span className="text-xs text-gray-600">Offline</span>
+                        </label>
+                      </div>
+                    </div>
+
+                    {/* Lock Status Filter - Lock Symbols */}
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm font-medium text-gray-700">Lock:</span>
+                      <div className="flex items-center space-x-1">
+                        <button
+                          onClick={() => setUserLockFilter('all')}
+                          className={`p-1 rounded ${userLockFilter === 'all' ? 'bg-blue-100 border-2 border-blue-300' : 'bg-gray-100 border border-gray-300'}`}
+                          title="All Users"
+                        >
+                          <span className="text-xs text-gray-600">All</span>
+                        </button>
+                        <button
+                          onClick={() => setUserLockFilter('locked')}
+                          className={`p-1 rounded ${userLockFilter === 'locked' ? 'bg-red-100 border-2 border-red-300' : 'bg-gray-100 border border-gray-300'}`}
+                          title="Locked Users"
+                        >
+                          <svg className="w-4 h-4 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+                          </svg>
+                        </button>
+                        <button
+                          onClick={() => setUserLockFilter('unlocked')}
+                          className={`p-1 rounded ${userLockFilter === 'unlocked' ? 'bg-green-100 border-2 border-green-300' : 'bg-gray-100 border border-gray-300'}`}
+                          title="Unlocked Users"
+                        >
+                          <svg className="w-4 h-4 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M10 2a5 5 0 00-5 5v2a2 2 0 00-2 2v5a2 2 0 002 2h10a2 2 0 002-2v-5a2 2 0 00-2-2H7V7a3 3 0 015.905-.75 1 1 0 001.937-.5A5.002 5.002 0 0010 2z" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
                     <Button
                       variant="outline"
                       size="sm"
@@ -1365,16 +1418,11 @@ const AdminDashboard = () => {
                             </div>
                           </TableCell>
                           <TableCell id={`admin-user-rides-${user.id}`} className="text-xs text-center">{user.rides || 0}</TableCell>
-                          <TableCell id={`admin-user-status-${user.id}`}>
-                            <div className="flex items-center space-x-1">
-                              <Badge className={`${user.is_online ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'} text-xs px-1 py-0`} id={`admin-user-online-badge-${user.id}`}>
-                                {user.is_online ? 'ON' : 'OFF'}
-                              </Badge>
-                              <Badge className={`${user.is_active ? 'bg-blue-100 text-blue-800' : 'bg-red-100 text-red-800'} text-xs px-1 py-0`} id={`admin-user-lock-badge-${user.id}`}>
-                                {user.is_active ? 'UNLOCKED' : 'LOCKED'}
-                              </Badge>
-                            </div>
-                          </TableCell>
+                  <TableCell id={`admin-user-status-${user.id}`}>
+                    <Badge className={`${user.is_online ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'} text-xs px-1 py-0`} id={`admin-user-online-badge-${user.id}`}>
+                      {user.is_online ? 'ON' : 'OFF'}
+                    </Badge>
+                  </TableCell>
                           <TableCell id={`admin-user-joined-${user.id}`} className="text-xs">
                             {new Date(user.created_at).toLocaleDateString()}
                           </TableCell>
