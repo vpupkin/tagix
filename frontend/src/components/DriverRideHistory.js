@@ -230,6 +230,7 @@ const DriverRideHistory = () => {
                       <TableHead>Ride ID</TableHead>
                       <TableHead>Rider</TableHead>
                       <TableHead>Route</TableHead>
+                      <TableHead>Details</TableHead>
                       <TableHead>Distance</TableHead>
                       <TableHead>Duration</TableHead>
                       <TableHead>Fare</TableHead>
@@ -261,6 +262,25 @@ const DriverRideHistory = () => {
                             <div className="text-xs text-gray-500 truncate">
                               → {ride.dropoff_location?.address || 'N/A'}
                             </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2 text-xs">
+                              <span className="flex items-center gap-1">
+                                <User className="h-3 w-3" />
+                                {ride.passenger_count || 1} passenger{ride.passenger_count > 1 ? 's' : ''}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Car className="h-3 w-3" />
+                                {ride.vehicle_type || 'Economy'}
+                              </span>
+                            </div>
+                            {ride.special_requirements && (
+                              <div className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                                <span className="font-medium">Special:</span> {ride.special_requirements}
+                              </div>
+                            )}
                           </div>
                         </TableCell>
                         <TableCell className="text-sm">

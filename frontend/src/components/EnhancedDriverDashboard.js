@@ -696,14 +696,46 @@ const EnhancedDriverDashboard = () => {
                               </span>
                             )}
                           </div>
-                          <p className="text-xs text-gray-600">
-                            {ride.distance_km?.toFixed(1)}km • Ⓣ{ride.estimated_fare?.toFixed(2)}
-                            {hasInsufficientBalance && (
-                              <span className="ml-2 text-red-600 font-medium">
-                                (Platform fee: Ⓣ{requiredPlatformFee.toFixed(2)})
-                              </span>
-                            )}
-                          </p>
+                          
+                          {/* Ride Details Row */}
+                          <div className="flex items-center gap-4 text-xs text-gray-600 mt-1">
+                            <span className="flex items-center gap-1">
+                              <User className="h-3 w-3" />
+                              {ride.passenger_count || 1} passenger{ride.passenger_count > 1 ? 's' : ''}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Car className="h-3 w-3" />
+                              {ride.vehicle_type || 'Economy'}
+                            </span>
+                            <span>
+                              {ride.distance_km?.toFixed(1)}km • Ⓣ{ride.estimated_fare?.toFixed(2)}
+                            </span>
+                          </div>
+                          
+                          {/* Special Requirements */}
+                          {ride.special_requirements && (
+                            <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded text-xs">
+                              <div className="flex items-start gap-2">
+                                <AlertCircle className="h-3 w-3 text-blue-600 mt-0.5 flex-shrink-0" />
+                                <div>
+                                  <span className="font-medium text-blue-800">Special Requirements:</span>
+                                  <p className="text-blue-700 mt-1">{ride.special_requirements}</p>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                          
+                          {/* Platform Fee Warning */}
+                          {hasInsufficientBalance && (
+                            <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-xs">
+                              <div className="flex items-center gap-2">
+                                <AlertCircle className="h-3 w-3 text-red-600" />
+                                <span className="text-red-700 font-medium">
+                                  Platform fee: Ⓣ{requiredPlatformFee.toFixed(2)} (Current balance: Ⓣ{balance.toFixed(2)})
+                                </span>
+                              </div>
+                            </div>
+                          )}
                         </div>
                         <Button
                           size="sm"
