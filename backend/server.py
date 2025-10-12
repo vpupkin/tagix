@@ -1126,7 +1126,23 @@ async def get_unified_ride_data(current_user: User = Depends(get_current_user)):
         all_ratings = await db.ratings.find({}).to_list(None)
         ratings_by_ride = {rating["ride_id"]: rating for rating in all_ratings}
         
-        # Add rating information to completed matches
+        # Get rider names for completed matches
+        rider_ids = set()
+        for match in completed_matches:
+            if match.get("rider_id"):
+                rider_ids.add(match["rider_id"])
+        
+        riders = {}
+        if rider_ids:
+            rider_cursor = db.users.find({"id": {"$in": list(rider_ids)}})
+            rider_list = await rider_cursor.to_list(None)
+            for rider in rider_list:
+                riders[rider['id']] = {
+                    'name': rider.get('name', 'Unknown Rider'),
+                    'email': rider.get('email', 'Unknown Email')
+                }
+        
+        # Add rating information and rider names to completed matches
         for match in completed_matches:
             ride_id = match["id"]
             if ride_id in ratings_by_ride:
@@ -1136,6 +1152,14 @@ async def get_unified_ride_data(current_user: User = Depends(get_current_user)):
             else:
                 match["rating"] = None
                 match["comment"] = None
+            
+            # Add rider name
+            if match.get("rider_id") and match["rider_id"] in riders:
+                match["rider_name"] = riders[match["rider_id"]]["name"]
+                match["rider_email"] = riders[match["rider_id"]]["email"]
+            else:
+                match["rider_name"] = "Unknown Rider"
+                match["rider_email"] = "Unknown Email"
         
         # Get driver location for distance calculations
         driver = await db.users.find_one({"id": current_user.id})

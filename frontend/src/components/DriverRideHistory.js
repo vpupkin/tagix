@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import axios from 'axios';
-import { History, Search, RefreshCw } from 'lucide-react';
+import { History, Search, RefreshCw, User, Car } from 'lucide-react';
 import { toast } from 'sonner';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
@@ -284,10 +284,10 @@ const DriverRideHistory = () => {
                           </div>
                         </TableCell>
                         <TableCell className="text-sm">
-                          {formatDistance(ride.distance_km)}
+                          {formatDistance(ride.estimated_distance_km || ride.distance_km)}
                         </TableCell>
                         <TableCell className="text-sm">
-                          {formatDuration(ride.duration_minutes)}
+                          {formatDuration(ride.estimated_duration_minutes || ride.duration_minutes)}
                         </TableCell>
                         <TableCell className="font-medium text-sm">
                           {formatCurrency(ride.estimated_fare)}
