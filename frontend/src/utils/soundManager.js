@@ -10,6 +10,7 @@ class SoundManager {
     this.volume = 0.8;
     this.audioContext = null;
     this.useWebAudio = true; // Fallback to Web Audio API when files fail
+    this.forceWebAudioMode = true; // Force Web Audio mode for production
     this.loadSounds();
   }
 
@@ -59,6 +60,12 @@ class SoundManager {
         volume: 1.0,
         description: 'Critical status notification',
         webAudio: { frequency: 1500, duration: 0.3, type: 'square' }
+      },
+      'balance_transaction': {
+        file: '/sounds/balance_update.mp3',
+        volume: 0.8,
+        description: 'Balance transaction notification',
+        webAudio: { frequency: 900, duration: 0.4, type: 'sine' }
       }
     };
 
@@ -67,6 +74,12 @@ class SoundManager {
       this.sounds[key] = new Audio(profile.file);
       this.sounds[key].volume = profile.volume;
       this.sounds[key].preload = 'auto';
+      
+      // Force Web Audio mode for production (since audio files are text files)
+      if (this.forceWebAudioMode) {
+        this.sounds[key].useWebAudio = true;
+        console.log(`🔊 Forcing Web Audio mode for ${key} (production mode)`);
+      }
       
       // Handle loading errors gracefully and fallback to Web Audio
       this.sounds[key].onerror = () => {

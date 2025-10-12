@@ -168,9 +168,19 @@ export const WebSocketProvider = ({ children }) => {
         console.log('WebSocket disconnected:', event.code, event.reason);
         setConnected(false);
         
+        // Handle different close codes
+        if (event.code === 1005) {
+          console.log('WebSocket closed with no status code (1005) - likely network issue');
+        } else if (event.code === 1006) {
+          console.log('WebSocket closed abnormally (1006) - connection lost');
+        } else if (event.code === 1000) {
+          console.log('WebSocket closed normally (1000)');
+          return; // Don't reconnect on normal closure
+        }
+        
         // Only attempt to reconnect if not manually closed and we haven't exceeded max attempts
         if (event.code !== 1000 && reconnectAttempts.current < maxReconnectAttempts && isAuthenticated) {
-          const delay = Math.min(Math.pow(2, reconnectAttempts.current) * 2000, 10000); // Max 10 seconds
+          const delay = Math.min(Math.pow(2, reconnectAttempts.current) * 1000, 5000); // Reduced max delay to 5 seconds
           reconnectAttempts.current++;
           console.log(`Attempting to reconnect... (${reconnectAttempts.current}/${maxReconnectAttempts}) in ${delay/1000}s`);
           
@@ -179,7 +189,8 @@ export const WebSocketProvider = ({ children }) => {
           }, delay);
         } else if (reconnectAttempts.current >= maxReconnectAttempts) {
           console.log('Max reconnection attempts reached. WebSocket connection failed.');
-          toast.error('Unable to establish real-time connection. Some features may not work properly.');
+          // Don't show error toast to avoid spam - just log it
+          console.warn('Unable to establish real-time connection. Some features may not work properly.');
         }
       };
 
@@ -480,6 +491,9 @@ export const WebSocketProvider = ({ children }) => {
             amount: data.amount
           }
         }));
+
+        // 🔊 Play sound notification for balance transaction
+        soundManager.playNotificationSound('balance_transaction', data);
         break;
 
       case 'reply_received':
