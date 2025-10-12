@@ -116,6 +116,7 @@ const AdminDashboard = () => {
   const [userSearchTerm, setUserSearchTerm] = useState('');
   const [userRoleFilter, setUserRoleFilter] = useState('all');
   const [userStatusFilter, setUserStatusFilter] = useState('all');
+  const [userLockFilter, setUserLockFilter] = useState('all');
   
   // Conversations state
   const [conversations, setConversations] = useState([]);
@@ -595,14 +596,17 @@ const AdminDashboard = () => {
       // Role filter
       const matchesRole = userRoleFilter === 'all' || user.role === userRoleFilter;
       
-      // Status filter
+      // Status filter (ONLINE/OFFLINE)
       const matchesStatus = userStatusFilter === 'all' || 
         (userStatusFilter === 'online' && user.is_online) ||
-        (userStatusFilter === 'offline' && !user.is_online) ||
-        (userStatusFilter === 'locked' && !user.is_active) ||
-        (userStatusFilter === 'unlocked' && user.is_active);
+        (userStatusFilter === 'offline' && !user.is_online);
       
-      return matchesSearch && matchesRole && matchesStatus;
+      // Lock filter (LOCKED/UNLOCKED)
+      const matchesLock = userLockFilter === 'all' || 
+        (userLockFilter === 'locked' && !user.is_active) ||
+        (userLockFilter === 'unlocked' && user.is_active);
+      
+      return matchesSearch && matchesRole && matchesStatus && matchesLock;
     });
   };
 
@@ -1207,9 +1211,17 @@ const AdminDashboard = () => {
                         <SelectValue placeholder="Status" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">All Status</SelectItem>
+                        <SelectItem value="all">Any Status</SelectItem>
                         <SelectItem value="online">Online</SelectItem>
                         <SelectItem value="offline">Offline</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Select value={userLockFilter} onValueChange={setUserLockFilter}>
+                      <SelectTrigger className="w-32" id="admin-users-lock-filter">
+                        <SelectValue placeholder="Lock" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Any Lock</SelectItem>
                         <SelectItem value="locked">Locked</SelectItem>
                         <SelectItem value="unlocked">Unlocked</SelectItem>
                       </SelectContent>
@@ -1221,6 +1233,7 @@ const AdminDashboard = () => {
                         setUserSearchTerm('');
                         setUserRoleFilter('all');
                         setUserStatusFilter('all');
+                        setUserLockFilter('all');
                       }}
                       id="admin-users-clear-filters"
                     >
