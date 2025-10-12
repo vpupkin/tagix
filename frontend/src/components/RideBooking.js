@@ -964,7 +964,7 @@ const RideBooking = () => {
                         {pickupLocation && dropoffLocation && (
                           <div className="text-right">
                             <p className="font-semibold text-gray-900">
-                              ${(estimatedFare * vehicle.multiplier).toFixed(2)}
+                              Ⓣ{(estimatedFare * vehicle.multiplier).toFixed(2)}
                             </p>
                           </div>
                         )}
@@ -1105,11 +1105,11 @@ const RideBooking = () => {
 
                   <div className="border-t pt-3 flex items-center justify-between">
                     <div className="flex items-center space-x-2">
-                      <DollarSign className="h-4 w-4 text-indigo-600" />
+                      <span className="text-indigo-600 font-bold">Ⓣ</span>
                       <span className="text-sm font-medium text-gray-700">Estimated Fare</span>
                     </div>
                     <span className="text-lg font-bold text-indigo-900">
-                      ${(estimatedFare * getVehicleTypeInfo(selectedVehicleType).multiplier).toFixed(2)}
+                      Ⓣ{(estimatedFare * getVehicleTypeInfo(selectedVehicleType).multiplier).toFixed(2)}
                     </span>
                   </div>
 
