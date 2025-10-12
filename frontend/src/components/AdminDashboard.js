@@ -1475,13 +1475,13 @@ const AdminDashboard = () => {
                         <TableHead>Type</TableHead>
                         <TableHead>Rider</TableHead>
                         <TableHead>Driver</TableHead>
-                        <TableHead>Route</TableHead>
                         <TableHead>Details</TableHead>
                         <TableHead>Fare</TableHead>
                         <TableHead>Rating</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Date</TableHead>
                         <TableHead>Actions</TableHead>
+                        <TableHead>Route</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -1504,16 +1504,6 @@ const AdminDashboard = () => {
                             </TableCell>
                             <TableCell>{ride.rider_id?.slice(-8) || 'N/A'}</TableCell>
                             <TableCell>{ride.driver_id?.slice(-8) || 'N/A'}</TableCell>
-                            <TableCell>
-                              <div className="max-w-xs">
-                                <p className="text-sm truncate">
-                                  {ride.pickup_location?.address || 'N/A'}
-                                </p>
-                                <p className="text-xs text-gray-500 truncate">
-                                  → {ride.dropoff_location?.address || 'N/A'}
-                                </p>
-                              </div>
-                            </TableCell>
                             <TableCell>
                               <div className="space-y-1">
                                 <div className="flex items-center gap-2 text-xs">
@@ -1569,6 +1559,16 @@ const AdminDashboard = () => {
                                 <MessageSquare className="h-4 w-4" />
                                 <span>Notify</span>
                               </Button>
+                            </TableCell>
+                            <TableCell>
+                              <div className="max-w-xs">
+                                <p className="text-sm truncate">
+                                  {ride.pickup_location?.address || 'N/A'}
+                                </p>
+                                <p className="text-xs text-gray-500 truncate">
+                                  → {ride.dropoff_location?.address || 'N/A'}
+                                </p>
+                              </div>
                             </TableCell>
                           </TableRow>
                         ))
