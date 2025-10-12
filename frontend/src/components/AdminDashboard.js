@@ -1478,7 +1478,7 @@ const AdminDashboard = () => {
                         <TableHead>Details</TableHead>
                         <TableHead>Fare</TableHead>
                         <TableHead>Rating</TableHead>
-                        <TableHead>Status</TableHead>
+                        <TableHead>Assignment</TableHead>
                         <TableHead>Date</TableHead>
                         <TableHead>Actions</TableHead>
                         <TableHead>Route</TableHead>
@@ -1498,8 +1498,8 @@ const AdminDashboard = () => {
                               #{ride.id.slice(-8)}
                             </TableCell>
                             <TableCell>
-                              <Badge variant={ride.ride_type === 'pending' ? 'secondary' : 'default'}>
-                                {ride.ride_type === 'pending' ? 'Request' : 'Completed'}
+                              <Badge variant={ride.status === 'pending' ? 'secondary' : 'default'}>
+                                {ride.status === 'pending' ? 'Request' : ride.status?.replace('_', ' ') || 'Unknown'}
                               </Badge>
                             </TableCell>
                             <TableCell>{ride.rider_id?.slice(-8) || 'N/A'}</TableCell>
@@ -1540,7 +1540,7 @@ const AdminDashboard = () => {
                             </TableCell>
                             <TableCell>
                               <Badge className={getStatusColor(ride.status)}>
-                                {ride.status}
+                                {ride.driver_id ? 'Assigned' : 'Unassigned'}
                               </Badge>
                             </TableCell>
                             <TableCell>
