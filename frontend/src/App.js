@@ -16,6 +16,7 @@ import DriverRideHistory from './components/DriverRideHistory';
 import PaymentSuccess from './components/PaymentSuccess';
 import Profile from './components/Profile';
 import GravatarDemo from './components/GravatarDemo';
+import UserInfoFloatingBox from './components/UserInfoFloatingBox';
 
 // Auth context
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -107,6 +108,9 @@ function MainApp() {
             onClose={() => setShowAuth(false)} 
           />
         )}
+        
+        {/* Floating User Info Box */}
+        <UserInfoFloatingBox />
       </div>
     </WebSocketProvider>
   );
