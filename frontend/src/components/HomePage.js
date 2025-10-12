@@ -148,7 +148,7 @@ const HomePage = ({ onGetStarted }) => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center space-y-4 mb-16">
             <Badge variant="secondary" className="px-4 py-2">
-              Why Choose MobilityHub
+              Why Choose UjeBar
             </Badge>
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900">
               Built for Modern Travel
@@ -234,7 +234,7 @@ const HomePage = ({ onGetStarted }) => {
               Ready to Start Your Journey?
             </h2>
             <p className="text-xl text-indigo-100 max-w-2xl mx-auto">
-              Join thousands of satisfied riders and drivers who trust MobilityHub for their daily transportation needs.
+              Join thousands of satisfied riders and drivers who trust UjeBar for their daily transportation needs.
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center">

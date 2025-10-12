@@ -135,7 +135,7 @@ const AuthModal = ({ isOpen, onClose }) => {
       >
         <DialogHeader className="pb-4 px-1">
           <DialogTitle className="text-center text-lg sm:text-xl font-bold gradient-text">
-            Welcome to MobilityHub
+            Welcome to UjeBar
           </DialogTitle>
           <DialogDescription className="text-center text-gray-600 text-sm">
             Your journey starts here

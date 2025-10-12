@@ -44,7 +44,7 @@ function MainApp() {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
         <div className="text-center space-y-4">
           <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600 mx-auto"></div>
-          <h2 className="text-2xl font-semibold text-gray-900">Loading MobilityHub...</h2>
+          <h2 className="text-2xl font-semibold text-gray-900">Loading UjeBar...</h2>
         </div>
       </div>
     );

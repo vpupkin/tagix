@@ -107,7 +107,7 @@ export const AuthProvider = ({ children }) => {
       setToken(access_token);
       setUser(newUser);
       
-      toast.success(`Welcome to MobilityHub, ${newUser.name}!`);
+      toast.success(`Welcome to UjeBar, ${newUser.name}!`);
       return { success: true };
     } catch (error) {
       const message = error.response?.data?.detail || 'Registration failed';

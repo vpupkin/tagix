@@ -870,7 +870,7 @@ const AdminDashboard = () => {
                 <span>Admin Dashboard</span>
               </h1>
               <p className="text-gray-600 mt-1">
-                Monitor and manage the MobilityHub platform
+                Monitor and manage the UjeBar platform
               </p>
             </div>
             <Button 
