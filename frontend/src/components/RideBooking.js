@@ -978,27 +978,37 @@ const RideBooking = () => {
             {/* Additional Options */}
             <Card className="card-hover">
               <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Users className="h-5 w-5 text-indigo-600" />
-                  <span>Trip Details</span>
+                <CardTitle className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <Users className="h-5 w-5 text-indigo-600" />
+                    <span>Trip Details</span>
+                  </div>
+                  {/* Passenger Count Selector */}
+                  <div className="flex items-center space-x-1" data-testid="passenger-count">
+                    {[
+                      { count: 1, icon: '👤', tooltip: '1 passenger' },
+                      { count: 2, icon: '👥', tooltip: '2 passengers' },
+                      { count: 3, icon: '👨‍👩‍👧', tooltip: '3 passengers' },
+                      { count: 4, icon: '👨‍👩‍👧‍👦', tooltip: '4+ passengers' }
+                    ].map(({ count, icon, tooltip }) => (
+                      <button
+                        key={count}
+                        type="button"
+                        onClick={() => setPassengerCount(count)}
+                        className={`w-8 h-8 rounded-full flex items-center justify-center text-lg transition-all duration-200 ${
+                          passengerCount === count
+                            ? 'bg-indigo-600 text-white shadow-md scale-110'
+                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200 hover:scale-105'
+                        }`}
+                        title={tooltip}
+                      >
+                        {icon}
+                      </button>
+                    ))}
+                  </div>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="passengers">Number of Passengers</Label>
-                  <Select value={passengerCount.toString()} onValueChange={(value) => setPassengerCount(parseInt(value))}>
-                    <SelectTrigger data-testid="passenger-count">
-                      <SelectValue placeholder="Select passengers" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {[1, 2, 3, 4].map((count) => (
-                        <SelectItem key={count} value={count.toString()}>
-                          {count} passenger{count > 1 ? 's' : ''}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="requirements">Special Requirements (Optional)</Label>
