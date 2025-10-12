@@ -1,0 +1,180 @@
+{
+  "timestamp": "2025-10-12T16:55:42.574Z",
+  "totalTests": 12,
+  "passedTests": 0,
+  "failedTests": 12,
+  "successRate": 0,
+  "testResults": [
+    {
+      "testName": "Feature Flag Integration",
+      "passed": false,
+      "timestamp": "2025-10-12T16:55:41.780Z",
+      "details": "Error: Request failed with status code 404",
+      "latencyMs": null
+    },
+    {
+      "testName": "Driver WebSocket Notifications",
+      "passed": false,
+      "timestamp": "2025-10-12T16:55:41.830Z",
+      "details": "Error: Request failed with status code 403",
+      "latencyMs": null
+    },
+    {
+      "testName": "Passenger WebSocket Notifications",
+      "passed": false,
+      "timestamp": "2025-10-12T16:55:41.879Z",
+      "details": "Error: Request failed with status code 403",
+      "latencyMs": null
+    },
+    {
+      "testName": "Sound Data in Notifications",
+      "passed": false,
+      "timestamp": "2025-10-12T16:55:41.923Z",
+      "details": "Error: Request failed with status code 403",
+      "latencyMs": null
+    },
+    {
+      "testName": "Frontend Sound Handling",
+      "passed": false,
+      "timestamp": "2025-10-12T16:55:41.967Z",
+      "details": "Error: Request failed with status code 404",
+      "latencyMs": null
+    },
+    {
+      "testName": "UI Refresh",
+      "passed": false,
+      "timestamp": "2025-10-12T16:55:42.010Z",
+      "details": "Error: Request failed with status code 403",
+      "latencyMs": null
+    },
+    {
+      "testName": "Latency Test 1",
+      "passed": false,
+      "timestamp": "2025-10-12T16:55:42.055Z",
+      "details": "Error: Request failed with status code 403",
+      "latencyMs": null
+    },
+    {
+      "testName": "Latency Test 2",
+      "passed": false,
+      "timestamp": "2025-10-12T16:55:42.160Z",
+      "details": "Error: Request failed with status code 403",
+      "latencyMs": null
+    },
+    {
+      "testName": "Latency Test 3",
+      "passed": false,
+      "timestamp": "2025-10-12T16:55:42.263Z",
+      "details": "Error: Request failed with status code 403",
+      "latencyMs": null
+    },
+    {
+      "testName": "Latency Test 4",
+      "passed": false,
+      "timestamp": "2025-10-12T16:55:42.366Z",
+      "details": "Error: Request failed with status code 403",
+      "latencyMs": null
+    },
+    {
+      "testName": "Latency Test 5",
+      "passed": false,
+      "timestamp": "2025-10-12T16:55:42.470Z",
+      "details": "Error: Request failed with status code 403",
+      "latencyMs": null
+    },
+    {
+      "testName": "Rollback Mechanism",
+      "passed": false,
+      "timestamp": "2025-10-12T16:55:42.573Z",
+      "details": "Error: Request failed with status code 404",
+      "latencyMs": null
+    }
+  ],
+  "failingTests": [
+    {
+      "testName": "Feature Flag Integration",
+      "passed": false,
+      "timestamp": "2025-10-12T16:55:41.780Z",
+      "details": "Error: Request failed with status code 404",
+      "latencyMs": null
+    },
+    {
+      "testName": "Driver WebSocket Notifications",
+      "passed": false,
+      "timestamp": "2025-10-12T16:55:41.830Z",
+      "details": "Error: Request failed with status code 403",
+      "latencyMs": null
+    },
+    {
+      "testName": "Passenger WebSocket Notifications",
+      "passed": false,
+      "timestamp": "2025-10-12T16:55:41.879Z",
+      "details": "Error: Request failed with status code 403",
+      "latencyMs": null
+    },
+    {
+      "testName": "Sound Data in Notifications",
+      "passed": false,
+      "timestamp": "2025-10-12T16:55:41.923Z",
+      "details": "Error: Request failed with status code 403",
+      "latencyMs": null
+    },
+    {
+      "testName": "Frontend Sound Handling",
+      "passed": false,
+      "timestamp": "2025-10-12T16:55:41.967Z",
+      "details": "Error: Request failed with status code 404",
+      "latencyMs": null
+    },
+    {
+      "testName": "UI Refresh",
+      "passed": false,
+      "timestamp": "2025-10-12T16:55:42.010Z",
+      "details": "Error: Request failed with status code 403",
+      "latencyMs": null
+    },
+    {
+      "testName": "Latency Test 1",
+      "passed": false,
+      "timestamp": "2025-10-12T16:55:42.055Z",
+      "details": "Error: Request failed with status code 403",
+      "latencyMs": null
+    },
+    {
+      "testName": "Latency Test 2",
+      "passed": false,
+      "timestamp": "2025-10-12T16:55:42.160Z",
+      "details": "Error: Request failed with status code 403",
+      "latencyMs": null
+    },
+    {
+      "testName": "Latency Test 3",
+      "passed": false,
+      "timestamp": "2025-10-12T16:55:42.263Z",
+      "details": "Error: Request failed with status code 403",
+      "latencyMs": null
+    },
+    {
+      "testName": "Latency Test 4",
+      "passed": false,
+      "timestamp": "2025-10-12T16:55:42.366Z",
+      "details": "Error: Request failed with status code 403",
+      "latencyMs": null
+    },
+    {
+      "testName": "Latency Test 5",
+      "passed": false,
+      "timestamp": "2025-10-12T16:55:42.470Z",
+      "details": "Error: Request failed with status code 403",
+      "latencyMs": null
+    },
+    {
+      "testName": "Rollback Mechanism",
+      "passed": false,
+      "timestamp": "2025-10-12T16:55:42.573Z",
+      "details": "Error: Request failed with status code 404",
+      "latencyMs": null
+    }
+  ],
+  "passingTests": []
+}

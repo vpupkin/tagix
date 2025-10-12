@@ -1,0 +1,208 @@
+{
+  "timestamp": "2025-10-12T16:55:40.235086+00:00",
+  "total_tests": 13,
+  "passed_tests": 0,
+  "failed_tests": 14,
+  "success_rate": 0.0,
+  "test_results": [
+    {
+      "test_name": "TestFeatureFlagSystem.test_feature_flag_defaults_to_off",
+      "passed": false,
+      "timestamp": "2025-10-12T16:55:40.187699+00:00",
+      "details": "Test exception: 'TestFeatureFlagSystem' object has no attribute 'log_test_result'",
+      "latency_ms": null
+    },
+    {
+      "test_name": "TestFeatureFlagSystem.test_feature_flag_endpoint_exists",
+      "passed": false,
+      "timestamp": "2025-10-12T16:55:40.189661+00:00",
+      "details": "Test exception: 'TestFeatureFlagSystem' object has no attribute 'log_test_result'",
+      "latency_ms": null
+    },
+    {
+      "test_name": "TestFeatureFlagSystem.test_feature_flag_realtime_delta_exists",
+      "passed": false,
+      "timestamp": "2025-10-12T16:55:40.191346+00:00",
+      "details": "Test exception: 'TestFeatureFlagSystem' object has no attribute 'log_test_result'",
+      "latency_ms": null
+    },
+    {
+      "test_name": "TestObservabilitySystem.test_ride_status_e2e_latency_timer_exists",
+      "passed": false,
+      "timestamp": "2025-10-12T16:55:40.192909+00:00",
+      "details": "Test exception: 'TestObservabilitySystem' object has no attribute 'log_test_result'",
+      "latency_ms": null
+    },
+    {
+      "test_name": "TestObservabilitySystem.test_ride_status_fanout_counter_exists",
+      "passed": false,
+      "timestamp": "2025-10-12T16:55:40.194384+00:00",
+      "details": "Test exception: 'TestObservabilitySystem' object has no attribute 'log_test_result'",
+      "latency_ms": null
+    },
+    {
+      "test_name": "TestObservabilitySystem.test_ride_status_push_sent_counter_exists",
+      "passed": false,
+      "timestamp": "2025-10-12T16:55:40.195863+00:00",
+      "details": "Test exception: 'TestObservabilitySystem' object has no attribute 'log_test_result'",
+      "latency_ms": null
+    },
+    {
+      "test_name": "TestSoundNotificationSystem.test_required_sound_profiles_exist",
+      "passed": false,
+      "timestamp": "2025-10-12T16:55:40.197170+00:00",
+      "details": "Test exception: 'TestSoundNotificationSystem' object has no attribute 'log_test_result'",
+      "latency_ms": null
+    },
+    {
+      "test_name": "TestSoundNotificationSystem.test_sound_profiles_endpoint_exists",
+      "passed": false,
+      "timestamp": "2025-10-12T16:55:40.198468+00:00",
+      "details": "Test exception: 'TestSoundNotificationSystem' object has no attribute 'log_test_result'",
+      "latency_ms": null
+    },
+    {
+      "test_name": "TestEnhancedNotifications.test_ride_accept_includes_sound_metadata",
+      "passed": false,
+      "timestamp": "2025-10-12T16:55:40.199761+00:00",
+      "details": "Test exception: 'TestEnhancedNotifications' object has no attribute 'log_test_result'",
+      "latency_ms": null
+    },
+    {
+      "test_name": "TestEnhancedNotifications.test_ride_request_includes_sound_metadata",
+      "passed": false,
+      "timestamp": "2025-10-12T16:55:40.200934+00:00",
+      "details": "Test exception: 'TestEnhancedNotifications' object has no attribute 'log_test_result'",
+      "latency_ms": null
+    },
+    {
+      "test_name": "TestSLOCompliance.test_accept_to_passenger_latency_slo",
+      "passed": false,
+      "timestamp": "2025-10-12T16:55:40.202125+00:00",
+      "details": "Test exception: 'TestSLOCompliance' object has no attribute 'log_test_result'",
+      "latency_ms": null
+    },
+    {
+      "test_name": "TestSLOCompliance.test_book_to_drivers_latency_slo",
+      "passed": false,
+      "timestamp": "2025-10-12T16:55:40.204820+00:00",
+      "details": "Test exception: 'TestSLOCompliance' object has no attribute 'log_test_result'",
+      "latency_ms": null
+    },
+    {
+      "test_name": "TestRollbackMechanism.test_feature_flag_off_disables_new_behavior",
+      "passed": false,
+      "timestamp": "2025-10-12T16:55:40.210509+00:00",
+      "details": "Test exception: 'TestRollbackMechanism' object has no attribute 'log_test_result'",
+      "latency_ms": null
+    },
+    {
+      "test_name": "WebSocket Tests",
+      "passed": false,
+      "timestamp": "2025-10-12T16:55:40.234959+00:00",
+      "details": "Async test error: local variable 'failed_tests' referenced before assignment",
+      "latency_ms": null
+    }
+  ],
+  "failing_tests": [
+    {
+      "test_name": "TestFeatureFlagSystem.test_feature_flag_defaults_to_off",
+      "passed": false,
+      "timestamp": "2025-10-12T16:55:40.187699+00:00",
+      "details": "Test exception: 'TestFeatureFlagSystem' object has no attribute 'log_test_result'",
+      "latency_ms": null
+    },
+    {
+      "test_name": "TestFeatureFlagSystem.test_feature_flag_endpoint_exists",
+      "passed": false,
+      "timestamp": "2025-10-12T16:55:40.189661+00:00",
+      "details": "Test exception: 'TestFeatureFlagSystem' object has no attribute 'log_test_result'",
+      "latency_ms": null
+    },
+    {
+      "test_name": "TestFeatureFlagSystem.test_feature_flag_realtime_delta_exists",
+      "passed": false,
+      "timestamp": "2025-10-12T16:55:40.191346+00:00",
+      "details": "Test exception: 'TestFeatureFlagSystem' object has no attribute 'log_test_result'",
+      "latency_ms": null
+    },
+    {
+      "test_name": "TestObservabilitySystem.test_ride_status_e2e_latency_timer_exists",
+      "passed": false,
+      "timestamp": "2025-10-12T16:55:40.192909+00:00",
+      "details": "Test exception: 'TestObservabilitySystem' object has no attribute 'log_test_result'",
+      "latency_ms": null
+    },
+    {
+      "test_name": "TestObservabilitySystem.test_ride_status_fanout_counter_exists",
+      "passed": false,
+      "timestamp": "2025-10-12T16:55:40.194384+00:00",
+      "details": "Test exception: 'TestObservabilitySystem' object has no attribute 'log_test_result'",
+      "latency_ms": null
+    },
+    {
+      "test_name": "TestObservabilitySystem.test_ride_status_push_sent_counter_exists",
+      "passed": false,
+      "timestamp": "2025-10-12T16:55:40.195863+00:00",
+      "details": "Test exception: 'TestObservabilitySystem' object has no attribute 'log_test_result'",
+      "latency_ms": null
+    },
+    {
+      "test_name": "TestSoundNotificationSystem.test_required_sound_profiles_exist",
+      "passed": false,
+      "timestamp": "2025-10-12T16:55:40.197170+00:00",
+      "details": "Test exception: 'TestSoundNotificationSystem' object has no attribute 'log_test_result'",
+      "latency_ms": null
+    },
+    {
+      "test_name": "TestSoundNotificationSystem.test_sound_profiles_endpoint_exists",
+      "passed": false,
+      "timestamp": "2025-10-12T16:55:40.198468+00:00",
+      "details": "Test exception: 'TestSoundNotificationSystem' object has no attribute 'log_test_result'",
+      "latency_ms": null
+    },
+    {
+      "test_name": "TestEnhancedNotifications.test_ride_accept_includes_sound_metadata",
+      "passed": false,
+      "timestamp": "2025-10-12T16:55:40.199761+00:00",
+      "details": "Test exception: 'TestEnhancedNotifications' object has no attribute 'log_test_result'",
+      "latency_ms": null
+    },
+    {
+      "test_name": "TestEnhancedNotifications.test_ride_request_includes_sound_metadata",
+      "passed": false,
+      "timestamp": "2025-10-12T16:55:40.200934+00:00",
+      "details": "Test exception: 'TestEnhancedNotifications' object has no attribute 'log_test_result'",
+      "latency_ms": null
+    },
+    {
+      "test_name": "TestSLOCompliance.test_accept_to_passenger_latency_slo",
+      "passed": false,
+      "timestamp": "2025-10-12T16:55:40.202125+00:00",
+      "details": "Test exception: 'TestSLOCompliance' object has no attribute 'log_test_result'",
+      "latency_ms": null
+    },
+    {
+      "test_name": "TestSLOCompliance.test_book_to_drivers_latency_slo",
+      "passed": false,
+      "timestamp": "2025-10-12T16:55:40.204820+00:00",
+      "details": "Test exception: 'TestSLOCompliance' object has no attribute 'log_test_result'",
+      "latency_ms": null
+    },
+    {
+      "test_name": "TestRollbackMechanism.test_feature_flag_off_disables_new_behavior",
+      "passed": false,
+      "timestamp": "2025-10-12T16:55:40.210509+00:00",
+      "details": "Test exception: 'TestRollbackMechanism' object has no attribute 'log_test_result'",
+      "latency_ms": null
+    },
+    {
+      "test_name": "WebSocket Tests",
+      "passed": false,
+      "timestamp": "2025-10-12T16:55:40.234959+00:00",
+      "details": "Async test error: local variable 'failed_tests' referenced before assignment",
+      "latency_ms": null
+    }
+  ],
+  "passing_tests": []
+}

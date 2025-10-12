@@ -716,6 +716,9 @@ async def create_ride_request(request_data: RideRequest, request: Request, curre
     if current_user.role != UserRole.RIDER:
         raise HTTPException(status_code=403, detail="Only riders can create ride requests")
     
+    # Start timing for SLO compliance
+    start_time = time.time()
+    
     request_data.rider_id = current_user.id
     
     # Calculate estimated fare
@@ -764,11 +767,34 @@ async def create_ride_request(request_data: RideRequest, request: Request, curre
             sender_name=current_user.name
         )
     
-    return {
+    # Check if feature flag is enabled for enhanced notifications
+    enhanced_notifications = feature_flags.get("realtime.status.deltaV1", False)
+    
+    response_data = {
         "request_id": request_data.id,
         "estimated_fare": request_data.estimated_fare,
         "matches_found": len(matches)
     }
+    
+    # Add notification metadata if feature flag is enabled
+    if enhanced_notifications:
+        response_data["notification_metadata"] = {
+            "sound_required": True,
+            "sound_profile": "ride_request",
+            "ui_update_required": True
+        }
+        
+        # Increment fanout counter
+        observability_counters["ride_status_fanout"] += len(matches)
+        
+        # Record latency for SLO compliance
+        latency_ms = (time.time() - start_time) * 1000
+        latency_measurements.append(latency_ms)
+        # Keep only last 1000 measurements to prevent memory issues
+        if len(latency_measurements) > 1000:
+            latency_measurements.pop(0)
+    
+    return response_data
 
 async def find_nearby_drivers(request: RideRequest) -> List[Dict[str, Any]]:
     """Find nearby available drivers for a ride request"""
@@ -802,6 +828,9 @@ async def find_nearby_drivers(request: RideRequest) -> List[Dict[str, Any]]:
 async def accept_ride_request(request_id: str, current_user: User = Depends(get_current_user)):
     if current_user.role != UserRole.DRIVER:
         raise HTTPException(status_code=403, detail="Only drivers can accept ride requests")
+    
+    # Start timing for SLO compliance
+    start_time = time.time()
     
     # Get the ride request first to calculate required platform fee
     request_doc = await db.ride_requests.find_one({"id": request_id})
@@ -913,10 +942,33 @@ async def accept_ride_request(request_id: str, current_user: User = Depends(get_
         sender_name=current_user.name
     )
     
-    return {
+    # Check if feature flag is enabled for enhanced notifications
+    enhanced_notifications = feature_flags.get("realtime.status.deltaV1", False)
+    
+    response_data = {
         "match_id": match.id,
         "message": "Ride request accepted successfully"
     }
+    
+    # Add notification metadata if feature flag is enabled
+    if enhanced_notifications:
+        response_data["notification_metadata"] = {
+            "sound_required": True,
+            "sound_profile": "ride_accepted",
+            "ui_update_required": True
+        }
+        
+        # Increment push sent counter
+        observability_counters["ride_status_push_sent"] += 1
+        
+        # Record latency for SLO compliance
+        latency_ms = (time.time() - start_time) * 1000
+        latency_measurements.append(latency_ms)
+        # Keep only last 1000 measurements to prevent memory issues
+        if len(latency_measurements) > 1000:
+            latency_measurements.pop(0)
+    
+    return response_data
 
 @api_router.post("/rides/{request_id}/decline", response_model=Dict[str, Any])
 async def decline_ride_request(request_id: str, current_user: User = Depends(get_current_user)):
@@ -3651,6 +3703,97 @@ async def get_config():
             "payments": True,
             "ratings": True,
             "admin_panel": True
+        }
+    }
+
+# Feature Flag System for QA Enforcement Charter
+# TDD Phase 1: Implement feature flag system to make tests pass
+
+# In-memory feature flags (in production, this would be in a database)
+feature_flags = {
+    "realtime.status.deltaV1": False  # Default OFF as per QA requirements
+}
+
+# Observability System for QA Enforcement Charter
+# TDD Phase 2: Implement observability counters and timers to make tests pass
+
+# In-memory counters and timers (in production, this would be in a database)
+observability_counters = {
+    "ride_status_fanout": 0,
+    "ride_status_push_sent": 0
+}
+
+# Latency measurements for SLO compliance
+latency_measurements = []  # List of latency measurements in milliseconds
+
+@api_router.get("/feature-flags")
+async def get_feature_flags():
+    """Get all feature flags - TDD requirement"""
+    return feature_flags
+
+@api_router.post("/feature-flags/{flag_name}")
+async def toggle_feature_flag(flag_name: str, request: Dict[str, bool]):
+    """Toggle a specific feature flag - TDD requirement"""
+    if flag_name not in feature_flags:
+        raise HTTPException(status_code=404, detail=f"Feature flag '{flag_name}' not found")
+    
+    enabled = request.get("enabled", False)
+    feature_flags[flag_name] = enabled
+    
+    return {"flag_name": flag_name, "enabled": enabled}
+
+# Observability Endpoints for QA Enforcement Charter
+@api_router.get("/observability/ride_status_fanout.count")
+async def get_fanout_count():
+    """Get ride status fanout counter - TDD requirement"""
+    return {"count": observability_counters["ride_status_fanout"]}
+
+@api_router.get("/observability/ride_status_push_sent.count")
+async def get_push_count():
+    """Get ride status push sent counter - TDD requirement"""
+    return {"count": observability_counters["ride_status_push_sent"]}
+
+@api_router.get("/observability/ride_status_e2e_latency_ms")
+async def get_latency_timer():
+    """Get ride status end-to-end latency timer with P50/P95 - TDD requirement"""
+    if not latency_measurements:
+        return {"P50": 0, "P95": 0}
+    
+    # Calculate percentiles
+    sorted_latencies = sorted(latency_measurements)
+    n = len(sorted_latencies)
+    
+    p50_idx = int(n * 0.5)
+    p95_idx = int(n * 0.95)
+    
+    p50 = sorted_latencies[p50_idx] if p50_idx < n else sorted_latencies[-1]
+    p95 = sorted_latencies[p95_idx] if p95_idx < n else sorted_latencies[-1]
+    
+    return {"P50": p50, "P95": p95}
+
+# Sound Notification System for QA Enforcement Charter
+# TDD Phase 3: Implement sound notification system to make tests pass
+
+@api_router.get("/sound-profiles")
+async def get_sound_profiles():
+    """Get sound profiles for notifications - TDD requirement"""
+    return {
+        "profiles": {
+            "status_critical": {
+                "sound": "critical.mp3",
+                "volume": 1.0,
+                "description": "Critical status notifications"
+            },
+            "ride_request": {
+                "sound": "request.mp3", 
+                "volume": 0.8,
+                "description": "New ride request notifications"
+            },
+            "ride_accepted": {
+                "sound": "accepted.mp3",
+                "volume": 0.8,
+                "description": "Ride acceptance notifications"
+            }
         }
     }
 
